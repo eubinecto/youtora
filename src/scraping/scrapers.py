@@ -1,9 +1,11 @@
 # the models that I'll be using.
+from typing import List
+
 from .models import Channel, Video, Caption, Track
-#how do I use type alises?
+# how do I use type aliases?
 import xmltodict
 
-# for getting the xml caption
+# for getting the xml caption from timed text api.
 import requests
 
 # use youtube_dl for getting the automatic captions
@@ -13,18 +15,13 @@ import youtube_dl
 # if you give it a channel url, you can get a list of videos... hopefully?
 class ChannelScraper:
     @classmethod
-    def getChannel(cls, channel_url):
-        """
-        given a url, returns the metadata of the channel.
-        :param url:
-        :return: a Channel object.
-        """
+    def get_channel(cls, channel_url: str):
         pass
 
 
 class VideoScraper:
     @classmethod
-    def getVideo(cls, vid_url):
+    def get_video(cls, vid_url: str) -> Video:
         """
         given a url, returns the meta data of the channel
         :param vid_url: the url of the video
@@ -35,6 +32,7 @@ class VideoScraper:
                     'allsubtitles': True,
                     'writeautomaticsub': True}
 
+        # get the info.
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url=vid_url, download=False)
 
@@ -50,6 +48,7 @@ class VideoScraper:
         assert vid_id is not None, "vid_id is required"
         assert title is not None, "title is required"
         assert channel_id is not None, "channel_id is required"
+        # I might need upload date to sort by recency.
         assert upload_date is not None, "upload_date is required"
 
         # returns a video object with the properites above
@@ -61,35 +60,39 @@ class VideoScraper:
                      automatic_captions)
 
     @classmethod
-    def extractVideos(cls, channel):
+    def extract_videos(cls, channel: Channel):
         """
         :param channel: given a Channel Object
         :return: returns Videos (a list of Video objects)
         """
         # type check
-        isinstance(channel, Channel)
+        if not isinstance(channel, Channel):
+            raise TypeError
+
         pass
 
 
 class CaptionScraper:
-    # the cpation types defined
-    CAPTION_TYPES = ["manual", "auto"]
+    # the caption types defined
+    CAPTION_TYPES = ("manual", "auto")
 
     # list of caption formats
-    CAPTION_FORMATS = {'srv1': 0,
-                       'srv2': 1,
-                       'srv3': 2,
-                       'ttml': 3,
-                       'vtt': 4}
+    format_idx = {
+        'srv1': 0,
+        'srv2': 1,
+        'srv3': 2,
+        'ttml': 3,
+        'vtt': 4
+    }
 
     # the caption format I'll be using
     CAPTION_FORMAT = 'srv1'
 
     @classmethod
-    def getCaption(cls,
-                   vid_url,
-                   lang_code='en',
-                   caption_type=None):
+    def get_caption(cls,
+                    vid_url: str,
+                    lang_code: str = 'en',
+                    caption_type: str = None):
         """
         downlaod a caption from the video url directly
         :param vid_url: the vid url to get the caption from.
@@ -103,10 +106,10 @@ class CaptionScraper:
         # use if key in dict to check if the caption with the language code exists
 
     @classmethod
-    def extractCaption(cls,
-                       video,
-                       lang_code='en',
-                       caption_type=None):
+    def extract_caption(cls,
+                        video,
+                        lang_code='en',
+                        caption_type=None):
         """
         extract the caption from a given video object
         instead of downlaoding it directly from a vid_url.
@@ -116,45 +119,42 @@ class CaptionScraper:
         :return: a caption object
         """
         # type check - must be a video object
-        isinstance(video, Video)
-        # input check - must be either None, "auto", "manual"
-        assert caption_type in ([None] + cls.CAPTION_TYPES), "invalid caption Type:{}" \
-            .format(caption_type)
+        if not isinstance(video, Video):
+            raise TypeError
 
-        # check for the existance of the captions for both types
+        # input check - must be either None, "auto", "manual"
+        assert caption_type is None \
+               or caption_type in cls.CAPTION_TYPES,\
+               "invalid caption Type:{}" \
+               .format(caption_type)
+
+        # check for the existence of the captions for both types
         manual_exists = lang_code in video.subtitles
         auto_exists = lang_code in video.automatic_captions
 
         vid_id = video.vid_id
         caption_url = None
+        format_idx = cls.format_idx[cls.CAPTION_FORMAT]
 
-        #prioritise manual
+        # prioritise manual
         if caption_type is None:
             if manual_exists:
                 caption_type = "manual"
-                caption_url = video.subtitles[lang_code]\
-                                             [cls.CAPTION_FORMATS[cls.CAPTION_FORMAT]]\
-                                             ['url']
-            #if manual caption does not exist, get the automatic one
+                caption_url = video.subtitles[lang_code][format_idx]['url']
+            # if manual caption does not exist, get the automatic one
             elif auto_exists:
                 caption_type = "auto"
-                caption_url = video.automatic_captions[lang_code]\
-                                                      [cls.CAPTION_FORMATS[cls.CAPTION_FORMAT]]\
-                                                      ['url']
+                caption_url = video.automatic_captions[lang_code][format_idx]['url']
         elif caption_type == "manual":
             if manual_exists:
-                caption_url = video.subtitles[lang_code]\
-                                             [cls.CAPTION_FORMATS[cls.CAPTION_FORMAT]]\
-                                             ['url']
+                caption_url = video.subtitles[lang_code][format_idx]['url']
         elif caption_type == "auto":
             if auto_exists:
-                caption_url = video.automatic_captions[lang_code]\
-                                                      [cls.CAPTION_FORMATS[cls.CAPTION_FORMAT]]\
-                                                      ['url']
+                caption_url = video.automatic_captions[lang_code][format_idx]['url']
 
         if caption_url is None:
             # raise an exception if no caption was found
-            raise KeyError("NOT FOUND:{}:lang_code={}:vid={}" \
+            raise KeyError("NOT FOUND:{}:lang_code={}:vid={}"
                            .format(caption_type if caption_type is not None else "manual&auto",
                                    lang_code,
                                    video))
@@ -165,22 +165,23 @@ class CaptionScraper:
                        caption_url=caption_url)
 
     @classmethod
-    def getTracks(cls, caption):
+    def get_tracks(cls, caption: Caption) -> List[Track]:
         """
         :param caption: a caption Object with caption url
         :return: a list of Track objects
         """
-        isinstance(caption, Caption)
-        #first, get the xml
+        if not isinstance(caption, Caption):
+            raise TypeError
+        # first, get the xml
 
-        tracksXML = requests.get(caption.caption_url).content
-        #deserialse the xml to dict
-        tracksDict = xmltodict.parse(tracksXML)
+        tracks_xml = requests.get(caption.caption_url).content
+        # deserialize the xml to dict
+        tracks_dict = xmltodict.parse(tracks_xml)
 
-        #the composite key of the caption
-        caption_comp_key = "|".join([caption.vid_id, caption.caption_type, caption.lang_code])
+        # the composite key of the caption
+        caption_comp_key = caption.caption_comp_key
         tracks = list()
-        for trackItem in tracksDict['transcript']['text']:
+        for trackItem in tracks_dict['transcript']['text']:
             start = trackItem["@start"]
             duration = trackItem["@dur"]
             text = trackItem["#text"]
@@ -191,3 +192,4 @@ class CaptionScraper:
 
 
 
+#
