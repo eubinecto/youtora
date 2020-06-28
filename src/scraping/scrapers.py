@@ -89,6 +89,54 @@ class CaptionScraper:
     CAPTION_FORMAT = 'srv1'
 
     @classmethod
+    def extract_caption(cls,
+                        video,
+                        lang_code='en',
+                        caption_type=None):
+        """
+        extract the caption from a given video object
+        instead of downlaoding it directly from a vid_url.
+        :param video: a video object
+        :param lang_code: the desired languauge
+        :param caption_type: None: any , manual: manually written, auto: auto caption
+        :return: a caption object
+        """
+        # type check - must be a video object
+        if not isinstance(video, Video):
+            raise TypeError(video)
+
+        # input check - must be either None, "auto", "manual"
+        if caption_type not in cls.CAPTION_TYPES:
+            raise ValueError(caption_type)
+
+        # check for the existence of the captions for both types
+        manual_exists = lang_code in video.subtitles
+        auto_exists = lang_code in video.auto_captions()
+
+        vid_id = video.vid_id
+        format_idx = cls.format_idx[cls.CAPTION_FORMAT]
+        caption_url = None
+
+        if caption_type == "manual":
+            if manual_exists:
+                caption_url = video.subtitles()[lang_code][format_idx]['url']
+        elif caption_type == "auto":
+            if auto_exists:
+                caption_url = video.auto_captions()[lang_code][format_idx]['url']
+
+        if caption_url is None:
+            # raise an exception if no caption was found
+            raise ValueError("NOT FOUND:{}:lang_code={}:vid={}"
+                             .format(caption_type if caption_type is not None else "manual&auto",
+                                     lang_code,
+                                     video))
+
+        return Caption(vid_id=vid_id,
+                       caption_type=caption_type,
+                       lang_code=lang_code,
+                       caption_url=caption_url)
+
+    @classmethod
     def get_caption(cls,
                     vid_url: str,
                     lang_code: str = 'en',
@@ -106,65 +154,6 @@ class CaptionScraper:
         # use if key in dict to check if the caption with the language code exists
 
     @classmethod
-    def extract_caption(cls,
-                        video,
-                        lang_code='en',
-                        caption_type=None):
-        """
-        extract the caption from a given video object
-        instead of downlaoding it directly from a vid_url.
-        :param video: a video object
-        :param lang_code: the desired langauge
-        :param caption_type: None: any , manual: manually written, auto: auto caption
-        :return: a caption object
-        """
-        # type check - must be a video object
-        if not isinstance(video, Video):
-            raise TypeError
-
-        # input check - must be either None, "auto", "manual"
-        assert caption_type is None \
-               or caption_type in cls.CAPTION_TYPES,\
-               "invalid caption Type:{}" \
-               .format(caption_type)
-
-        # check for the existence of the captions for both types
-        manual_exists = lang_code in video.subtitles
-        auto_exists = lang_code in video.automatic_captions
-
-        vid_id = video.vid_id
-        caption_url = None
-        format_idx = cls.format_idx[cls.CAPTION_FORMAT]
-
-        # prioritise manual
-        if caption_type is None:
-            if manual_exists:
-                caption_type = "manual"
-                caption_url = video.subtitles[lang_code][format_idx]['url']
-            # if manual caption does not exist, get the automatic one
-            elif auto_exists:
-                caption_type = "auto"
-                caption_url = video.automatic_captions[lang_code][format_idx]['url']
-        elif caption_type == "manual":
-            if manual_exists:
-                caption_url = video.subtitles[lang_code][format_idx]['url']
-        elif caption_type == "auto":
-            if auto_exists:
-                caption_url = video.automatic_captions[lang_code][format_idx]['url']
-
-        if caption_url is None:
-            # raise an exception if no caption was found
-            raise KeyError("NOT FOUND:{}:lang_code={}:vid={}"
-                           .format(caption_type if caption_type is not None else "manual&auto",
-                                   lang_code,
-                                   video))
-
-        return Caption(vid_id=vid_id,
-                       caption_type=caption_type,
-                       lang_code=lang_code,
-                       caption_url=caption_url)
-
-    @classmethod
     def get_tracks(cls, caption: Caption) -> List[Track]:
         """
         :param caption: a caption Object with caption url
@@ -179,7 +168,7 @@ class CaptionScraper:
         tracks_dict = xmltodict.parse(tracks_xml)
 
         # the composite key of the caption
-        caption_comp_key = caption.caption_comp_key
+        caption_comp_key = caption.caption_comp_key()
         tracks = list()
         for trackItem in tracks_dict['transcript']['text']:
             start = trackItem["@start"]
@@ -189,7 +178,3 @@ class CaptionScraper:
             tracks.append(track)
 
         return tracks
-
-
-
-#
