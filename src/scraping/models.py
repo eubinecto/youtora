@@ -3,7 +3,8 @@
 class Channel:
     def __init__(self,
                  channel_id: str,
-                 uploader: str):
+                 uploader: str,
+                 playlist):
         # key
         self._channel_id = channel_id
 
@@ -17,6 +18,7 @@ class Channel:
         # channels that have hundreds of videos.
         # so we need some degree of atomicity.
         # self.videos = videos
+        self._playlist = playlist
 
     # accessor methods
     def channel_id(self):
@@ -24,6 +26,9 @@ class Channel:
 
     def channel_url(self):
         return self._channel_url
+
+    def playlist(self):
+        return self._playlist
 
     def __str__(self) -> str:
         """
@@ -80,10 +85,6 @@ class Video:
     # overrides the dunder string method
     def __str__(self):
         return self._title
-
-    @property
-    def vid_id(self):
-        return self._vid_id
 
 
 class Caption:

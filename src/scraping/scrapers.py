@@ -14,12 +14,26 @@ import youtube_dl
 
 # if you give it a channel url, you can get a list of videos... hopefully?
 class ChannelScraper:
+
     @classmethod
-    def get_channel(cls, channel_url: str):
+    def get_channel(cls, channel_url: str) -> Channel:
         pass
 
 
 class VideoScraper:
+
+    @classmethod
+    def extract_videos(cls, channel: Channel):
+        """
+        :param channel: given a Channel Object
+        :return: returns Videos (a list of Video objects)
+        """
+        # type check
+        if not isinstance(channel, Channel):
+            raise TypeError
+
+        pass
+
     @classmethod
     def get_video(cls, vid_url: str) -> Video:
         """
@@ -59,25 +73,13 @@ class VideoScraper:
                      subtitles,
                      automatic_captions)
 
-    @classmethod
-    def extract_videos(cls, channel: Channel):
-        """
-        :param channel: given a Channel Object
-        :return: returns Videos (a list of Video objects)
-        """
-        # type check
-        if not isinstance(channel, Channel):
-            raise TypeError
-
-        pass
-
 
 class CaptionScraper:
     # the caption types defined
     CAPTION_TYPES = ("manual", "auto")
 
     # list of caption formats
-    format_idx = {
+    FORMAT_IDX = {
         'srv1': 0,
         'srv2': 1,
         'srv3': 2,
@@ -90,15 +92,15 @@ class CaptionScraper:
 
     @classmethod
     def extract_caption(cls,
-                        video,
-                        lang_code='en',
-                        caption_type=None):
+                        video: Video,
+                        lang_code: str = 'en',
+                        caption_type: str = "auto"):
         """
         extract the caption from a given video object
-        instead of downlaoding it directly from a vid_url.
+        instead of downloading it directly from a vid_url.
         :param video: a video object
-        :param lang_code: the desired languauge
-        :param caption_type: None: any , manual: manually written, auto: auto caption
+        :param lang_code: the desired language
+        :param caption_type:manual: manually written, auto: ASR. the default is auto.
         :return: a caption object
         """
         # type check - must be a video object
@@ -113,8 +115,8 @@ class CaptionScraper:
         manual_exists = lang_code in video.subtitles
         auto_exists = lang_code in video.auto_captions()
 
-        vid_id = video.vid_id
-        format_idx = cls.format_idx[cls.CAPTION_FORMAT]
+        vid_id = video.vid_id()
+        format_idx = cls.FORMAT_IDX[cls.CAPTION_FORMAT]
         caption_url = None
 
         if caption_type == "manual":
@@ -124,12 +126,14 @@ class CaptionScraper:
             if auto_exists:
                 caption_url = video.auto_captions()[lang_code][format_idx]['url']
 
-        if caption_url is None:
-            # raise an exception if no caption was found
-            raise ValueError("NOT FOUND:{}:lang_code={}:vid={}"
-                             .format(caption_type if caption_type is not None else "manual&auto",
-                                     lang_code,
-                                     video))
+        # to be handled
+        # Note: a None is a singleton object.
+        # there can only be 1 None.
+        # So whatever variable that is assigned to None keyword
+        # refers to the same memory location. ("NULL" in C)
+        # so it makes sense to use is operator rather than equality operator.
+        if caption_type is None:
+            raise ValueError(caption_type)
 
         return Caption(vid_id=vid_id,
                        caption_type=caption_type,
@@ -140,9 +144,9 @@ class CaptionScraper:
     def get_caption(cls,
                     vid_url: str,
                     lang_code: str = 'en',
-                    caption_type: str = None):
+                    caption_type: str = "auto"):
         """
-        downlaod a caption from the video url directly
+        download a caption from the video url directly
         :param vid_url: the vid url to get the caption from.
         :param lang_code: the desired language you want the caption to be written in.
         :param caption_type: either manual / auto. if None, it type manual is prioritised.
