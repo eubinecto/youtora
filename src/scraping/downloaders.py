@@ -13,28 +13,27 @@ import youtube_dl
 
 
 # if you give it a channel url, you can get a list of videos... hopefully?
-class ChannelScraper:
+class ChannelDownloader:
     @classmethod
-    def get_channel(cls, channel_url: str) -> Channel:
+    def dl_channel(cls, channel_url: str) -> Channel:
         pass
 
 
-class VideoScraper:
+class VideoDownloader:
+    # get all of the captions, whether it be manual or auto.
+    VIDEO_DL_OPTS = {'writesubtitles': True,
+                     'allsubtitles': True,
+                     'writeautomaticsub': True}
 
     @classmethod
-    def get_video(cls, vid_url: str) -> Video:
+    def dl_video(cls, vid_url: str) -> Video:
         """
         given a url, returns the meta data of the channel
         :param vid_url: the url of the video
         :return: a Video object
         """
-        # get all of the captions, whether it be manual or auto.
-        ydl_opts = {'writesubtitles': True,
-                    'allsubtitles': True,
-                    'writeautomaticsub': True}
-
         # get the info.
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        with youtube_dl.YoutubeDL(cls.VIDEO_DL_OPTS) as ydl:
             info = ydl.extract_info(url=vid_url, download=False)
 
         # access the results
@@ -61,7 +60,7 @@ class VideoScraper:
                      automatic_captions)
 
 
-class CaptionScraper:
+class CaptionDownloader:
     # the caption types defined
     CAPTION_TYPES = ("manual", "auto")
 
@@ -74,36 +73,17 @@ class CaptionScraper:
         'vtt': 4
     }
 
-    # the caption format I'll be using
-    CAPTION_FORMAT = 'srv1'
-
     @classmethod
-    def get_caption(cls,
-                    vid_url: str,
-                    lang_code: str = 'en',
-                    caption_type: str = "auto"):
+    def dl_tracks(cls,
+                  caption_comp_key: str,
+                  caption_url: str) -> List[Track]:
         """
-        download a caption from the video url directly
-        :param vid_url: the vid url to get the caption from.
-        :param lang_code: the desired language you want the caption to be written in.
-        :param caption_type: either manual / auto. if None, it type manual is prioritised.
-        :return: a Caption object
-        """
-        # will I need this in the first place?
-        pass
-
-    @classmethod
-    def get_tracks(cls, caption: Caption) -> List[Track]:
-        """
-        :param caption: a caption Object with caption url
+        :param caption_comp_key: the key of the caption.
+        :param caption_url: the url to download the track from.
         :return: a list of Track objects
         """
-        #error handling
-        if not isinstance(caption, Caption):
-            raise TypeError
-
         # first, get the response
-        response = requests.get(caption.caption_url)
+        response = requests.get(caption_url)
 
         # check if the response was erroneous
         response.raise_for_status()
@@ -113,10 +93,6 @@ class CaptionScraper:
 
         # deserialize the xml to dict
         tracks_dict = xmltodict.parse(tracks_xml)
-
-        # the composite key of the caption
-        caption_comp_key = caption.caption_comp_key
-
         # prepare a bucket for tracks
         tracks = list()
 
@@ -127,5 +103,7 @@ class CaptionScraper:
             text = trackItem["#text"]
             track = Track(caption_comp_key, start, duration, text)
             tracks.append(track)
-
         return tracks
+
+    # the caption format I'll be using
+    CAPTION_FORMAT = 'srv1'

@@ -1,5 +1,6 @@
+from typing import List
 
-from .scrapers import CaptionScraper
+from .downloaders import CaptionDownloader
 
 
 class Channel:
@@ -19,7 +20,7 @@ class Channel:
         # because if you do...Channel will get just so huge in size for
         # channels that have hundreds of videos.
         # so we need some degree of atomicity.
-        # self.videos = videos
+        # self.videos = videos <- not including this.
         self._playlist = playlist
 
     # accessor methods
@@ -60,6 +61,7 @@ class Video:
         # build the url yourself... save the number of parameters.
         self._vid_url = "https://www.youtube.com/watch?v={}"\
                         .format(vid_id)
+
         self._title = title
         self._channel_id = channel_id
         self._upload_date = upload_date
@@ -112,11 +114,13 @@ class Video:
         :return: a caption object
         """
         # input check - must be either None, "auto", "manual"
-        if caption_type not in CaptionScraper.CAPTION_TYPES:
+        if caption_type not in CaptionDownloader.CAPTION_TYPES:
             raise ValueError(caption_type)
 
-        # set the desired the caption format in the CaptionScraper class.
-        format_idx = CaptionScraper.FORMAT_IDX[CaptionScraper.CAPTION_FORMAT]
+        # set the desired caption format in the CaptionScraper class.
+        format_idx = CaptionDownloader.FORMAT_IDX[CaptionDownloader.CAPTION_FORMAT]
+
+        # this is initially None
         caption_url = None
 
         if caption_type == "manual":
@@ -157,6 +161,11 @@ class Caption:
 
         self._caption_url = caption_url
 
+        # download the tracks on init of caption
+        # list of track objects.
+        self._tracks: List[Track] = CaptionDownloader.dl_tracks(caption_comp_key=self._caption_comp_key,
+                                                                caption_url=self._caption_url)
+
     # accessor methods
     @property
     def caption_comp_key(self):
@@ -165,6 +174,10 @@ class Caption:
     @property
     def caption_url(self):
         return self._caption_url
+
+    @property
+    def tracks(self):
+        return self._tracks
 
     # overrides dunder string method
     def __str__(self) -> str:
