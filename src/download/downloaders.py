@@ -14,6 +14,9 @@ import youtube_dl
 # to be raised when no caption was found
 from .errors import CaptionNotFoundError
 
+# for escaping character reference entities
+import html
+
 
 # if you give it a channel url, you can get a list of videos... hopefully?
 class ChannelDownloader:
@@ -66,8 +69,7 @@ class VideoDownloader:
             print(ce)
         else:
             # on successful downloading
-            print("caption found: vid title={}, type={}"\
-                  .format(title, caption_type))
+            print("MANUAL FOUND: {}".format(title))
 
         # try getting the caption of type manual
         try:
@@ -80,8 +82,7 @@ class VideoDownloader:
             print(ce)
         else:
             # on successful downloading
-            print("caption found: vid title={}, type={}" \
-                  .format(title, caption_type))
+            print("AUTO FOUND: {}".format(title))
 
         # returns a video object with the properties above
         return Video(vid_id,
@@ -143,16 +144,22 @@ class CaptionDownloader:
         # So whatever variable that is assigned to None keyword
         # refers to the same memory location. ("NULL" in C)
         # so it makes sense to use is operator rather than equality operator.
-        if caption_type is None:
-            raise CaptionNotFoundError("caption not found: caption type={}, lang code={}"\
+        if caption_url is None:
+            raise CaptionNotFoundError("NOT FOUND: caption type={}, lang code={}"\
                                        .format(caption_type, lang_code))
 
         # this will be the id of each caption
         caption_comp_key = "|".join([vid_id, caption_type, lang_code])
 
         # get the tracks with the given caption url
-        tracks = TrackDownloader.dl_tracks(caption_comp_key=caption_comp_key,
-                                           caption_url=caption_url)
+        try:
+            tracks = TrackDownloader.dl_tracks(caption_comp_key=caption_comp_key,
+                                               caption_url=caption_url)
+        except requests.exceptions.HTTPError as he:
+            # print the error message
+            print(he)
+            # and tracks is an empty list
+            tracks = list()
 
         return Caption(caption_comp_key=caption_comp_key,
                        caption_url=caption_url,
@@ -176,8 +183,8 @@ class TrackDownloader:
         # check if the response was erroneous
         response.raise_for_status()
 
-        # if the request was successful, get the xml
-        tracks_xml = response.content
+        # get the xml. escape the character reference entities
+        tracks_xml = html.unescape(response.text)
 
         # deserialize the xml to dict
         tracks_dict = xmltodict.parse(tracks_xml)
