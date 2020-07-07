@@ -1,4 +1,6 @@
 
+from .scrapers import CaptionScraper
+
 
 class Channel:
     def __init__(self,
@@ -21,12 +23,18 @@ class Channel:
         self._playlist = playlist
 
     # accessor methods
+    # property decorator allows you to
+    # access protected variable by just using the name of
+    # the method.
+    @property
     def channel_id(self):
         return self._channel_id
 
+    @property
     def channel_url(self):
         return self._channel_url
 
+    @property
     def playlist(self):
         return self._playlist
 
@@ -61,30 +69,75 @@ class Video:
         self._auto_captions = auto_captions
 
     # accessor methods
+    @property
     def vid_id(self):
         return self._vid_id
 
+    @property
     def vid_url(self):
         return self._vid_url
 
+    @property
     def title(self):
         return self._title
 
+    @property
     def channel_id(self):
         return self._channel_id
 
+    @property
     def upload_date(self):
         return self._upload_date
 
+    @property
     def subtitles(self):
         return self._subtitles
 
+    @property
     def auto_captions(self):
         return self._auto_captions
 
     # overrides the dunder string method
     def __str__(self):
         return self._title
+
+    def extract_caption(self,
+                        lang_code: str = 'en',
+                        caption_type: str = "auto"):
+        """
+        extract the caption from the video object
+        instead of downloading it directly from a vid_url.
+        :param lang_code: the desired language.
+        :param caption_type:manual: manually written, auto: ASR. the default is auto.
+        :return: a caption object
+        """
+        # input check - must be either None, "auto", "manual"
+        if caption_type not in CaptionScraper.CAPTION_TYPES:
+            raise ValueError(caption_type)
+
+        # set the desired the caption format in the CaptionScraper class.
+        format_idx = CaptionScraper.FORMAT_IDX[CaptionScraper.CAPTION_FORMAT]
+        caption_url = None
+
+        if caption_type == "manual":
+            if lang_code in self.subtitles:  # manual exists
+                caption_url = self.subtitles[lang_code][format_idx]['url']
+        elif caption_type == "auto":  # auto exists
+            if lang_code in self.auto_captions:
+                caption_url = self.auto_captions[lang_code][format_idx]['url']
+
+        # Note: a None is a singleton object.
+        # there can only be 1 None.
+        # So whatever variable that is assigned to None keyword
+        # refers to the same memory location. ("NULL" in C)
+        # so it makes sense to use is operator rather than equality operator.
+        if caption_type is None:
+            raise ValueError(caption_type)
+
+        return Caption(vid_id=self.vid_id,
+                       caption_type=caption_type,
+                       lang_code=lang_code,
+                       caption_url=caption_url)
 
 
 class Caption:
@@ -105,9 +158,11 @@ class Caption:
         self._caption_url = caption_url
 
     # accessor methods
+    @property
     def caption_comp_key(self):
         return self._caption_comp_key
 
+    @property
     def caption_url(self):
         return self._caption_url
 
@@ -132,12 +187,15 @@ class Track:
         self._text = text
 
     # accessor methods
+    @property
     def track_comp_key(self):
         return self._track_comp_key
 
+    @property
     def duration(self):
         return self._duration
 
+    @property
     def text(self):
         return self._text
 

@@ -34,3 +34,27 @@ Does it support `put` request as well?
 curl -X GET "localhost:9200/_cat/health?v&pretty"
 ```
 
+
+
+---
+7th of July, 2020
+
+재권님께서 명령내려주신 것만, elastic search 데이터 베이스에  저장해놓자.
+일단 현재 생각하고 있는 것은, 스탠포드의 모든 강좌 속 자막을 검색 할수 있는 api를 짜는 것.
+
+프론트 엔드 데모는, 종윤이가 수고를 해주기로 약속함.
+내가 api만 제대로 짜서 주면 된다!
+
+
+## parent-child relationship
+
+channel,
+playlist, (nullable)
+video,
+caption, 
+track
+
+
+
+## To-do
+- [ ] 일단, extract video 로직도 미리 짜놓기.

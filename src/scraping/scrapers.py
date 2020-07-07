@@ -14,25 +14,12 @@ import youtube_dl
 
 # if you give it a channel url, you can get a list of videos... hopefully?
 class ChannelScraper:
-
     @classmethod
     def get_channel(cls, channel_url: str) -> Channel:
         pass
 
 
 class VideoScraper:
-
-    @classmethod
-    def extract_videos(cls, channel: Channel):
-        """
-        :param channel: given a Channel Object
-        :return: returns Videos (a list of Video objects)
-        """
-        # type check
-        if not isinstance(channel, Channel):
-            raise TypeError
-
-        pass
 
     @classmethod
     def get_video(cls, vid_url: str) -> Video:
@@ -65,7 +52,7 @@ class VideoScraper:
         # I might need upload date to sort by recency.
         assert upload_date is not None, "upload_date is required"
 
-        # returns a video object with the properites above
+        # returns a video object with the properties above
         return Video(vid_id,
                      title,
                      channel_id,
@@ -91,56 +78,6 @@ class CaptionScraper:
     CAPTION_FORMAT = 'srv1'
 
     @classmethod
-    def extract_caption(cls,
-                        video: Video,
-                        lang_code: str = 'en',
-                        caption_type: str = "auto"):
-        """
-        extract the caption from a given video object
-        instead of downloading it directly from a vid_url.
-        :param video: a video object
-        :param lang_code: the desired language
-        :param caption_type:manual: manually written, auto: ASR. the default is auto.
-        :return: a caption object
-        """
-        # type check - must be a video object
-        if not isinstance(video, Video):
-            raise TypeError(video)
-
-        # input check - must be either None, "auto", "manual"
-        if caption_type not in cls.CAPTION_TYPES:
-            raise ValueError(caption_type)
-
-        # check for the existence of the captions for both types
-        manual_exists = lang_code in video.subtitles
-        auto_exists = lang_code in video.auto_captions()
-
-        vid_id = video.vid_id()
-        format_idx = cls.FORMAT_IDX[cls.CAPTION_FORMAT]
-        caption_url = None
-
-        if caption_type == "manual":
-            if manual_exists:
-                caption_url = video.subtitles()[lang_code][format_idx]['url']
-        elif caption_type == "auto":
-            if auto_exists:
-                caption_url = video.auto_captions()[lang_code][format_idx]['url']
-
-        # to be handled
-        # Note: a None is a singleton object.
-        # there can only be 1 None.
-        # So whatever variable that is assigned to None keyword
-        # refers to the same memory location. ("NULL" in C)
-        # so it makes sense to use is operator rather than equality operator.
-        if caption_type is None:
-            raise ValueError(caption_type)
-
-        return Caption(vid_id=vid_id,
-                       caption_type=caption_type,
-                       lang_code=lang_code,
-                       caption_url=caption_url)
-
-    @classmethod
     def get_caption(cls,
                     vid_url: str,
                     lang_code: str = 'en',
@@ -152,10 +89,8 @@ class CaptionScraper:
         :param caption_type: either manual / auto. if None, it type manual is prioritised.
         :return: a Caption object
         """
-        # first, write code for handling errors in the script.
-        # esp
+        # will I need this in the first place?
         pass
-        # use if key in dict to check if the caption with the language code exists
 
     @classmethod
     def get_tracks(cls, caption: Caption) -> List[Track]:
@@ -163,17 +98,29 @@ class CaptionScraper:
         :param caption: a caption Object with caption url
         :return: a list of Track objects
         """
+        #error handling
         if not isinstance(caption, Caption):
             raise TypeError
-        # first, get the xml
 
-        tracks_xml = requests.get(caption.caption_url).content
+        # first, get the response
+        response = requests.get(caption.caption_url)
+
+        # check if the response was erroneous
+        response.raise_for_status()
+
+        # if the request was successful, get the xml
+        tracks_xml = response.content
+
         # deserialize the xml to dict
         tracks_dict = xmltodict.parse(tracks_xml)
 
         # the composite key of the caption
-        caption_comp_key = caption.caption_comp_key()
+        caption_comp_key = caption.caption_comp_key
+
+        # prepare a bucket for tracks
         tracks = list()
+
+        # get the tracks
         for trackItem in tracks_dict['transcript']['text']:
             start = trackItem["@start"]
             duration = trackItem["@dur"]
