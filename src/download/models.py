@@ -1,6 +1,6 @@
 from typing import List
 
-from .downloaders import CaptionDownloader
+from .downloaders import TrackDownloader
 
 
 class Channel:
@@ -103,46 +103,6 @@ class Video:
     def __str__(self):
         return self._title
 
-    def extract_caption(self,
-                        lang_code: str = 'en',
-                        caption_type: str = "auto"):
-        """
-        extract the caption from the video object
-        instead of downloading it directly from a vid_url.
-        :param lang_code: the desired language.
-        :param caption_type:manual: manually written, auto: ASR. the default is auto.
-        :return: a caption object
-        """
-        # input check - must be either None, "auto", "manual"
-        if caption_type not in CaptionDownloader.CAPTION_TYPES:
-            raise ValueError(caption_type)
-
-        # set the desired caption format in the CaptionScraper class.
-        format_idx = CaptionDownloader.FORMAT_IDX[CaptionDownloader.CAPTION_FORMAT]
-
-        # this is initially None
-        caption_url = None
-
-        if caption_type == "manual":
-            if lang_code in self.subtitles:  # manual exists
-                caption_url = self.subtitles[lang_code][format_idx]['url']
-        elif caption_type == "auto":  # auto exists
-            if lang_code in self.auto_captions:
-                caption_url = self.auto_captions[lang_code][format_idx]['url']
-
-        # Note: a None is a singleton object.
-        # there can only be 1 None.
-        # So whatever variable that is assigned to None keyword
-        # refers to the same memory location. ("NULL" in C)
-        # so it makes sense to use is operator rather than equality operator.
-        if caption_type is None:
-            raise ValueError(caption_type)
-
-        return Caption(vid_id=self.vid_id,
-                       caption_type=caption_type,
-                       lang_code=lang_code,
-                       caption_url=caption_url)
-
 
 class Caption:
     def __init__(self,
@@ -163,8 +123,8 @@ class Caption:
 
         # download the tracks on init of caption
         # list of track objects.
-        self._tracks: List[Track] = CaptionDownloader.dl_tracks(caption_comp_key=self._caption_comp_key,
-                                                                caption_url=self._caption_url)
+        self._tracks: List[Track] = TrackDownloader.dl_tracks(caption_comp_key=self._caption_comp_key,
+                                                              caption_url=self._caption_url)
 
     # accessor methods
     @property

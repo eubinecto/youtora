@@ -11,6 +11,9 @@ import requests
 # use youtube_dl for getting the automatic captions
 import youtube_dl
 
+# to be raised when no caption was found
+from .errors import CaptionNotFoundError
+
 
 # if you give it a channel url, you can get a list of videos... hopefully?
 class ChannelDownloader:
@@ -61,6 +64,7 @@ class VideoDownloader:
 
 
 class CaptionDownloader:
+
     # the caption types defined
     CAPTION_TYPES = ("manual", "auto")
 
@@ -72,6 +76,52 @@ class CaptionDownloader:
         'ttml': 3,
         'vtt': 4
     }
+
+    @classmethod
+    def dl_caption(cls,
+                   video: Video,
+                   lang_code: str = 'en',
+                   caption_type: str = "auto"):
+        """
+        extract the caption from the video object
+        :param video: a video object to download the caption for
+        :param lang_code: the desired language. default language is english.
+        :param caption_type:manual: manually written, auto: ASR. the default is auto.
+        :return: a caption object
+        """
+        # input check - must be either None, "auto", "manual"
+        if caption_type not in cls.CAPTION_TYPES:
+            raise ValueError(caption_type)
+
+        # set the desired caption format in the CaptionScraper class.
+        format_idx = cls.FORMAT_IDX[TrackDownloader.CAPTION_FORMAT]
+
+        # this is initially None
+        caption_url = None
+
+        if caption_type == "manual":
+            if lang_code in video.subtitles:  # manual exists
+                caption_url = video.subtitles[lang_code][format_idx]['url']
+        elif caption_type == "auto":  # auto exists
+            if lang_code in video.auto_captions:
+                caption_url = video.auto_captions[lang_code][format_idx]['url']
+
+        # Note: a None is a singleton object.
+        # there can only be 1 None.
+        # So whatever variable that is assigned to None keyword
+        # refers to the same memory location. ("NULL" in C)
+        # so it makes sense to use is operator rather than equality operator.
+        if caption_type is None:
+            raise CaptionNotFoundError("caption not found: caption type={}, lang code={}"\
+                                       .format(caption_type, lang_code))
+
+        return Caption(vid_id=video.vid_id,
+                       caption_type=caption_type,
+                       lang_code=lang_code,
+                       caption_url=caption_url)
+
+
+class TrackDownloader:
 
     @classmethod
     def dl_tracks(cls,
