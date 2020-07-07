@@ -1,6 +1,4 @@
-from typing import List
-
-from .downloaders import TrackDownloader
+from typing import List, Dict
 
 
 class Channel:
@@ -46,108 +44,10 @@ class Channel:
         return self._uploader
 
 
-class Video:
-    def __init__(self,
-                 vid_id: str,
-                 title: str,
-                 channel_id: str,
-                 upload_date: str,
-                 # what are their types?
-                 subtitles,
-                 auto_captions):
-        # key
-        self._vid_id = vid_id
-
-        # build the url yourself... save the number of parameters.
-        self._vid_url = "https://www.youtube.com/watch?v={}"\
-                        .format(vid_id)
-
-        self._title = title
-        self._channel_id = channel_id
-        self._upload_date = upload_date
-
-        # these two might be None.
-        self._subtitles = subtitles
-        self._auto_captions = auto_captions
-
-    # accessor methods
-    @property
-    def vid_id(self):
-        return self._vid_id
-
-    @property
-    def vid_url(self):
-        return self._vid_url
-
-    @property
-    def title(self):
-        return self._title
-
-    @property
-    def channel_id(self):
-        return self._channel_id
-
-    @property
-    def upload_date(self):
-        return self._upload_date
-
-    @property
-    def subtitles(self):
-        return self._subtitles
-
-    @property
-    def auto_captions(self):
-        return self._auto_captions
-
-    # overrides the dunder string method
-    def __str__(self):
-        return self._title
-
-
-class Caption:
-    def __init__(self,
-                 vid_id: str,
-                 caption_type: str,
-                 lang_code: str,
-                 caption_url: str):
-        """
-        :param vid_id: the unique id of the video.
-        :param caption_type: manual / auto
-        :param lang_code: en, kr , etc
-        :param caption_url: the url from which the tracks can be downloaded
-        """
-        # composite key
-        self._caption_comp_key = "|".join([vid_id, caption_type, lang_code])
-
-        self._caption_url = caption_url
-
-        # download the tracks on init of caption
-        # list of track objects.
-        self._tracks: List[Track] = TrackDownloader.dl_tracks(caption_comp_key=self._caption_comp_key,
-                                                              caption_url=self._caption_url)
-
-    # accessor methods
-    @property
-    def caption_comp_key(self):
-        return self._caption_comp_key
-
-    @property
-    def caption_url(self):
-        return self._caption_url
-
-    @property
-    def tracks(self):
-        return self._tracks
-
-    # overrides dunder string method
-    def __str__(self) -> str:
-        """
-        overrides the dunder string method
-        """
-        return self._caption_comp_key
-
-
 class Track:
+
+    __slots__ = '_track_comp_key', '_duration', '_text'
+
     def __init__(self,
                  caption_comp_key: str,
                  start,
@@ -178,3 +78,111 @@ class Track:
         overrides the dunder string method
         """
         return self._track_comp_key
+
+
+class Caption:
+
+    __slots__ = '_caption_comp_key', '_caption_url', '_tracks'
+
+    def __init__(self,
+                 caption_comp_key: str,
+                 caption_url: str,
+                 tracks: List[Track]):
+        """
+        :param caption_comp_key:
+        :param caption_url: the url from which the tracks can be downloaded
+        :param tracks: the list of tracks that belongs to this caption (1 to 1)
+        """
+        # composite key
+        self._caption_comp_key = caption_comp_key
+
+        self._caption_url = caption_url
+
+        # download the tracks on init of caption
+        # list of track objects.
+        self._tracks = tracks
+
+    # accessor methods
+    @property
+    def caption_comp_key(self):
+        return self._caption_comp_key
+
+    @property
+    def caption_url(self):
+        return self._caption_url
+
+    @property
+    def tracks(self):
+        return self._tracks
+
+    # overrides dunder string method
+    def __str__(self) -> str:
+        """
+        overrides the dunder string method
+        """
+        return self._caption_comp_key
+
+
+class Video:
+
+    # to save RAM space
+    __slots__ = '_vid_id', '_vid_url', '_title', '_channel_id', '_upload_date', '_captions'
+
+    def __init__(self,
+                 vid_id: str,
+                 title: str,
+                 channel_id: str,
+                 upload_date: str,
+                 captions: Dict[str, Caption]):
+        """
+        :param vid_id: the unique id at the end of the vid url
+        :param title: the title of the youtube video
+        :param channel_id: the id of the channel this video belongs to
+        :param upload_date: the uploaded date of the video
+        :param captions: the dictionary of captions. keys are either auto or manual
+        """
+        # key
+        self._vid_id = vid_id
+
+        # build the url yourself... save the number of parameters.
+        self._vid_url = "https://www.youtube.com/watch?v={}"\
+                        .format(vid_id)
+
+        self._title = title
+        self._channel_id = channel_id
+        self._upload_date = upload_date
+        self._captions = captions
+
+    # accessor methods
+    @property
+    def vid_id(self):
+        return self._vid_id
+
+    @property
+    def vid_url(self):
+        return self._vid_url
+
+    @property
+    def title(self):
+        return self._title
+
+    @property
+    def channel_id(self):
+        return self._channel_id
+
+    @property
+    def upload_date(self):
+        return self._upload_date
+
+    @property
+    def captions(self):
+        return self._captions
+
+    # overrides the dunder string method
+    def __str__(self):
+        return self._title
+
+
+# 이것도 재미있을 듯!
+class Chapter:
+    pass

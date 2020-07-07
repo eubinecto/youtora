@@ -45,7 +45,7 @@ class VideoDownloader:
         channel_id = info['channel_url']
         upload_date = info['upload_date']
         subtitles = info['subtitles']
-        automatic_captions = info['automatic_captions']
+        auto_captions = info['automatic_captions']
 
         # asserting: these four must not be None
         assert vid_id is not None, "vid_id is required"
@@ -54,13 +54,41 @@ class VideoDownloader:
         # I might need upload date to sort by recency.
         assert upload_date is not None, "upload_date is required"
 
+        captions = dict()
+        # try getting caption of type manual
+        try:
+            caption_type = 'manual'
+            captions[caption_type] = CaptionDownloader.dl_caption(vid_id=vid_id,
+                                                                  video_subtitles=subtitles,
+                                                                  video_auto_captions=auto_captions,
+                                                                  caption_type=caption_type)
+        except CaptionNotFoundError as ce:
+            print(ce)
+        else:
+            # on successful downloading
+            print("caption found: vid title={}, type={}"\
+                  .format(title, caption_type))
+
+        # try getting the caption of type manual
+        try:
+            caption_type = 'auto'
+            captions[caption_type] = CaptionDownloader.dl_caption(vid_id=vid_id,
+                                                                  video_subtitles=subtitles,
+                                                                  video_auto_captions=auto_captions,
+                                                                  caption_type=caption_type)
+        except CaptionNotFoundError as ce:
+            print(ce)
+        else:
+            # on successful downloading
+            print("caption found: vid title={}, type={}" \
+                  .format(title, caption_type))
+
         # returns a video object with the properties above
         return Video(vid_id,
                      title,
                      channel_id,
                      upload_date,
-                     subtitles,
-                     automatic_captions)
+                     captions)
 
 
 class CaptionDownloader:
@@ -79,14 +107,18 @@ class CaptionDownloader:
 
     @classmethod
     def dl_caption(cls,
-                   video: Video,
-                   lang_code: str = 'en',
-                   caption_type: str = "auto"):
+                   vid_id,
+                   video_subtitles,
+                   video_auto_captions,
+                   caption_type: str,
+                   lang_code: str = 'en'):
         """
         extract the caption from the video object
-        :param video: a video object to download the caption for
-        :param lang_code: the desired language. default language is english.
-        :param caption_type:manual: manually written, auto: ASR. the default is auto.
+        :param vid_id:
+        :param video_subtitles:
+        :param video_auto_captions:
+        :param caption_type: manual = manually written, auto = ASR. the default is auto.
+        :param lang_code: default is english
         :return: a caption object
         """
         # input check - must be either None, "auto", "manual"
@@ -100,11 +132,11 @@ class CaptionDownloader:
         caption_url = None
 
         if caption_type == "manual":
-            if lang_code in video.subtitles:  # manual exists
-                caption_url = video.subtitles[lang_code][format_idx]['url']
+            if lang_code in video_subtitles:  # manual exists
+                caption_url = video_subtitles[lang_code][format_idx]['url']
         elif caption_type == "auto":  # auto exists
-            if lang_code in video.auto_captions:
-                caption_url = video.auto_captions[lang_code][format_idx]['url']
+            if lang_code in video_auto_captions:
+                caption_url = video_auto_captions[lang_code][format_idx]['url']
 
         # Note: a None is a singleton object.
         # there can only be 1 None.
@@ -115,10 +147,16 @@ class CaptionDownloader:
             raise CaptionNotFoundError("caption not found: caption type={}, lang code={}"\
                                        .format(caption_type, lang_code))
 
-        return Caption(vid_id=video.vid_id,
-                       caption_type=caption_type,
-                       lang_code=lang_code,
-                       caption_url=caption_url)
+        # this will be the id of each caption
+        caption_comp_key = "|".join([vid_id, caption_type, lang_code])
+
+        # get the tracks with the given caption url
+        tracks = TrackDownloader.dl_tracks(caption_comp_key=caption_comp_key,
+                                           caption_url=caption_url)
+
+        return Caption(caption_comp_key=caption_comp_key,
+                       caption_url=caption_url,
+                       tracks=tracks)
 
 
 class TrackDownloader:
