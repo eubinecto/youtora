@@ -20,9 +20,39 @@ import html
 
 # if you give it a channel url, you can get a list of videos... hopefully?
 class ChannelDownloader:
+
+    # define the channel themes here
+    CHANNEL_THEMES = ("education", "entertainment")
+
+    # do not download subtitles when downloading a channel
+    CHANNEL_DL_OPTS = {'writesubtitles': False,
+                       'allsubtitles': False,
+                       'writeautomaticsub': False}
+
     @classmethod
-    def dl_channel(cls, channel_url: str) -> Channel:
-        pass
+    def dl_channel(cls,
+                   channel_url: str,
+                   channel_theme: str) -> Channel:
+        # for debugging purpose
+        assert channel_theme in cls.CHANNEL_THEMES, "Invalid channel theme"
+
+        # use the video dl option.
+        with youtube_dl.YoutubeDL(cls.CHANNEL_DL_OPTS) as ydl:
+            info = ydl.extract_info(url=channel_url, download=False)
+
+        # extract this from the info.
+        channel_id = info['id']
+        creator = info['uploader']
+        vid_id_list = list()
+
+        # gather up the keys
+        for entry in info['entries']:
+            vid_id_list.append(entry['id'])
+
+        return Channel(channel_id=channel_id,
+                       creator=creator,
+                       channel_theme=channel_theme,
+                       vid_id_list=vid_id_list)
 
 
 class VideoDownloader:
@@ -46,7 +76,10 @@ class VideoDownloader:
         vid_id = info['id']
         title = info['title']
         channel_id = info['channel_url']
-        upload_date = info['upload_date']
+        upload_date = "{year}-{month}-{day}"\
+                      .format(year=info['upload_date'][:4],
+                              month=info['upload_date'][4:6],
+                              day=info['upload_date'][6:])  # e.g. 20200610 -> 2020-06-10
         subtitles = info['subtitles']
         auto_captions = info['automatic_captions']
 
@@ -54,13 +87,15 @@ class VideoDownloader:
         assert vid_id is not None, "vid_id is required"
         assert title is not None, "title is required"
         assert channel_id is not None, "channel_id is required"
+
         # I might need upload date to sort by recency.
         assert upload_date is not None, "upload_date is required"
 
+        # init with None
         captions = dict()
         # try getting caption of type manual
         try:
-            caption_type = 'manual'
+            caption_type = CaptionDownloader.CAPTION_TYPES[0]
             captions[caption_type] = CaptionDownloader.dl_caption(vid_id=vid_id,
                                                                   video_subtitles=subtitles,
                                                                   video_auto_captions=auto_captions,
@@ -68,12 +103,12 @@ class VideoDownloader:
         except CaptionNotFoundError as ce:
             print(ce)
         else:
-            # on successful downloading
+            # on successful download
             print("MANUAL FOUND: {}".format(title))
 
-        # try getting the caption of type manual
+        # try getting the caption of type auto
         try:
-            caption_type = 'auto'
+            caption_type = CaptionDownloader.CAPTION_TYPES[1]
             captions[caption_type] = CaptionDownloader.dl_caption(vid_id=vid_id,
                                                                   video_subtitles=subtitles,
                                                                   video_auto_captions=auto_captions,
@@ -81,7 +116,7 @@ class VideoDownloader:
         except CaptionNotFoundError as ce:
             print(ce)
         else:
-            # on successful downloading
+            # on successful download
             print("AUTO FOUND: {}".format(title))
 
         # returns a video object with the properties above
@@ -122,7 +157,7 @@ class CaptionDownloader:
         :param lang_code: default is english
         :return: a caption object
         """
-        # input check - must be either None, "auto", "manual"
+        # input check - must be either  "manual" or "auto"
         if caption_type not in cls.CAPTION_TYPES:
             raise ValueError(caption_type)
 
@@ -193,10 +228,11 @@ class TrackDownloader:
 
         # get the tracks
         for trackItem in tracks_dict['transcript']['text']:
-            start = trackItem["@start"]
-            duration = trackItem["@dur"]
+            start: str = trackItem["@start"]
+            duration: float = float(trackItem["@dur"])
             text = trackItem["#text"]
-            track = Track(caption_comp_key, start, duration, text)
+            track_comp_key = "|".join([caption_comp_key, start])
+            track = Track(track_comp_key, duration, text)
             tracks.append(track)
         return tracks
 

@@ -58,3 +58,57 @@ track
 
 ## To-do
 - [ ] 일단, extract video 로직도 미리 짜놓기.
+
+
+
+--- 
+8th of July
+
+일단 채널 인덱싱을 먼저 진행하고, 나중에 vid_id에서 url을 만들어서 캡션을 저장하는 식으로 하는 것이.. 나을 것?
+그래. 그렇게 가능한 dependency를 줄일 수 있을 것.
+
+이 부분을 내일 아침에 일어나서 하자.
+
+
+---
+9th of July
+
+엘라스틱 서치.. parent-child relationship을 어떻게 정의하더라?
+
+all you need  doing is to define the type of the parent index, when creating the child index.
+
+```
+PUT / company
+{
+    "mappings":
+    {
+      "branch": {},
+        "employee": 
+        {
+          "_parent":
+          {
+            "type": "branch"
+          }
+        }
+      }
+}           
+
+
+```
+
+1 - N relationship in parent = child. (think of a general tree!)
+
+when indexing parent, we need not know anything about children.
+
+when indexing children however, you need to specify the id of its parent.
+
+내가 걱정이 되는건 ram 초과가 되는 것.
+
+채널에서 비디오들을 수집을 할때, 그냥 비디오 아이디만 나오도록 해야하는데. 그걸 조절할 수 있는 옵션이 있나?
+
+
+--- 
+10th of July
+
+use `elasticsearch` python client.
+It is neatly low-level, so would be just fine.
