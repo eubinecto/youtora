@@ -19,7 +19,7 @@ ES_END_POINT = "http://localhost:9200"
 # the name of the database is youtora! obviously..
 INDEX = "youtora"
 
-# schema for the index above is define here
+# schema for the index above is defined here
 INDEX_SCHEMA_DICT = {
     "mappings": {
         "properties": {
@@ -91,10 +91,9 @@ INDEX_SCHEMA_DICT = {
 
 def es_index_doc(doc_type,
                  doc_id,
-                 data_json):
+                 doc):
     # send the indexing request
     global INDEX
-    global USER_AGENT
     query_index_doc = "/{index}/{type}/{id}" \
         .format(index=INDEX,
                 type=doc_type,
@@ -102,8 +101,7 @@ def es_index_doc(doc_type,
 
     # consult pg.39 of the book elastic search the definitive guide
     r = requests.put(url=ES_END_POINT + query_index_doc,
-                     data=data_json,
-                     headers={"user_agent": USER_AGENT})
+                     data=doc)
 
     # check if the request was successful
     r.raise_for_status()
@@ -117,11 +115,11 @@ def index_channel(channel: Channel):
 
     # build the data to send to elastic search
     channel_id = channel.channel_id
-    data_json = {}
+    doc = {}
 
     es_index_doc(doc_type="channel",
                  doc_id=channel_id,
-                 data_json=data_json)
+                 doc=doc)
 
 
 def index_video(video: Video):
@@ -133,11 +131,11 @@ def index_video(video: Video):
     vid_id = video.vid_id
 
     # include the parent id in data json.
-    data_json = {}
+    doc = {}
 
     es_index_doc(doc_type="video",
                  doc_id=vid_id,
-                 data_json=data_json)
+                 doc=doc)
 
 
 def index_caption(caption: Caption):
@@ -147,11 +145,11 @@ def index_caption(caption: Caption):
 
     # build the data to send to elastic search
     # include the parent id in data json
-    data_json = {}
+    doc = {}
 
     es_index_doc(doc_type="caption",
                  doc_id=caption.caption_comp_key,
-                 data_json=data_json)
+                 doc=doc)
 
 
 def index_track(track: Track):
@@ -161,14 +159,14 @@ def index_track(track: Track):
 
     # build the data to send to elastic search
     # include the parent id in data json
-    data_json = {}
+    doc = {}
 
     es_index_doc(doc_type=track,
                  doc_id=track.track_comp_key,
-                 data_json=data_json)
+                 doc=doc)
 
 
-def exec_indexing_doc(channel_url: str,
+def exec_indexing_all(channel_url: str,
                       channel_theme: str):
     """
     given the channel url,
@@ -210,6 +208,9 @@ def exec_indexing_doc(channel_url: str,
 
 
 def create_index(index_name):
+    """
+    helper function to be used for creating an index with s
+    """
     global ES_END_POINT
     global INDEX_SCHEMA_DICT
 
@@ -226,8 +227,4 @@ def create_index(index_name):
     # wait, how do I do logging in python?
     # for logging
 
-
-def update_index(index_name):
-    global ES_END_POINT
-    global INDEX_SCHEMA_DICT
 
