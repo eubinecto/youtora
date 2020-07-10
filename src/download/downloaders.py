@@ -17,12 +17,14 @@ from .errors import CaptionNotFoundError
 # for escaping character reference entities
 import html
 
+import logging
+
 
 # if you give it a channel url, you can get a list of videos... hopefully?
 class ChannelDownloader:
 
     # define the channel themes here
-    CHANNEL_THEMES = ("education", "entertainment")
+    CHANNEL_THEMES = ("education", "entertainment", "technology")
 
     # do not download subtitles when downloading a channel
     CHANNEL_DL_OPTS = {'writesubtitles': False,
@@ -132,6 +134,9 @@ class CaptionDownloader:
     # the caption types defined
     CAPTION_TYPES = ("manual", "auto")
 
+    # the caption format I'll be using
+    CAPTION_FORMAT = 'srv1'
+
     # list of caption formats
     FORMAT_IDX = {
         'srv1': 0,
@@ -162,7 +167,7 @@ class CaptionDownloader:
             raise ValueError(caption_type)
 
         # set the desired caption format in the CaptionScraper class.
-        format_idx = cls.FORMAT_IDX[TrackDownloader.CAPTION_FORMAT]
+        format_idx = cls.FORMAT_IDX[cls.CAPTION_FORMAT]
 
         # this is initially None
         caption_url = None
@@ -180,7 +185,7 @@ class CaptionDownloader:
         # refers to the same memory location. ("NULL" in C)
         # so it makes sense to use is operator rather than equality operator.
         if caption_url is None:
-            raise CaptionNotFoundError("NOT FOUND: caption type={}, lang code={}"\
+            raise CaptionNotFoundError("NOT FOUND: caption type={}, lang code={}" \
                                        .format(caption_type, lang_code))
 
         # this will be the id of each caption
@@ -228,13 +233,34 @@ class TrackDownloader:
 
         # get the tracks
         for trackItem in tracks_dict['transcript']['text']:
-            start: str = trackItem["@start"]
-            duration: float = float(trackItem["@dur"])
-            text = trackItem["#text"]
-            track_comp_key = "|".join([caption_comp_key, start])
+            try:
+                start: float = trackItem["@start"]
+            except KeyError as ke:
+                logger = logging.getLogger("@start")
+                # log the error
+                logger.error(ke)
+                # but execution should continue
+                # -1 to state an error
+                start = -1
+            try:
+                duration: float = float(trackItem["@dur"])
+            except KeyError as ke:
+                logger = logging.getLogger("@dur")
+                # log the error
+                logger.error(ke)
+                # but execution should continue
+                # -1 to state an error
+                duration = -1
+            try:
+                text = trackItem["#text"]
+            except KeyError as ke:
+                logger = logging.getLogger("@text")
+                # log the error
+                logger.error(ke)
+                # but execution should continue
+                # empty string to state an error
+                text = ""
+            track_comp_key = "|".join([caption_comp_key, str(start)])
             track = Track(track_comp_key, duration, text)
             tracks.append(track)
         return tracks
-
-    # the caption format I'll be using
-    CAPTION_FORMAT = 'srv1'

@@ -112,3 +112,62 @@ when indexing children however, you need to specify the id of its parent.
 
 use `elasticsearch` python client.
 It is neatly low-level, so would be just fine.
+
+
+일단 오늘 
+1. 엘라스틱 서치 클라이언트로 스크립트 짜기
+2. 조그마한 채널을 하나 인덱싱을 해보기 -  3blue1brown 채널이 괜찮을 듯!
+3. 실제로 검색 쿼리를 하나 날려보기
+이걸 오전안에 끝내버릴 수 있나?
+초 집중이 필요할 것.
+
+어제 알은 사실. elastic search 7에서는 많은 것이 바뀜.. 특히 document의 타입으로 join이 생겼다. 
+내가 어제 새벽에서 그래서 자꾸 오류가 떴었던 것.
+[Join Data Type - 공식 문서 첨고](https://www.elastic.co/guide/en/elasticsearch/reference/current/parent-join.html)
+
+
+Note: an id of an index is automatically created when an index is created.
+```
+create_index("youtora")
+{
+  "acknowledged": true,
+  "shards_acknowledged": true,
+  "index": "youtora"
+}
+create_index("youtora")
+400 Client Error: Bad Request for url: http://localhost:9200/youtora
+{
+  "error": {
+    "root_cause": [
+      {
+        "type": "resource_already_exists_exception",
+        "reason": "index [youtora/NIn_cqhDSuOFnxSGz7Padg] already exists",
+        "index_uuid": "NIn_cqhDSuOFnxSGz7Padg",
+        "index": "youtora"
+      }
+    ],
+    "type": "resource_already_exists_exception",
+    "reason": "index [youtora/NIn_cqhDSuOFnxSGz7Padg] already exists",
+    "index_uuid": "NIn_cqhDSuOFnxSGz7Padg",
+    "index": "youtora"
+  },
+  "status": 400
+}
+```
+
+
+strange parts의 비디오를 시험삼아 인덱싱 중인데.
+와우. 생각보다 오래걸린다. progress 바를 표시해야 할듯.
+
+
+# for viewing disk usage of elastic search db
+- https://stackoverflow.com/questions/29417830/elasticsearch-find-disk-space-usage
+
+use the following command:
+```
+curl -XGET "http://localhost:9200/_cat/shards?v"
+```
+
+
+it might be much faster to do indexing tracks in batches... I think?
+why are we doing it individually..haha.. although this is just for fun...
