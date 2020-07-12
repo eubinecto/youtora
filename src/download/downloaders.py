@@ -24,7 +24,7 @@ import logging
 class ChannelDownloader:
 
     # define the channel themes here
-    CHANNEL_THEMES = ("education", "entertainment", "technology")
+    CHANNEL_THEMES = ("education", "entertainment", "technology", "lectures")
 
     # do not download subtitles when downloading a channel
     CHANNEL_DL_OPTS = {'writesubtitles': False,
@@ -64,10 +64,13 @@ class VideoDownloader:
                      'writeautomaticsub': True}
 
     @classmethod
-    def dl_video(cls, vid_url: str) -> Video:
+    def dl_video(cls,
+                 vid_url: str,
+                 lang_code: str) -> Video:
         """
         given a url, returns the meta data of the channel
         :param vid_url: the url of the video
+        :param lang_code: the lang code of the caption
         :return: a Video object
         """
         # get the info.
@@ -101,7 +104,8 @@ class VideoDownloader:
             captions[caption_type] = CaptionDownloader.dl_caption(vid_id=vid_id,
                                                                   video_subtitles=subtitles,
                                                                   video_auto_captions=auto_captions,
-                                                                  caption_type=caption_type)
+                                                                  caption_type=caption_type,
+                                                                  lang_code=lang_code)
         except CaptionNotFoundError as ce:
             print(ce)
         else:
@@ -114,7 +118,8 @@ class VideoDownloader:
             captions[caption_type] = CaptionDownloader.dl_caption(vid_id=vid_id,
                                                                   video_subtitles=subtitles,
                                                                   video_auto_captions=auto_captions,
-                                                                  caption_type=caption_type)
+                                                                  caption_type=caption_type,
+                                                                  lang_code=lang_code)
         except CaptionNotFoundError as ce:
             print(ce)
         else:
@@ -137,6 +142,13 @@ class CaptionDownloader:
     # the caption format I'll be using
     CAPTION_FORMAT = 'srv1'
 
+    # english, british english. they are different.
+    # when looking for english language, look for these codes.
+    LANG_CODES_ENG = ('en', 'en-GB')
+
+    # other languages
+    LANG_CODES_OTHERS = ('ko', 'ja')
+
     # list of caption formats
     FORMAT_IDX = {
         'srv1': 0,
@@ -155,6 +167,8 @@ class CaptionDownloader:
                    lang_code: str = 'en'):
         """
         extract the caption from the video object
+        need to handle the case where the lang code does not exist.
+        I think you might need to download the list of lang codes.
         :param vid_id:
         :param video_subtitles:
         :param video_auto_captions:

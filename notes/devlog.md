@@ -141,7 +141,7 @@ create_index("youtora")
     "root_cause": [
       {
         "type": "resource_already_exists_exception",
-        "reason": "index [youtora/NIn_cqhDSuOFnxSGz7Padg] already exists",
+        "reason": "index [youtora/NIn_cqhDSuOFnxSGz7Padg] already exists", <- this is the automatically genereated id
         "index_uuid": "NIn_cqhDSuOFnxSGz7Padg",
         "index": "youtora"
       }
@@ -168,6 +168,54 @@ use the following command:
 curl -XGET "http://localhost:9200/_cat/shards?v"
 ```
 
-
 it might be much faster to do indexing tracks in batches... I think?
 why are we doing it individually..haha.. although this is just for fun...
+
+다음에 코드 작성할 때 
+- 배치로 인덱싱해서 인덱싱 속도 높이기!
+- video 오브젝트를 다운로드 받을 때는 멀티 프로세싱으로 빠르게 돌리기!
+
+use `bulk API`. 
+data = list of json files.
+
+
+---
+11st of July 
+
+
+constants -> 다른 적절한 이름은 없나?
+constants 안에도 클래스로 나눠서 상수 관리하기.
+
+벌크 api.
+crud 안에서는 클래스를 도큐멘테이션 그대로 따라서 이름짓기. 
+e.g. indexAPI, bulkAPI, etc
+그게 doc 따라하기에는 적절할 것!
+
+
+아 그리고 algo data = 이렇게 study log를 쓰는편이 기록에 더 도움이 될 것!
+그냥 공부할 때마다, 바로바로 생각이 나는 것들을 정리해서 적어놓기.
+
+공식문서 구조대로 스크립트를 정리하기.
+
+
+- documentAPI
+- indexAPI
+- searchAPI
+
+
+다른 차원의 사람? 왜 그런 것에 한계를 두는지...
+레벨이 나뉘어져 있나.
+그냥 공부하고 이해하면 되지.
+오늘 아담 공부를 한번 해보자.
+
+코딩도 더 늦어지기 전에 이해를 제대로 해야할 것.
+
+
+
+audio + video 같이 있는 source url의 포맷
+- format id : 22
+
+```python
+# 제일 마지막것 가져오면 된다!
+info['formats'][-1]['url']
+```

@@ -16,6 +16,14 @@ from src.es.constants import *
 import logging
 
 
+class IndexAPI:
+    pass
+
+
+class BulkAPI:
+    pass
+
+
 def create_index(index_name):
     """
     The create index API allows to instantiate an index.
