@@ -6,8 +6,6 @@ ES_END_POINT = "http://localhost:9200"
 # the name of the database is youtora! obviously..
 INDEX = "youtora"
 
-
-
 # keyword data type: only searchable by tis exact value
 # https://www.elastic.co/guide/en/elasticsearch/reference/current/keyword.html
 # schema for the index above is defined here
@@ -17,7 +15,7 @@ INDEX_SCHEMA_DICT = {
             "channel": {
                 "properties": {
                     "channel_url": {
-                        "type": "keyword"
+                        "type": "keyword"  # 이건 필요없을 수도.
                     },
                     "creator": {
                         "type": "text"

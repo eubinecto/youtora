@@ -219,3 +219,26 @@ audio + video 같이 있는 source url의 포맷
 # 제일 마지막것 가져오면 된다!
 info['formats'][-1]['url']
 ```
+
+---
+13rd of July
+
+# 재권님 피드백
+
+벌크 api.
+elasticsearch의 default 옵션을 변경하기.
+디폴트 메모리가 꽤 적어서 그런 것일수도.
+
+---
+
+16th of July
+
+
+오늘 refactoring 을 끝낸다.
+그리고 full-text search도 가능하게 만들어야 함.
+tokenization도 고려해서.
+
+
+## Refactoring
+일단... 현재 refactoring이 필요한 것은..
+아, 다른 브랜치를 만들어서 해보자.
