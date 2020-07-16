@@ -5,13 +5,59 @@ from src.download.downloaders import ChannelDownloader, VideoDownloader
 from src.download.models import Video, Caption
 from src.query.store import store_channel, store_video, store_caption, store_track
 
+import numpy as np
+
 # for faster video download
 # use this later.
+from multiprocessing import Process, Manager
+
+from time import sleep
+
+
+def collect_videos(ns,
+                   vid_id_list,
+                   lang_code):
+    shared_bucket = ns.shared_bucket
+    for vid_id in vid_id_list:
+        # make a vid_url
+        vid_url = "https://www.youtube.com/watch?v={}" \
+            .format(vid_id)
+        shared_bucket.append(VideoDownloader.dl_video(vid_url=vid_url,
+                                                      lang_code=lang_code))
+    ns.shared_bucket = shared_bucket
+
+
+def multiprocess_dl_vids(vid_id_list: list,
+                         bucket: list,
+                         lang_code: str,
+                         num_proc=4):
+    # split the video id lists into n batches
+    batches = np.array_split(np.asarray(vid_id_list), num_proc)
+
+    # assign temp buckets for each batches
+    # register processes
+    with Manager() as manager:
+        ns = manager.Namespace()
+        ns.shared_bucket = []
+
+        processes = [Process(target=collect_videos, args=(ns, batch, lang_code))
+                     for batch in batches]
+
+        # start the processes
+        for p in processes:
+            p.start()
+
+        for p in processes:
+            p.join()
+
+        for video in ns.shared_bucket:
+            bucket.append(video)
 
 
 def exec_indexing_all(channel_url: str,
                       channel_theme: str,
-                      lang_code: str):
+                      lang_code: str,
+                      num_proc: int = 4):
     """
     given the channel url,
     index all of the captions & tracks s
@@ -26,25 +72,11 @@ def exec_indexing_all(channel_url: str,
     # download videos
     # make this faster using multiple processes
     video_list: List[Video] = list()
-    total_vid_cnt = len(channel.vid_id_list)
-    vid_done = 0
-    vid_logger = logging.getLogger("video_list")
 
-    # 여기를 multi-processing 으로?
-    # 어떻게 할 수 있는가?
-    for vid_id in channel.vid_id_list:
-        # make a vid_url
-        vid_url = "https://www.youtube.com/watch?v={}" \
-            .format(vid_id)
-        video_list.append(VideoDownloader.dl_video(vid_url=vid_url,
-                                                   lang_code=lang_code))
-        vid_done += 1
-        vid_logger.info("video done: {}/{}".format(vid_done, total_vid_cnt))
-
-    # target = the for loop above
-    # arg = 1. container, and ,mini batch.
-    # start all of the process
-    # join all of the  process
+    multiprocess_dl_vids(vid_id_list=channel.vid_id_list,
+                         bucket=video_list,
+                         lang_code=lang_code,
+                         num_proc=num_proc)
 
     # index videos
     for video in video_list:
