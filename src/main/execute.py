@@ -58,6 +58,7 @@ def exec_indexing_all(channel_url: str,
             store_caption(caption)
 
     # and then, index all of the tracks
+    # you might need a progress bar..
     for video in video_list:
         for caption_type, caption in video.captions.items():
             caption_type: str
