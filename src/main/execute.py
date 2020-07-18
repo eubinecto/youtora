@@ -3,10 +3,10 @@ from typing import List
 
 from src.download.downloaders import ChannelDownloader, VideoDownloader
 from src.download.models import Video, Caption
-from src.es.crud.create import create_channel, create_video, create_caption, create_track
+from src.query.store import store_channel, store_video, store_caption, store_track
 
 # for faster video download
-from multiprocessing import Process
+# use this later.
 
 
 def exec_indexing_all(channel_url: str,
@@ -21,7 +21,7 @@ def exec_indexing_all(channel_url: str,
     channel = ChannelDownloader.dl_channel(channel_url=channel_url,
                                            channel_theme=channel_theme)
     # index the channel first
-    create_channel(channel=channel)
+    store_channel(channel=channel)
 
     # download videos
     # make this faster using multiple processes
@@ -48,19 +48,20 @@ def exec_indexing_all(channel_url: str,
 
     # index videos
     for video in video_list:
-        create_video(video)
+        store_video(video)
 
     # index captions
     for video in video_list:
         for caption_type, caption in video.captions.items():
             caption_type: str
             caption: Caption
-            create_caption(caption)
+            store_caption(caption)
 
     # and then, index all of the tracks
+    # you might need a progress bar..
     for video in video_list:
         for caption_type, caption in video.captions.items():
             caption_type: str
             caption: Caption
             for track in caption.tracks:
-                create_track(track)
+                store_track(track)
