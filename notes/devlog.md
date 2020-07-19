@@ -327,3 +327,7 @@ caption에 array 타입으로 tracks field를 넣었어야 했나?
 나중에 Index를 flush해야 될 때가 오면, 그 전에 현재 저장된 channel & playlist를 저장하자.
 아, 그리고 channel을 저장하는 경우. playlist도 uploaded_videos로 저장을 하는 것이 좋지 않을까?
 일단은 이렇게 냅두자.
+
+이것으로 변경하는 브랜치를 새로 만들기.
+그 브랜치는 doc_ori_youtora 라는 인덱스를 만들게 될 것.
+
