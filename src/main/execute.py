@@ -7,7 +7,7 @@ from src.query.index import IdxSingle, IdxMulti
 
 import youtube_dl
 
-# debugging mode
+# set the logging mode from here
 # https://stackoverflow.com/questions/11548674/logging-info-doesnt-show-up-on-console-but-warn-and-error-do/11548754
 logging.basicConfig(level=logging.INFO)
 
@@ -23,7 +23,7 @@ class Helper:
         total_vid_cnt = len(vid_id_list)
         vid_done = 0
         # https://stackoverflow.com/questions/11548674/logging-info-doesnt-show-up-on-console-but-warn-and-error-do/11548754
-        vid_logger = logging.getLogger("video_list")
+        vid_logger = logging.getLogger("help_dl_vids")
         # 여기를 multi-processing 으로?
         # 어떻게 할 수 있는가?
         for vid_id in vid_id_list:

@@ -295,3 +295,21 @@ POST youtora/_delete_by_query?conflicts=proceed
   }
 }
 ```
+
+
+You can also specify the size of the results, using "from" & "size" parameters.
+```
+GET /youtora/_search
+{
+  "from" : 0,
+  "size" : 100,
+  "query": {
+    "match": {
+      "text": {
+        "query" : "generative adversarial"
+      }
+    }
+  }
+}
+
+```

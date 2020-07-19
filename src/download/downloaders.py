@@ -96,7 +96,8 @@ class VideoDownloader:
     # get all of the captions, whether it be manual or auto.
     VIDEO_DL_OPTS = {'writesubtitles': True,
                      'allsubtitles': True,
-                     'writeautomaticsub': True}
+                     'writeautomaticsub': True,
+                     'quiet': True}
 
     @classmethod
     def dl_video(cls,
@@ -255,10 +256,14 @@ class TrackDownloader:
                   caption_comp_key: str,
                   caption_url: str) -> List[Track]:
         """
+        this is where most of the errors occur.
+        make sure to refactor this later in such a way that this is
+        robust to all potential errors.
         :param caption_comp_key: the key of the caption.
         :param caption_url: the url to download the track from.
         :return: a list of Track objects
         """
+        logger = logging.getLogger("dl_tracks")
         # first, get the response
         response = requests.get(caption_url)
         # check if the response was erroneous
@@ -270,27 +275,21 @@ class TrackDownloader:
         # prepare a bucket for tracks
         tracks = list()
         # get the tracks
-        for trackItem in tracks_dict['transcript']['text']:
+        # error handling for the case when there is only 1 track.
+        # quirk of youtube_dl
+        # e.g. https://www.youtube.com/watch?v=1SMmc9gQmHQ
+        if isinstance(tracks_dict['transcript']['text'], dict):
+            # just one item
+            start = tracks_dict['transcript']['text']["@start"]
             try:
-                start: float = trackItem["@start"]
+                duration: float = float(tracks_dict['transcript']['text']["@dur"])
             except KeyError as ke:
-                logger = logging.getLogger("@start")
-                # log the error
+                # duration may not exist
                 logger.warning(ke)
-                # but execution should continue
-                # -1 to state an error
-                start = -1
+                # if duration does not exist, then it is zero
+                duration = 0.0
             try:
-                duration: float = float(trackItem["@dur"])
-            except KeyError as ke:
-                logger = logging.getLogger("@dur")
-                # log the error
-                logger.warning(ke)
-                # but execution should continue
-                # -1 to state an error
-                duration = -1
-            try:
-                text = trackItem["#text"]
+                text = tracks_dict['transcript']['text']["#text"]
             except KeyError as ke:
                 logger = logging.getLogger("@text")
                 # log the error
@@ -299,6 +298,28 @@ class TrackDownloader:
                 # empty string to state an error
                 text = ""
             track_comp_key = "|".join([caption_comp_key, str(start)])
-            track = Track(track_comp_key, duration, text)
-            tracks.append(track)
+            tracks.append(Track(track_comp_key=track_comp_key,
+                                duration=duration,
+                                text=text))
+        else:
+            for trackItem in tracks_dict['transcript']['text']:
+                start: float = trackItem["@start"]
+                try:
+                    duration: float = float(trackItem["@dur"])
+                except KeyError as ke:
+                    # duration may not exist
+                    logger.warning(ke)
+                    # if duration does not exist, then it is zero
+                    duration = 0.0
+                try:
+                    text = trackItem["#text"]
+                except KeyError as ke:
+                    # log the error
+                    logger.warning(ke)
+                    # but execution should continue
+                    # empty string to state an error
+                    text = ""
+                track_comp_key = "|".join([caption_comp_key, str(start)])
+                track = Track(track_comp_key, duration, text)
+                tracks.append(track)
         return tracks
