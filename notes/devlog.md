@@ -242,3 +242,56 @@ tokenization도 고려해서.
 ## Refactoring
 일단... 현재 refactoring이 필요한 것은..
 아, 다른 브랜치를 만들어서 해보자.
+
+
+멀티 프로세싱
+- 스크립트로 실행해햐한다.
+- 스크립트로 실행하지 않으면 broken pipe.
+- 근데 문제는, 스크립트로 하면 import 문제가 발생.
+- 그것은 어떻게 해결해야 하나.. 종윤이가 패키지 구성으로 해결할 수 있다고 했는데, 그것 아닌 것 같다.
+
+
+bulk api 를 사용해서 인덱싱을 하니, 키바나에서 서치가 되지가 않는다.
+이유가 뭘까.
+뭔가 hidden이라서?
+
+
+
+delete _all
+하고나면, 키바나도 재설정이 필요. 
+
+플레이리스트도 인덱싱할 수 있도록 해야될 것 같다.
+이건.. 일단 지금 키바나 이슈가 해결이 되면, 브랜치를 새롭게 따서 추가할 것.
+
+bulk api - 나중에는 메모리 이슈를 해결하기 위해, 제너레이터를 이용하는 것이 중요하게 될 것.
+근데 제너레이터를 하게되면, lazy evaluation 때문에, 루프가 돌때 다운로드를 시도하게 될 것.
+그래서, 내 생각에는, 다운로드 받은 것은 냅두고. 복사하는 것이 필요할 때만. 제너레이터를 사용한 것이 좋을 것.
+
+
+
+This is how you do a basic full-text search
+```
+GET /youtora/_search
+{
+  "query": {
+    "match": {
+      "text": {
+        "query" : "you are an impostor"
+      }
+    }
+  }
+}
+```
+
+manual이 있으면 manual 만 가지고 가도록 로직 수정.
+
+this is how you delete all documents in the index
+use delete by query.
+```
+POST youtora/_delete_by_query?conflicts=proceed
+{
+  "query": {
+    "match_all": {}
+  }
+}
+```
