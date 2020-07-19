@@ -2,8 +2,10 @@
 # for creating youtora
 from src.es.restAPIs.idxAPIs.idxManagement import CreateIdxAPI
 
+INDEX_NAME = "doc_ori_youtora"
 
-def create_youtora_idx():
+
+def create_youtora():
     """
     creates the youtora index with the given configurations
     """
@@ -56,22 +58,25 @@ def create_youtora_idx():
                     },
                     "lang_code": {
                         "type": "keyword"
-                    }
+                    },
+                    "tracks": {
+                        # nested type
+                        # https://stackoverflow.com/questions/26258292/querystring-search-on-array-elements-in-elastic-search
+                        "type": "nested",
+                        "properties": {
+                            "start": {
+                                "type": "double"
+                            },
+                            "duration": {
+                                "type": "double"
+                            },
+                            "text": {
+                                "type": "text"
+                            }
+                        }  # properties
+                    }  # tracks
                 }  # properties
             },  # caption
-            "track": {
-                "properties": {
-                    "start": {
-                        "type": "double"
-                    },
-                    "duration": {
-                        "type": "double"
-                    },
-                    "text": {
-                        "type": "text"
-                    }
-                }  # properties
-            },  # track
             # note: the _parent thing is deprecated in elastic search 7.
             "youtora_relations": {
                 "type": "join",  # join data type
@@ -79,12 +84,11 @@ def create_youtora_idx():
                     # a channel is a parent of both playlist and video
                     "channel":  ["playlist", "video"],
                     "video": "caption",
-                    "caption": "track"
                 }  # relations
             }  # youtora_relations
         }  # properties
     }  # mappings_config
 
     # call to es
-    CreateIdxAPI.create_idx(index="youtora",
+    CreateIdxAPI.create_idx(index=INDEX_NAME,
                             mappings=mappings)

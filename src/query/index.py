@@ -8,6 +8,8 @@ from src.es.restAPIs.API import API
 from src.es.restAPIs.docAPIs.single import IdxAPI
 from src.es.restAPIs.docAPIs.multi import BulkAPI
 
+from src.query.create import INDEX_NAME
+
 
 class IdxSingle:
     @classmethod
@@ -32,7 +34,7 @@ class IdxSingle:
         # send a request to es
         # channel is the root, so no need for for
         # specifying  routing
-        IdxAPI.put_doc(index="youtora",
+        IdxAPI.put_doc(index=INDEX_NAME,
                        _id=channel.channel_id,
                        doc=doc,
                        # automatically replaces the doc should it already exists
@@ -56,7 +58,7 @@ class IdxSingle:
         # send a request to es
         # channel is the root, so no need for for
         # specifying  routing
-        IdxAPI.put_doc(index="youtora",
+        IdxAPI.put_doc(index=INDEX_NAME,
                        _id=playlist.plist_id,
                        doc=doc,
                        # automatically replaces the doc should it already exists
@@ -83,7 +85,7 @@ class IdxSingle:
         }  # doc
 
         # send request
-        IdxAPI.put_doc(index="youtora",
+        IdxAPI.put_doc(index=INDEX_NAME,
                        _id=video.vid_id,
                        doc=doc,
                        # automatically replaces the doc should it already exists
@@ -101,18 +103,28 @@ class IdxSingle:
 
         # build the data to send to elastic search
         # include the parent id in data json
+        tracks = [
+            {
+                "start": track.start,
+                "duration": track.duration,
+                "text": track.text
+            }  # a track dict object
+            for track in caption.tracks
+        ]  # tracks - list comprehension
+
         doc = {
             "type": "caption",
             "caption_type": caption.caption_type,
             "lang_code": caption.lang_code,
             "caption_url": caption.caption_url,
+            "tracks": tracks,
             "youtora_relations": {
                 "name": "caption",
                 "parent": parent_id
             }
         }
         # send a request to es
-        IdxAPI.put_doc(index="youtora",
+        IdxAPI.put_doc(index=INDEX_NAME,
                        _id=caption.caption_comp_key,
                        doc=doc,
                        # automatically replaces the doc should it already exists
@@ -141,7 +153,7 @@ def idx_track(track: Track):
         }
     }
     # make a request to es
-    IdxAPI.put_doc(index="youtora",
+    IdxAPI.put_doc(index=INDEX_NAME,
                    _id=track.track_comp_key,
                    doc=doc,
                    # automatically replaces the doc should it already exists
@@ -185,7 +197,7 @@ class IdxMulti:
             parent_id = "|".join(track.track_comp_key.split("|")[:-1])
             request = {
                 "index": {
-                    "_index": "youtora",
+                    "_index": INDEX_NAME,
                     "_id": track.track_comp_key,
                     # you can specify routing point for each action
                     # https://stackoverflow.com/questions/19745515/why-doesnt-routing-work-with-elasticsearch-bulk-api
@@ -212,4 +224,4 @@ class IdxMulti:
 
         BulkAPI.post_bulk(request_body=request_body,
                           refresh='true',
-                          index="youtora")
+                          index=INDEX_NAME)

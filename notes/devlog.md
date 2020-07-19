@@ -269,6 +269,7 @@ bulk api - 나중에는 메모리 이슈를 해결하기 위해, 제너레이터
 
 
 
+
 This is how you do a basic full-text search
 ```
 GET /youtora/_search
@@ -323,6 +324,8 @@ caption에 array 타입으로 tracks field를 넣었어야 했나?
 일단 현재로써는 이렇게 진행하고.
 그런 index 수정은 인덱싱 속도가 빠르게 된 이후에 진행하도록 하자.
 그래야 이것저것 다 복구 할 수 있으니!
+그렇게 하는 경우, 굳이 bulk api를 써서 트랙을 인덱싱 할 필요가 없게될 것.
+그냥 caption만 넣으면 될 것이니.
 
 나중에 Index를 flush해야 될 때가 오면, 그 전에 현재 저장된 channel & playlist를 저장하자.
 아, 그리고 channel을 저장하는 경우. playlist도 uploaded_videos로 저장을 하는 것이 좋지 않을까?
@@ -330,4 +333,14 @@ caption에 array 타입으로 tracks field를 넣었어야 했나?
 
 이것으로 변경하는 브랜치를 새로 만들기.
 그 브랜치는 doc_ori_youtora 라는 인덱스를 만들게 될 것.
+
+also, you might want to add visualiser after that.
+
+
+순서가 중요한 것, 서로 dependent 한 자료형은 독립적으로 저장하지 말고, 어레이 타입에다가 같이 두어야한다.
+그게 문서 집합형 설계인 것 같다.
+노 sql에 대한 개념이 그런 것인가?
+
+
+array 속에 있는.. object - nested data type 인가? 각 원소들을 검색하고 싶으면 어떻게 해야하나?
 

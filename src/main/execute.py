@@ -63,15 +63,6 @@ class Helper:
                 caption: Caption
                 IdxSingle.idx_caption(caption)
 
-    @classmethod
-    def help_idx_tracks(cls, video_list: List[Video]):
-        for vid in video_list:
-            for _, caption in vid.captions.items():
-                caption: Caption
-                IdxMulti.idx_tracks(caption.tracks,
-                                    # automatically replaces the doc should it already exists
-                                    op_type='index')
-
 
 class Executor:
     @classmethod
@@ -94,8 +85,6 @@ class Executor:
         Helper.help_idx_vids(video_list)
         # index all captions
         Helper.help_idx_captions(video_list)
-        # index all tracks
-        Helper.help_idx_tracks(video_list)
 
     @classmethod
     def exec_idx_channel(cls,
@@ -117,6 +106,4 @@ class Executor:
         Helper.help_idx_vids(video_list)
         # index all captions
         Helper.help_idx_captions(video_list)
-        # index all tracks
-        Helper.help_idx_tracks(video_list)
 
