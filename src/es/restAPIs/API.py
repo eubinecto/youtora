@@ -9,6 +9,10 @@ class API:
     # change this to AWS endpoint after deploying the engine to AWS.
     ES_ENDPOINT = "http://localhost:9200"
 
+    # options to be used for validation
+    REFRESH_OPS = ('true', 'false', 'wait_for')
+    OP_TYPE_OPS = ('index', 'create')
+
     class Utils:
         """
         utilities to be used with API
@@ -31,5 +35,5 @@ class API:
                 # then raise the exception again
                 raise he
             else:
-                logger.info(print(json.dumps(r.json(), indent=2)))
+                logger.info(json.dumps(r.json(), indent=2))
 

@@ -1,7 +1,7 @@
 # the models that I'll be using.
 from typing import List
 
-from .models import Channel, Video, Caption, Track
+from .models import Channel, Video, Caption, Track, Playlist
 # how do I use type aliases?
 import xmltodict
 
@@ -22,21 +22,21 @@ import logging
 
 # if you give it a channel url, you can get a list of videos... hopefully?
 class ChannelDownloader:
-
     # define the channel themes here
-    CHANNEL_THEMES = ("education", "entertainment", "technology", "lectures")
+    # CHANNEL_THEMES = ("education", "entertainment", "technology", "lectures")
+    # not doing this yet.
+    # I can categorise this later.
 
     # do not download subtitles when downloading a channel
-    CHANNEL_DL_OPTS = {'writesubtitles': False,
-                       'allsubtitles': False,
-                       'writeautomaticsub': False}
+    CHANNEL_DL_OPTS = {
+        'writesubtitles': False,
+        'allsubtitles': False,
+        'writeautomaticsub': False,
+        'ignoreerrors': True,
+    }
 
     @classmethod
-    def dl_channel(cls,
-                   channel_url: str,
-                   channel_theme: str) -> Channel:
-        # for debugging purpose
-        assert channel_theme in cls.CHANNEL_THEMES, "Invalid channel theme"
+    def dl_channel(cls, channel_url: str) -> Channel:
 
         # use the video dl option.
         with youtube_dl.YoutubeDL(cls.CHANNEL_DL_OPTS) as ydl:
@@ -49,12 +49,47 @@ class ChannelDownloader:
 
         # gather up the keys
         for entry in info['entries']:
-            vid_id_list.append(entry['id'])
+            if entry:
+                vid_id_list.append(entry['id'])
 
         return Channel(channel_id=channel_id,
                        creator=creator,
-                       channel_theme=channel_theme,
                        vid_id_list=vid_id_list)
+
+
+class PlaylistDownloader:
+    PLAYLIST_DL_OPTIONS = {
+        'writesubtitles': False,
+        'allsubtitles': False,
+        'writeautomaticsub': False,
+        # youtube_dl.utils.DownloadError: ERROR: 5mXahVco1ok: YouTube said: Unable to extract video data
+        # ignore this error and keep getting videos
+        'ignoreerrors': True,
+    }
+
+    @classmethod
+    def dl_playlist(cls, playlist_url: str) -> Playlist:
+        # use the video dl option.
+        with youtube_dl.YoutubeDL(cls.PLAYLIST_DL_OPTIONS) as ydl:
+            info = ydl.extract_info(url=playlist_url, download=False)
+        # extract this from the info.
+        plist_id = info['id']
+        plist_title = info['title']
+        plist_vid_ids = list()
+        # gather up the keys
+        for entry in info['entries']:
+            if entry:  # ignore invalid videos
+                plist_vid_ids.append(entry['id'])
+        channel_id = info['entries'][0]['channel_id']
+        creator = info['entries'][0]['uploader']
+        # construct a channel
+        plist_channel = Channel(channel_id=channel_id,
+                                creator=creator)
+        # return the playlist
+        return Playlist(plist_id=plist_id,
+                        plist_title=plist_title,
+                        plist_vid_ids=plist_vid_ids,
+                        plist_channel=plist_channel)
 
 
 class VideoDownloader:
@@ -88,18 +123,11 @@ class VideoDownloader:
         subtitles = info['subtitles']
         auto_captions = info['automatic_captions']
 
-        # asserting: these four must not be None
-        assert vid_id is not None, "vid_id is required"
-        assert title is not None, "title is required"
-        assert channel_id is not None, "channel_id is required"
-
-        # I might need upload date to sort by recency.
-        assert upload_date is not None, "upload_date is required"
-
         # init with None
         captions = dict()
         # try getting caption of type manual
         try:
+            # manual
             caption_type = CaptionDownloader.CAPTION_TYPES[0]
             captions[caption_type] = CaptionDownloader.dl_caption(vid_id=vid_id,
                                                                   video_subtitles=subtitles,
@@ -108,23 +136,23 @@ class VideoDownloader:
                                                                   lang_code=lang_code)
         except CaptionNotFoundError as ce:
             print(ce)
+            # if manual is not found, try getting the caption of type auto
+            try:
+                # auto
+                caption_type = CaptionDownloader.CAPTION_TYPES[1]
+                captions[caption_type] = CaptionDownloader.dl_caption(vid_id=vid_id,
+                                                                      video_subtitles=subtitles,
+                                                                      video_auto_captions=auto_captions,
+                                                                      caption_type=caption_type,
+                                                                      lang_code=lang_code)
+            except CaptionNotFoundError as ce:
+                print(ce)
+            else:
+                # on successful download
+                print("AUTO FOUND: {}".format(title))
         else:
             # on successful download
             print("MANUAL FOUND: {}".format(title))
-
-        # try getting the caption of type auto
-        try:
-            caption_type = CaptionDownloader.CAPTION_TYPES[1]
-            captions[caption_type] = CaptionDownloader.dl_caption(vid_id=vid_id,
-                                                                  video_subtitles=subtitles,
-                                                                  video_auto_captions=auto_captions,
-                                                                  caption_type=caption_type,
-                                                                  lang_code=lang_code)
-        except CaptionNotFoundError as ce:
-            print(ce)
-        else:
-            # on successful download
-            print("AUTO FOUND: {}".format(title))
 
         # returns a video object with the properties above
         return Video(vid_id,
@@ -186,6 +214,7 @@ class CaptionDownloader:
         # this is initially None
         caption_url = None
 
+        # switch statement
         if caption_type == "manual":
             if lang_code in video_subtitles:  # manual exists
                 caption_url = video_subtitles[lang_code][format_idx]['url']
@@ -221,7 +250,6 @@ class CaptionDownloader:
 
 
 class TrackDownloader:
-
     @classmethod
     def dl_tracks(cls,
                   caption_comp_key: str,
@@ -233,18 +261,14 @@ class TrackDownloader:
         """
         # first, get the response
         response = requests.get(caption_url)
-
         # check if the response was erroneous
         response.raise_for_status()
-
         # get the xml. escape the character reference entities
         tracks_xml = html.unescape(response.text)
-
         # deserialize the xml to dict
         tracks_dict = xmltodict.parse(tracks_xml)
         # prepare a bucket for tracks
         tracks = list()
-
         # get the tracks
         for trackItem in tracks_dict['transcript']['text']:
             try:
@@ -252,7 +276,7 @@ class TrackDownloader:
             except KeyError as ke:
                 logger = logging.getLogger("@start")
                 # log the error
-                logger.error(ke)
+                logger.warning(ke)
                 # but execution should continue
                 # -1 to state an error
                 start = -1
@@ -261,7 +285,7 @@ class TrackDownloader:
             except KeyError as ke:
                 logger = logging.getLogger("@dur")
                 # log the error
-                logger.error(ke)
+                logger.warning(ke)
                 # but execution should continue
                 # -1 to state an error
                 duration = -1
@@ -270,7 +294,7 @@ class TrackDownloader:
             except KeyError as ke:
                 logger = logging.getLogger("@text")
                 # log the error
-                logger.error(ke)
+                logger.warning(ke)
                 # but execution should continue
                 # empty string to state an error
                 text = ""

@@ -18,16 +18,27 @@ def create_youtora_idx():
                         "type": "keyword"  # 이건 필요없을 수도.
                     },
                     "creator": {
-                        "type": "text"
+                        "type": "keyword"
+                    }  # creator
+                }  # properties
+            },  # channel
+            "playlist": {
+                "properties": {
+                    "plist_url": {
+                        "type": "keyword"
                     },
-                    "channel_theme": {
+                    "plist_title": {
+                        "type": "keyword"
+                    },
+                    "plist_vid_ids": {
+                        # of type array. can I leave this as blank?
                         "type": "keyword"
                     }
                 }  # properties
-            },  # channel
+            },  # playlist
             "video": {
                 "properties": {
-                    "title": {
+                    "vid_title": {
                         "type": "text"
                     },
                     "upload_date": {
@@ -65,7 +76,8 @@ def create_youtora_idx():
             "youtora_relations": {
                 "type": "join",  # join data type
                 "relations": {
-                    "channel": "video",
+                    # a channel is a parent of both playlist and video
+                    "channel":  ["playlist", "video"],
                     "video": "caption",
                     "caption": "track"
                 }  # relations

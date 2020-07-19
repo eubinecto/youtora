@@ -6,14 +6,12 @@ class Channel:
     __slots__ = "_channel_id", \
                 "_channel_url", \
                 "_creator", \
-                "_channel_theme", \
                 "_vid_id_list"
 
     def __init__(self,
                  channel_id: str,
                  creator: str,
-                 channel_theme: str,
-                 vid_id_list: list):
+                 vid_id_list: list = None):
         # key
         self._channel_id = channel_id
 
@@ -21,8 +19,6 @@ class Channel:
                             .format(channel_id)
 
         self._creator = creator
-
-        self._channel_theme = channel_theme
 
         # no reference to actual video objects
         # just reference video id's here. (in case there are too many videos to download)
@@ -45,10 +41,6 @@ class Channel:
         return self._creator
 
     @property
-    def channel_theme(self):
-        return self._channel_theme
-
-    @property
     def vid_id_list(self):
         return self._vid_id_list
 
@@ -57,6 +49,64 @@ class Channel:
         overrides the dunder string method
         """
         return self._creator
+
+
+class Playlist:
+    # for saving memory space
+    __slots__ = "_plist_id", \
+                "_plist_url", \
+                "_plist_title", \
+                "_plist_vid_ids", \
+                "_plist_channel"
+
+    def __init__(self,
+                 plist_id: str,
+                 plist_title: str,
+                 plist_vid_ids: List[str],
+                 plist_channel: Channel):
+        # key
+        self._plist_id = plist_id
+
+        self._plist_url = "http://www.youtube.com/playlist/{}" \
+            .format(plist_id)
+
+        self._plist_title = plist_title
+
+        # no reference to actual video objects
+        # just reference video id's here. (in case there are too many videos to download)
+        self._plist_vid_ids = plist_vid_ids
+
+        self._plist_channel = plist_channel
+
+    # accessor methods
+    # property decorator allows you to
+    # access protected variable by just using the name of
+    # the method.
+    @property
+    def plist_id(self):
+        return self._plist_id
+
+    @property
+    def plist_url(self):
+        return self._plist_url
+
+    @property
+    def plist_title(self):
+        return self._plist_title
+
+    @property
+    def plist_vid_ids(self):
+        return self._plist_vid_ids
+
+    @property
+    def plist_channel(self):
+        return self._plist_channel
+
+    def __str__(self) -> str:
+        """
+        overrides the dunder string method
+        """
+        return self._plist_title
 
 
 class Track:
@@ -156,17 +206,22 @@ class Caption:
 class Video:
 
     # to save RAM space
-    __slots__ = '_vid_id', '_vid_url', '_title', '_channel_id', '_upload_date', '_captions'
+    __slots__ = '_vid_id',\
+                '_vid_url',\
+                '_vid_title',\
+                '_channel_id',\
+                '_upload_date',\
+                '_captions'
 
     def __init__(self,
                  vid_id: str,
-                 title: str,
+                 vid_title: str,
                  channel_id: str,
                  upload_date: str,
                  captions: Dict[str, Caption]):
         """
         :param vid_id: the unique id at the end of the vid url
-        :param title: the title of the youtube video
+        :param vid_title: the title of the youtube video
         :param channel_id: the id of the channel this video belongs to
         :param upload_date: the uploaded date of the video
         :param captions: the dictionary of captions. keys are either auto or manual
@@ -178,7 +233,7 @@ class Video:
         self._vid_url = "https://www.youtube.com/watch?v={}"\
                         .format(vid_id)
 
-        self._title = title
+        self._vid_title = vid_title
         self._channel_id = channel_id
         self._upload_date = upload_date
         self._captions = captions
@@ -193,8 +248,8 @@ class Video:
         return self._vid_url
 
     @property
-    def title(self):
-        return self._title
+    def vid_title(self):
+        return self._vid_title
 
     @property
     def channel_id(self):
@@ -210,7 +265,7 @@ class Video:
 
     # overrides the dunder string method
     def __str__(self):
-        return self._title
+        return self._vid_title
 
 
 # 이것도 재미있을 듯!
