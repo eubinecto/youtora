@@ -117,11 +117,12 @@ class Track:
 
     def __init__(self,
                  track_comp_key: str,
+                 start: float,
                  duration: float,
                  text: str):
         # comp key
         self._track_comp_key = track_comp_key
-        self._start: float = float(track_comp_key.split("|")[-1])  # extract start
+        self._start = start
         self._duration = duration
         self._text = text
 
