@@ -2,6 +2,10 @@ import logging
 import requests
 import json
 
+import sys
+# https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
 
 class API:
     # currently the end point of elastic search is set to local host.
@@ -35,5 +39,5 @@ class API:
                 # then raise the exception again
                 raise he
             else:
-                logger.info(json.dumps(r.json(), indent=2))
+                logger.debug(json.dumps(r.json(), indent=2))
 

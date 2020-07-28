@@ -18,6 +18,9 @@ from .errors import CaptionNotFoundError
 import html
 
 import logging
+import sys
+# https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 # if you give it a channel url, you can get a list of videos... hopefully?
@@ -117,10 +120,10 @@ class VideoDownloader:
         vid_id = info['id']
         title = info['title']
         channel_id = info['channel_url']
-        upload_date = "{year}-{month}-{day}"\
-                      .format(year=info['upload_date'][:4],
-                              month=info['upload_date'][4:6],
-                              day=info['upload_date'][6:])  # e.g. 20200610 -> 2020-06-10
+        upload_date = "{year}-{month}-{day}" \
+            .format(year=info['upload_date'][:4],
+                    month=info['upload_date'][4:6],
+                    day=info['upload_date'][6:])  # e.g. 20200610 -> 2020-06-10
         subtitles = info['subtitles']
         auto_captions = info['automatic_captions']
 
@@ -164,7 +167,6 @@ class VideoDownloader:
 
 
 class CaptionDownloader:
-
     # the caption types defined
     CAPTION_TYPES = ("manual", "auto")
 
@@ -229,7 +231,7 @@ class CaptionDownloader:
         # refers to the same memory location. ("NULL" in C)
         # so it makes sense to use is operator rather than equality operator.
         if caption_url is None:
-            raise CaptionNotFoundError("NOT FOUND: caption type={}, lang code={}" \
+            raise CaptionNotFoundError("NOT FOUND: caption type={}, lang code={}"
                                        .format(caption_type, lang_code))
 
         # this will be the id of each caption
@@ -280,7 +282,7 @@ class TrackDownloader:
         # e.g. https://www.youtube.com/watch?v=1SMmc9gQmHQ
         if isinstance(tracks_dict['transcript']['text'], dict):
             # just one item
-            start = tracks_dict['transcript']['text']["@start"]
+            start = float(tracks_dict['transcript']['text']["@start"])
             try:
                 duration: float = float(tracks_dict['transcript']['text']["@dur"])
             except KeyError as ke:
@@ -297,13 +299,15 @@ class TrackDownloader:
                 # but execution should continue
                 # empty string to state an error
                 text = ""
-            track_comp_key = "|".join([caption_comp_key, str(start)])
+            # there is only one item, so the id should end with 0.
+            track_comp_key = "|".join([caption_comp_key, '0'])
             tracks.append(Track(track_comp_key=track_comp_key,
+                                start=start,
                                 duration=duration,
                                 text=text))
         else:
-            for trackItem in tracks_dict['transcript']['text']:
-                start: float = trackItem["@start"]
+            for idx, trackItem in enumerate(tracks_dict['transcript']['text']):
+                start: float = float(trackItem["@start"])
                 try:
                     duration: float = float(trackItem["@dur"])
                 except KeyError as ke:
@@ -319,7 +323,9 @@ class TrackDownloader:
                     # but execution should continue
                     # empty string to state an error
                     text = ""
-                track_comp_key = "|".join([caption_comp_key, str(start)])
-                track = Track(track_comp_key, duration, text)
+                # adding the index instead of start is crucial
+                # for quickly referencing prev & next track.
+                track_comp_key = "|".join([caption_comp_key, str(idx)])
+                track = Track(track_comp_key, start, duration, text)
                 tracks.append(track)
         return tracks

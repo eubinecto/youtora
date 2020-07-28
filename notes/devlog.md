@@ -552,4 +552,77 @@ PUT test
 
 이참에 update api도 파보지 뭐!
  
+ 
+adding `updateAPI` class in `single.py`.
+ - https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-update.html
+ 
+But is it possible to update an id of a doc?
 
+
+A strategy that comes to my mind:
+1. get all captions
+2. for each caption, get all tracks. sort by id.
+3. for each track
+  1. find the new id 
+  2. create a track with that index
+  3. delete the previous track.
+  
+  
+아, 너무 복잡하다.
+그냥 모든 데이터를 다 날리지 뭐.
+
+전부 밀었다.
+```
+POST youtora/_delete_by_query?conflicts=proceed
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+
+{
+  "took" : 26017,
+  "timed_out" : false,
+  "total" : 396028,
+  "deleted" : 396028,
+  "batches" : 397,
+  "version_conflicts" : 0,
+  "noops" : 0,
+  "retries" : {
+    "bulk" : 0,
+    "search" : 0
+  },
+  "throttled_millis" : 0,
+  "requests_per_second" : -1.0,
+  "throttled_until_millis" : 0,
+  "failures" : [ ]
+}
+
+```
+오, 생각보다 시간이 걸렸음.
+
+
+자, 이제 제대로 id를 만들어서 하자..
+
+생각보다 쉽다. 그냥 enumerate id하면 됨.
+
+파이참 콘솔 로깅 다 빨강으로 나오는 것 고치는 법.
+ - https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
+ 
+ 
+ 
+ 플레이리스트 하나로 테스팅해보기.
+ 
+ 아 이 정도면 테스트 하나 정도는 만들어야 하지 않을까..
+ 
+ 
+ okay. search tracks done.
+ 
+ Now you can finally, get prev & next tracks.
+ 
+ 
+ now what we need is..
+ 
+ 
+ 

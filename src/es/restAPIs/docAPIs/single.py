@@ -8,6 +8,7 @@ class IdxAPI(API):
     If the document already exists, updates the document and increments its version.
     https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html
     """
+    PUT_DOC = "/{index}/_doc/{_id}"
 
     @classmethod
     def put_doc(cls,
@@ -28,9 +29,7 @@ class IdxAPI(API):
          if it does not already exist (put if absent).
         :param routing: (Optional, string) Target the specified primary shard
         """
-        PUT_DOC = "/{index}/_doc/{_id}"
-        query = PUT_DOC.format(index=index,
-                               _id=_id)
+        query = cls.PUT_DOC.format(index=index, _id=_id)
 
         params = dict()
 
@@ -48,5 +47,32 @@ class IdxAPI(API):
                          json=doc,
                          params=params)
 
+        r.raise_for_status()
+
         # check if the request was successful
         super().Utils.log_response(r, "create_doc")
+
+
+class GetAPI(API):
+    """
+    Retrieves the specified JSON document from an index.
+    https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-get.html
+    """
+    GET_DOC = "/{index}/_doc/{_id}"
+
+    @classmethod
+    def get_doc(cls, index: str, _id: str) -> dict:
+        query = cls.GET_DOC.format(index=index, _id=_id)
+
+        r = requests.get(url=super().ES_ENDPOINT + query)
+
+        # check if the request was successful
+        return r.json()
+
+
+class UpdateAPI(API):
+    """
+    Updates a document using the specified script.
+    https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-update.html
+    """
+    pass
