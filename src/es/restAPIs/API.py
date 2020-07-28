@@ -2,7 +2,6 @@ import logging
 import requests
 import json
 
-logging.set
 
 class API:
     # currently the end point of elastic search is set to local host.

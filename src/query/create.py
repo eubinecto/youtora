@@ -2,6 +2,7 @@
 # for creating youtora
 from src.es.restAPIs.idxAPIs.idxManagement import CreateIdxAPI
 
+# the index to store documents in
 INDEX_NAME = "doc_ori_youtora"
 
 
@@ -72,7 +73,7 @@ def create_youtora():
                             },
                             "text": {
                                 "type": "text"
-                            }
+                            }  #text
                         }  # properties
                     }  # tracks
                 }  # properties

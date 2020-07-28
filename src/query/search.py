@@ -13,7 +13,8 @@ def search_tracks(query_text):
     """
     r_json_dict = SearchAPI.get_search(field="text",
                                        query=query_text,
-                                       index="youtora")
+                                       index="youtora",
+                                       _size=20)
     # collect a timestamped url!
     results = list()
     for hit in r_json_dict['hits']['hits']:
@@ -26,4 +27,6 @@ def search_tracks(query_text):
         }
         results.append(res)
 
-    return results
+    for idx, res in enumerate(results):
+        print(str(idx + 1) + ":", res['text'], "\t", res['context'])
+        print("---")

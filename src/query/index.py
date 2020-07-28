@@ -117,7 +117,7 @@ class IdxSingle:
             "caption_type": caption.caption_type,
             "lang_code": caption.lang_code,
             "caption_url": caption.caption_url,
-            "tracks": tracks,
+            "tracks": tracks,   # index caption & tracks all together
             "youtora_relations": {
                 "name": "caption",
                 "parent": parent_id
@@ -133,35 +133,6 @@ class IdxSingle:
                        routing=parent_id,
                        # force refresh (make it immediately visible to search)
                        refresh='true')
-
-
-def idx_track(track: Track):
-    
-    # caption is the parent of track
-    parent_id = "|".join(track.track_comp_key.split("|")[:-1])
-
-    # build the data to send to elastic search
-    # include the parent id in data json
-    doc = {
-        "type": "track",
-        "start": track.start,
-        "duration": track.duration,
-        "text": track.text,
-        "youtora_relations": {
-            "name": "track",
-            "parent": parent_id
-        }
-    }
-    # make a request to es
-    IdxAPI.put_doc(index=INDEX_NAME,
-                   _id=track.track_comp_key,
-                   doc=doc,
-                   # automatically replaces the doc should it already exists
-                   op_type='index',
-                   # designate a parent id
-                   routing=parent_id,
-                   # force refresh
-                   refresh='true')
 
 
 class IdxMulti:
@@ -182,46 +153,3 @@ class IdxMulti:
         # fill this in later
         # using generators
         pass
-
-    @classmethod
-    def idx_tracks(cls,
-                   tracks: List[Track],
-                   op_type: str = None):
-        """
-        uses bulk api to store all the tracks at a single request
-        """
-        request_body = list()
-        # gather up all the docs
-        for track in tracks:
-            # extract the parent id
-            parent_id = "|".join(track.track_comp_key.split("|")[:-1])
-            request = {
-                "index": {
-                    "_index": INDEX_NAME,
-                    "_id": track.track_comp_key,
-                    # you can specify routing point for each action
-                    # https://stackoverflow.com/questions/19745515/why-doesnt-routing-work-with-elasticsearch-bulk-api
-                    "routing": parent_id
-                }  # index
-            }  # request
-            if op_type:
-                assert op_type in API.OP_TYPE_OPS
-                request["index"]["op_type"] = op_type
-            doc = {
-                "type": "track",
-                "start": track.start,
-                "duration": track.duration,
-                "text": track.text,
-                "youtora_relations": {
-                    "name": "track",
-                    "parent": parent_id
-                }
-            }
-            request_body.append(request)
-            request_body.append(doc)
-            # delete the track once used
-            del track
-
-        BulkAPI.post_bulk(request_body=request_body,
-                          refresh='true',
-                          index=INDEX_NAME)

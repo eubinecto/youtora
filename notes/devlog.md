@@ -215,7 +215,7 @@ e.g. indexAPI, bulkAPI, etc
 audio + video 같이 있는 source url의 포맷
 - format id : 22
 
-```python
+```
 # 제일 마지막것 가져오면 된다!
 info['formats'][-1]['url']
 ```
@@ -343,4 +343,202 @@ also, you might want to add visualiser after that.
 
 
 array 속에 있는.. object - nested data type 인가? 각 원소들을 검색하고 싶으면 어떻게 해야하나?
+
+
+카테고리.
+- 카테고리로 분류를 해놓으면. 더 용이하게.
+
+새로운 인덱스에.. 이제 넣을 수 있어야 하는데.
+
+
+---
+27th of July, 2020
+
+
+`doc_ori_youtora`
+인덱스는 일단 만드는 것에 성공한 것으로 알고 있다.
+
+create_youtora를 실행하니 bad request인 것을 보니 이미 만들어져있다.
+
+그럼 이제 해야할일은.
+- [x] caption 추가 로직을 변경하고, 트랙 추가로직을 삭제 <- 이건 저번에 이미 했었네.
+  - [x] 작은 플레이리스트로 추가로직 테스트 해보기
+- [ ] search tracks 리팩토링
+- [ ] 바로 이전 자막, 바로 다음 자막도 알 수 있도록 할 수 있나?
+- [ ] 멀티 프로세싱으로 비디오 다운로드의 속도를 높인다.
+- [ ] video_id 수집도 Selenium으로 속도를 높인다. <- 이미 기존 유토라에서 해본적이 있으므로, 해당 코드를 참고할 것.
+- [ ] python color-coded logging. 색깔이 자꾸 빨간색으로 나오니까 헷갈린다.
+  - info: green
+  - warning: yellow
+  - Error: red
+  - 로 바꿀수는 없나.?
+
+흥분하지 말기. 천천히 생각하면서 개발하기.
+집중.
+
+
+kibana 오류가 자꾸 거슬려서, 지우고 재설치를 해보았다.
+아래는 brew install kibana이후 설치를 마친뒤에 나오는 서머리.
+```
+==> Summary
+🍺  /usr/local/Cellar/node@10/10.22.0: 4,266 files, 53.7MB
+==> Installing kibana
+==> Pouring kibana-7.8.0.catalina.bottle.tar.gz
+==> Caveats
+Config: /usr/local/etc/kibana/
+If you wish to preserve your plugins upon upgrade, make a copy of
+/usr/local/opt/kibana/plugins before upgrading, and copy it into the
+new keg location after upgrading.
+
+To have launchd start kibana now and restart at login:
+  brew services start kibana
+Or, if you don't want/need a background service you can just run:
+  kibana
+==> Summary
+🍺  /usr/local/Cellar/kibana/7.8.0: 60,973 files, 439.4MB
+Removing: /Users/eubin/Library/Caches/Homebrew/kibana--7.6.2.catalina.bottle.tar.gz... (97.1MB)
+==> Caveats
+==> node@10
+node@10 is keg-only, which means it was not symlinked into /usr/local,
+because this is an alternate version of another formula.
+
+If you need to have node@10 first in your PATH run:
+  echo 'export PATH="/usr/local/opt/node@10/bin:$PATH"' >> ~/.zshrc
+
+For compilers to find node@10 you may need to set:
+  export LDFLAGS="-L/usr/local/opt/node@10/lib"
+  export CPPFLAGS="-I/usr/local/opt/node@10/include"
+
+==> kibana
+Config: /usr/local/etc/kibana/
+If you wish to preserve your plugins upon upgrade, make a copy of
+/usr/local/opt/kibana/plugins before upgrading, and copy it into the
+new keg location after upgrading.
+
+To have launchd start kibana now and restart at login:
+  brew services start kibana
+Or, if you don't want/need a background service you can just run:
+  kibana
+
+```
+
+지웠다가 재설치했더니 오류가 사라짐. 굿.
+
+키바나 재설치하는김에, elasticserch를 7.8.0 버전으로 업글했다.
+
+
+---
+28th of July, 2020
+
+검색을 도무지 어떻게 하는지 모르겠다.
+nested search를 해아하는 것인데.
+
+
+일단 내가 하고자 하는 것은
+1. full text search on caption.tracks.text
+plus,
+2. get the entire caption.tracks object
+3. get the index of the track object that matched
+  
+  
+지금 현재. 1번도, 2번도, 3번도 어떻게 하는지 모른다.
+
+일단 1번 부터 먼저 알아보자.
+
+검색 키워드를 full text search on nested field로 해야하나?
+nested 타입은 풀텍스트 검색이 안되는 건가?
+그게 문제인건가?
+일단 검색을 해보자.
+
+오, 누군가 질문을 올려놓은 것이 있다. https://discuss.elastic.co/t/full-text-search-in-nested-and-normal-object/127962
+읽어보자.
+
+```
+PUT test
+{
+  "mappings": {
+    "documents": {
+      "properties": {
+        "title": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "fields": {
+          "type": "nested",
+          "properties": {
+            "uid": {
+              "type": "keyword"
+            },
+            "value": {
+              "type": "text"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+```
+
+type `document` has a nested field `fields`. 딱 나랑 같은 상황이다!
+- 나는 caption.tracks[idx].text
+- 이 친구는 document.fields[idx].value
+
+에 full-text search를 하고 싶어한다.
+
+그래서, 쿼리를 어떻게 짜야하지?
+
+```
+아, `copy_to`라는 키워드가 있다고 하네.
+PUT test
+{
+  "mappings": {
+    "documents": {
+      "properties": {
+        "fulltext": {
+          "type": "text" <- 여기에다가 copy_to.
+        },
+        "title": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "fields": {
+          "type": "nested",
+          "properties": {
+            "uid": {
+              "type": "keyword"
+            },
+            "value": {
+              "type": "text",
+              "copy_to": "fulltext" <- 요거를 추가해야 함
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+그래. 근데 너무 구조가 복잡해진다.
+
+나는 애초에 이렇게 인데스를 변경하고자 했던 의도가, 검색 후에 이전 트랙, 다음 트랙을 접근하고 싶어서였는데..
+이렇게 되는 거라면 굳이..
+
+방법이 없어보인다.
+음.
+그러면 foreign key 와 같은 것은?
+아.
+그냥 아이디로 조회하면 되는거잖아.. 바보야..ㅠㅠ
+
+ 
 
