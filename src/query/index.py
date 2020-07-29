@@ -21,7 +21,7 @@ class IdxSingle:
             "type": "channel",
             "channel_url": channel.channel_url,
             "uploader": channel.uploader,
-            "subscribers": channel.subscribers,
+            "subs": channel.subs,
             # "channel_theme": channel.channel_theme, <- maybe later
             # parent-child relationship.
             # channel is the root, so no need for specifying

@@ -8,13 +8,13 @@ class Channel:
         "channel_url",
         "uploader",
         "vid_id_list",
-        "subscribers"
+        "subs"
     )
 
     def __init__(self,
                  channel_id: str,
                  uploader: str,
-                 subscribers: int,
+                 subs: int,
                  vid_id_list: list = None):
         """
         :param channel_id:
@@ -30,7 +30,7 @@ class Channel:
         self.uploader = uploader
 
         # social feature
-        self.subscribers = subscribers
+        self.subs = subs
 
         # no reference to actual video objects
         # just reference video id's here. (in case there are too many videos to download)

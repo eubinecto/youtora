@@ -48,7 +48,8 @@ class ChannelDownloader:
 
         # extract this from the info.
         channel_id = info['id']
-        creator = info['uploader']
+        uploader = info['uploader']
+        subs = ... # to be filled later
         vid_id_list = list()
 
         # gather up the keys
@@ -57,7 +58,8 @@ class ChannelDownloader:
                 vid_id_list.append(entry['id'])
 
         return Channel(channel_id=channel_id,
-                       uploader=creator,
+                       uploader=uploader,
+                       subs=subs,
                        vid_id_list=vid_id_list)
 
 
@@ -88,7 +90,9 @@ class PlaylistDownloader:
         channel_id = info['entries'][0]['channel_id']
         uploader = info['entries'][0]['uploader']
         # construct a channel
+        subs = ...  # to be filled later
         plist_channel = Channel(channel_id=channel_id,
+                                subs=subs,
                                 uploader=uploader)
         # return the playlist
         return Playlist(plist_id=plist_id,
@@ -99,10 +103,13 @@ class PlaylistDownloader:
 
 class VideoDownloader:
     # get all of the captions, whether it be manual or auto.
-    VIDEO_DL_OPTS = {'writesubtitles': True,
-                     'allsubtitles': True,
-                     'writeautomaticsub': True,
-                     'quiet': True}
+    VIDEO_DL_OPTS = {
+        'writesubtitles': True,
+        'allsubtitles': True,
+        'writeautomaticsub': True,
+        'writeinfojson': True,
+        'quiet': True
+    }  # VIDEO_DL_OPTIONS
 
     @classmethod
     def dl_video(cls,
@@ -128,6 +135,11 @@ class VideoDownloader:
                     day=info['upload_date'][6:])  # e.g. 20200610 -> 2020-06-10
         subtitles = info['subtitles']
         auto_captions = info['automatic_captions']
+        views = info['view_count']
+
+        # better collect these info separately
+        likes = ...
+        dislikes = ...
 
         # init with None
         captions = dict()
@@ -161,11 +173,14 @@ class VideoDownloader:
             print("MANUAL FOUND: {}".format(title))
 
         # returns a video object with the properties above
-        return Video(vid_id,
-                     title,
-                     channel_id,
-                     upload_date,
-                     captions)
+        return Video(vid_id=vid_id,
+                     vid_title=title,
+                     channel_id=channel_id,
+                     upload_date=upload_date,
+                     captions=captions,
+                     likes=likes,
+                     dislikes=dislikes,
+                     views=views)
 
 
 class CaptionDownloader:

@@ -20,9 +20,9 @@ def create_youtora_idx():
                     "uploader": {
                         "type": "keyword"
                     },  # creator
-                    "subscribers": {
+                    "subs": {
                         "type": "integer"
-                    }  # subscribers
+                    }  # subs
                 }  # properties
             },  # channel
             "playlist": {
