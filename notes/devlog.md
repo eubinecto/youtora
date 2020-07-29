@@ -552,6 +552,9 @@ PUT test
 
 이참에 update api도 파보지 뭐!
  
+ now, what is next?
+ 
+ we want to get...
  
 adding `updateAPI` class in `single.py`.
  - https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-update.html
@@ -623,6 +626,18 @@ POST youtora/_delete_by_query?conflicts=proceed
  
  
  now what we need is..
+ increasing the speed of downloading playlists.
+
+use aria2 as an external downloader?
+- https://github.com/ytdl-org/youtube-dl/issues/350#issuecomment-244847884
+ 
+```
+ $ youtube-dl --external-downloader aria2c --external-downloader-args '-x <number of threads>' https://www.youtube.com/playlist?list=PLsPUh22kYmNBkabv9M4fXo6HMLKnc7iR6
+```
  
  
+ 근데 이 external 다운로더를 쓰려면.
+ download option 을 True로 해야한다.
+ 그건 내가 원하는 것이 아님...
  
+ 일단 이렇게 하는 것은 포기해야할 듯.

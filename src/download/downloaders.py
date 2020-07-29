@@ -36,6 +36,7 @@ class ChannelDownloader:
         'allsubtitles': False,
         'writeautomaticsub': False,
         'ignoreerrors': True,
+        'writethumbnail': False,
     }
 
     @classmethod
@@ -68,6 +69,7 @@ class PlaylistDownloader:
         # youtube_dl.utils.DownloadError: ERROR: 5mXahVco1ok: YouTube said: Unable to extract video data
         # ignore this error and keep getting videos
         'ignoreerrors': True,
+        'writethumbnail': False,
     }
 
     @classmethod
