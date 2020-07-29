@@ -20,7 +20,8 @@ class IdxSingle:
         doc = {
             "type": "channel",
             "channel_url": channel.channel_url,
-            "creator": channel.creator,
+            "uploader": channel.uploader,
+            "subs": channel.subs,
             # "channel_theme": channel.channel_theme, <- maybe later
             # parent-child relationship.
             # channel is the root, so no need for specifying
@@ -74,6 +75,9 @@ class IdxSingle:
             "type": "video",
             "title": video.vid_title,
             "upload_date": video.upload_date,
+            "views": video.views,
+            "likes": video.likes,
+            "dislikes": video.dislikes,
             "youtora_relations": {
                 "name": "video",
                 # provide the parent id here

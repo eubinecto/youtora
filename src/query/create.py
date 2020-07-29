@@ -17,9 +17,12 @@ def create_youtora_idx():
                     "channel_url": {
                         "type": "keyword"  # 이건 필요없을 수도.
                     },
-                    "creator": {
+                    "uploader": {
                         "type": "keyword"
-                    }  # creator
+                    },  # creator
+                    "subs": {
+                        "type": "integer"
+                    }  # subs
                 }  # properties
             },  # channel
             "playlist": {
@@ -43,6 +46,15 @@ def create_youtora_idx():
                     },
                     "upload_date": {
                         "type": "date"
+                    },
+                    "views": {
+                        "type": "integer"
+                    },
+                    "likes": {
+                        "type": "integer"
+                    },
+                    "dislikes": {
+                        "type": "integer"
                     }
                 }  # properties
             },  # video

@@ -3,61 +3,55 @@ from typing import List, Dict
 
 class Channel:
     # for saving memory space
-    __slots__ = "_channel_id", \
-                "_channel_url", \
-                "_creator", \
-                "_vid_id_list"
+    __slots__ = (
+        "channel_id",
+        "channel_url",
+        "uploader",
+        "vid_id_list",
+        "subs"
+    )
 
     def __init__(self,
                  channel_id: str,
-                 creator: str,
+                 uploader: str,
+                 subs: int,
                  vid_id_list: list = None):
+        """
+        :param channel_id:
+        :param uploader:
+        :param vid_id_list: default is None (have a look at dl_playlist)
+        """
         # key
-        self._channel_id = channel_id
+        self.channel_id = channel_id
 
-        self._channel_url = "http://www.youtube.com/channel/{}"\
+        self.channel_url = "http://www.youtube.com/channel/{}"\
                             .format(channel_id)
 
-        self._creator = creator
+        self.uploader = uploader
+
+        # social feature
+        self.subs = subs
 
         # no reference to actual video objects
         # just reference video id's here. (in case there are too many videos to download)
-        self._vid_id_list = vid_id_list
-
-    # accessor methods
-    # property decorator allows you to
-    # access protected variable by just using the name of
-    # the method.
-    @property
-    def channel_id(self):
-        return self._channel_id
-
-    @property
-    def channel_url(self):
-        return self._channel_url
-
-    @property
-    def creator(self):
-        return self._creator
-
-    @property
-    def vid_id_list(self):
-        return self._vid_id_list
+        self.vid_id_list = vid_id_list
 
     def __str__(self) -> str:
         """
         overrides the dunder string method
         """
-        return self._creator
+        return self.uploader
 
 
 class Playlist:
     # for saving memory space
-    __slots__ = "_plist_id", \
-                "_plist_url", \
-                "_plist_title", \
-                "_plist_vid_ids", \
-                "_plist_channel"
+    __slots__ = (
+        "plist_id",
+        "plist_url",
+        "plist_title",
+        "plist_vid_ids",
+        "plist_channel"
+    )
 
     def __init__(self,
                  plist_id: str,
@@ -65,55 +59,33 @@ class Playlist:
                  plist_vid_ids: List[str],
                  plist_channel: Channel):
         # key
-        self._plist_id = plist_id
+        self.plist_id = plist_id
 
-        self._plist_url = "http://www.youtube.com/playlist/{}" \
+        self.plist_url = "http://www.youtube.com/playlist/{}" \
             .format(plist_id)
 
-        self._plist_title = plist_title
+        self.plist_title = plist_title
 
         # no reference to actual video objects
         # just reference video id's here. (in case there are too many videos to download)
-        self._plist_vid_ids = plist_vid_ids
+        self.plist_vid_ids = plist_vid_ids
 
-        self._plist_channel = plist_channel
-
-    # accessor methods
-    # property decorator allows you to
-    # access protected variable by just using the name of
-    # the method.
-    @property
-    def plist_id(self):
-        return self._plist_id
-
-    @property
-    def plist_url(self):
-        return self._plist_url
-
-    @property
-    def plist_title(self):
-        return self._plist_title
-
-    @property
-    def plist_vid_ids(self):
-        return self._plist_vid_ids
-
-    @property
-    def plist_channel(self):
-        return self._plist_channel
+        self.plist_channel = plist_channel
 
     def __str__(self) -> str:
         """
         overrides the dunder string method
         """
-        return self._plist_title
+        return self.plist_title
 
 
 class Track:
-    __slots__ = '_track_comp_key', \
-                '_start', \
-                '_duration', \
-                '_text'
+    __slots__ = (
+        'track_comp_key',
+        'start',
+        'duration',
+        'text'
+    )
 
     def __init__(self,
                  track_comp_key: str,
@@ -121,43 +93,28 @@ class Track:
                  duration: float,
                  text: str):
         # comp key
-        self._track_comp_key = track_comp_key
-        self._start = start
-        self._duration = duration
-        self._text = text
-
-    # accessor methods
-    @property
-    def track_comp_key(self):
-        return self._track_comp_key
-
-    @property
-    def start(self):
-        return self._start
-
-    @property
-    def duration(self):
-        return self._duration
-
-    @property
-    def text(self):
-        return self._text
+        self.track_comp_key = track_comp_key
+        self.start = start
+        self.duration = duration
+        self.text = text
 
     # overrides dunder string method
     def __str__(self) -> str:
         """
         overrides the dunder string method
         """
-        return self._track_comp_key
+        return self.track_comp_key
 
 
 class Caption:
 
-    __slots__ = '_caption_comp_key', \
-                '_caption_type', \
-                '_lang_code', \
-                '_caption_url', \
-                '_tracks'
+    __slots__ = (
+        'caption_comp_key',
+        'caption_type',
+        'lang_code',
+        'caption_url',
+        'tracks'
+    )
 
     def __init__(self,
                  caption_comp_key: str,
@@ -167,59 +124,46 @@ class Caption:
         :param caption_url: the url from which the tracks can be downloaded
         :param tracks: the list of tracks that belongs to this caption (1 to 1)
         """
-        self._caption_comp_key = caption_comp_key
-        self._caption_type = caption_comp_key.split("|")[1]
-        self._lang_code = caption_comp_key.split("|")[2]
-        self._caption_url = caption_url
+        self.caption_comp_key = caption_comp_key
+        self.caption_type = caption_comp_key.split("|")[1]
+        self.lang_code = caption_comp_key.split("|")[2]
+        self.caption_url = caption_url
         # download the tracks on init of caption
         # list of track objects.
-        self._tracks = tracks
-
-    # accessor methods
-    @property
-    def caption_comp_key(self):
-        return self._caption_comp_key
-
-    @property
-    def caption_type(self):
-        return self._caption_type
-
-    @property
-    def lang_code(self):
-        return self._lang_code
-
-    @property
-    def caption_url(self):
-        return self._caption_url
-
-    @property
-    def tracks(self):
-        return self._tracks
+        self.tracks = tracks
 
     # overrides dunder string method
     def __str__(self) -> str:
         """
         overrides the dunder string method
         """
-        return self._caption_comp_key
+        return self.caption_comp_key
 
 
 class Video:
 
     # to save RAM space
-    __slots__ = '_vid_id',\
-                '_vid_url',\
-                '_vid_title',\
-                '_channel_id',\
-                '_upload_date',\
-                '_captions'
+    __slots__ = (
+        'vid_id',
+        'vid_url',
+        'vid_title',
+        'channel_id',
+        'upload_date',
+        'captions',
+        'likes',
+        'dislikes',
+        'views'
+    )
 
     def __init__(self,
                  vid_id: str,
                  vid_title: str,
                  channel_id: str,
                  upload_date: str,
-                 captions: Dict[str, Caption]):
+                 captions: Dict[str, Caption],
+                 likes: int,
+                 dislikes: int,
+                 views: int):
         """
         :param vid_id: the unique id at the end of the vid url
         :param vid_title: the title of the youtube video
@@ -228,47 +172,26 @@ class Video:
         :param captions: the dictionary of captions. keys are either auto or manual
         """
         # key
-        self._vid_id = vid_id
+        self.vid_id = vid_id
 
         # build the url yourself... save the number of parameters.
-        self._vid_url = "https://www.youtube.com/watch?v={}"\
+        self.vid_url = "https://www.youtube.com/watch?v={}"\
                         .format(vid_id)
 
-        self._vid_title = vid_title
-        self._channel_id = channel_id
-        self._upload_date = upload_date
-        self._captions = captions
-
-    # accessor methods
-    @property
-    def vid_id(self):
-        return self._vid_id
-
-    @property
-    def vid_url(self):
-        return self._vid_url
-
-    @property
-    def vid_title(self):
-        return self._vid_title
-
-    @property
-    def channel_id(self):
-        return self._channel_id
-
-    @property
-    def upload_date(self):
-        return self._upload_date
-
-    @property
-    def captions(self):
-        return self._captions
+        self.vid_title = vid_title
+        self.channel_id = channel_id
+        self.upload_date = upload_date
+        self.captions = captions
+        self.likes = likes
+        self.dislikes = dislikes
+        self.views = views
 
     # overrides the dunder string method
     def __str__(self):
-        return self._vid_title
+        return self.vid_title
 
 
-# 이것도 재미있을 듯!
+# 이것도 재미있을 듯! <- 지금은 지금 해야하는 일에 집중.
+# 어차피 개발 단계이므로, 계속 해나가면 된다.
 class Chapter:
     pass
