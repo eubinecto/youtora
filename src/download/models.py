@@ -7,13 +7,20 @@ class Channel:
         "channel_id",
         "channel_url",
         "uploader",
-        "vid_id_list"
+        "vid_id_list",
+        "subscribers"
     )
 
     def __init__(self,
                  channel_id: str,
                  uploader: str,
+                 subscribers: int,
                  vid_id_list: list = None):
+        """
+        :param channel_id:
+        :param uploader:
+        :param vid_id_list: default is None (have a look at dl_playlist)
+        """
         # key
         self.channel_id = channel_id
 
@@ -21,6 +28,9 @@ class Channel:
                             .format(channel_id)
 
         self.uploader = uploader
+
+        # social feature
+        self.subscribers = subscribers
 
         # no reference to actual video objects
         # just reference video id's here. (in case there are too many videos to download)
