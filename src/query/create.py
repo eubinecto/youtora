@@ -19,7 +19,10 @@ def create_youtora_idx():
                     },
                     "creator": {
                         "type": "keyword"
-                    }  # creator
+                    },  # creator
+                    "subscribers": {
+                        "type": "integer"
+                    }  # subscribers
                 }  # properties
             },  # channel
             "playlist": {
@@ -43,6 +46,15 @@ def create_youtora_idx():
                     },
                     "upload_date": {
                         "type": "date"
+                    },
+                    "views": {
+                        "type": "integer"
+                    },
+                    "likes": {
+                        "type": "integer"
+                    },
+                    "dislikes": {
+                        "type": "integer"
                     }
                 }  # properties
             },  # video
