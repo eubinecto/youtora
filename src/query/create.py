@@ -17,7 +17,7 @@ def create_youtora_idx():
                     "channel_url": {
                         "type": "keyword"  # 이건 필요없을 수도.
                     },
-                    "creator": {
+                    "uploader": {
                         "type": "keyword"
                     },  # creator
                     "subscribers": {
