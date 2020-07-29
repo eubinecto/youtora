@@ -57,7 +57,7 @@ class ChannelDownloader:
                 vid_id_list.append(entry['id'])
 
         return Channel(channel_id=channel_id,
-                       creator=creator,
+                       uploader=creator,
                        vid_id_list=vid_id_list)
 
 
@@ -86,10 +86,10 @@ class PlaylistDownloader:
             if entry:  # ignore invalid videos
                 plist_vid_ids.append(entry['id'])
         channel_id = info['entries'][0]['channel_id']
-        creator = info['entries'][0]['uploader']
+        uploader = info['entries'][0]['uploader']
         # construct a channel
         plist_channel = Channel(channel_id=channel_id,
-                                creator=creator)
+                                uploader=uploader)
         # return the playlist
         return Playlist(plist_id=plist_id,
                         plist_title=plist_title,
