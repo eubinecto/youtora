@@ -1,7 +1,7 @@
 # for talking to elastic search
 from typing import Generator, List
 
-from src.download.models import Channel, Playlist, Video, Caption, Track
+from src.youtube.dload.models import Channel, Playlist, Video, Caption, Track
 
 # API for indexing a single document
 from src.es.restAPIs.API import API
