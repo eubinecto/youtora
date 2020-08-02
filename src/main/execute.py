@@ -1,8 +1,8 @@
 import logging
 from typing import List
 
-from src.download.downloaders import ChannelDownloader, VideoDownloader, PlaylistDownloader
-from src.download.models import Video, Caption
+from src.youtube.dload.dloaders import ChannelDownloader, VideoDownloader, PlaylistDownloader
+from src.youtube.dload.models import Video, Caption
 from src.query.index import IdxSingle, IdxMulti
 
 import youtube_dl
