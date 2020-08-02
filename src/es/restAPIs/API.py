@@ -39,5 +39,5 @@ class API:
                 # then raise the exception again
                 raise he
             else:
-                logger.debug(json.dumps(r.json(), indent=2))
+                logger.info(json.dumps(r.json(), indent=2))
 

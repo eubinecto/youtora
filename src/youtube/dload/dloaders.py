@@ -11,6 +11,8 @@ import requests
 # use youtube_dl for getting the automatic captions
 import youtube_dl
 
+from selenium import webdriver
+
 # to be raised when no caption was found
 from .errors import CaptionNotFoundError
 
@@ -22,85 +24,6 @@ import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-
-
-# if you give it a channel url, you can get a list of videos... hopefully?
-class ChannelDownloader:
-    # define the channel themes here
-    # CHANNEL_THEMES = ("education", "entertainment", "technology", "lectures")
-    # not doing this yet.
-    # I can categorise this later.
-
-    # do not download subtitles when downloading a channel
-    CHANNEL_DL_OPTS = {
-        'writesubtitles': False,
-        'allsubtitles': False,
-        'writeautomaticsub': False,
-        'ignoreerrors': True,
-        'writethumbnail': False,
-    }
-
-    @classmethod
-    def dl_channel(cls, channel_url: str) -> Channel:
-
-        # use the video dl option.
-        with youtube_dl.YoutubeDL(cls.CHANNEL_DL_OPTS) as ydl:
-            info = ydl.extract_info(url=channel_url, download=False)
-
-        # extract this from the info.
-        channel_id = info['id']
-        uploader = info['uploader']
-        # later, you'll get channel_id & uploader from the scraper as well
-        subs = ChannelScraper.subs(channel_url)
-        vid_id_list = list()
-
-        # gather up the keys
-        for entry in info['entries']:
-            if entry:
-                vid_id_list.append(entry['id'])
-
-        return Channel(channel_id=channel_id,
-                       uploader=uploader,
-                       subs=subs,
-                       vid_id_list=vid_id_list)
-
-
-class PlaylistDownloader:
-    PLAYLIST_DL_OPTIONS = {
-        'writesubtitles': False,
-        'allsubtitles': False,
-        'writeautomaticsub': False,
-        # youtube_dl.utils.DownloadError: ERROR: 5mXahVco1ok: YouTube said: Unable to extract video data
-        # ignore this error and keep getting videos
-        'ignoreerrors': True,
-        'writethumbnail': False,
-    }
-
-    @classmethod
-    def dl_playlist(cls, playlist_url: str) -> Playlist:
-        # use the video dl option.
-        with youtube_dl.YoutubeDL(cls.PLAYLIST_DL_OPTIONS) as ydl:
-            info = ydl.extract_info(url=playlist_url, download=False)
-        # extract this from the info.
-        plist_id = info['id']
-        plist_title = info['title']
-        plist_vid_ids = list()
-        # gather up the keys
-        for entry in info['entries']:
-            if entry:  # ignore invalid videos
-                plist_vid_ids.append(entry['id'])
-        channel_id = info['entries'][0]['channel_id']
-        uploader = info['entries'][0]['uploader']
-        # construct a channel
-        subs = ChannelScraper.subs(chan_url="https://m.youtube.com/channel/{}".format(channel_id))
-        plist_channel = Channel(channel_id=channel_id,
-                                subs=subs,
-                                uploader=uploader)
-        # return the playlist
-        return Playlist(plist_id=plist_id,
-                        plist_title=plist_title,
-                        plist_vid_ids=plist_vid_ids,
-                        plist_channel=plist_channel)
 
 
 class VideoDownloader:
@@ -116,11 +39,13 @@ class VideoDownloader:
     @classmethod
     def dl_video(cls,
                  vid_url: str,
-                 lang_code: str) -> Video:
+                 lang_code: str,
+                 driver: webdriver.Chrome = None) -> Video:
         """
         given a url, returns the meta data of the channel
         :param vid_url: the url of the video
         :param lang_code: the lang code of the caption
+        :param driver
         :return: a Video object
         """
         # get the info.
@@ -140,7 +65,9 @@ class VideoDownloader:
         views = info['view_count']
 
         # better collect these info separately
-        likes, dislikes = VideoScraper.likes_dislikes(vid_url)
+        likes, dislikes = VideoScraper.likes_dislikes(vid_url,
+                                                      # give it a driver
+                                                      driver=driver)
 
         # init with None
         captions = dict()

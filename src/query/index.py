@@ -42,32 +42,6 @@ class IdxSingle:
                        refresh='true')
 
     @classmethod
-    def idx_playlist(cls, playlist: Playlist):
-        # build the doc
-        doc = {
-            "type": "playlist",
-            "plist_url": playlist.plist_url,
-            "plist_title": playlist.plist_title,
-            "plist_vid_ids": playlist.plist_vid_ids,
-            "youtora_relations": {
-                "name": "playlist",
-                "parent": playlist.plist_channel.channel_id
-            }
-        }
-        # send a request to es
-        # channel is the root, so no need for for
-        # specifying  routing
-        IdxAPI.put_doc(index="youtora",
-                       _id=playlist.plist_id,
-                       doc=doc,
-                       # automatically replaces the doc should it already exists
-                       op_type='index',
-                       # must live in the same shard as the parent
-                       routing=playlist.plist_channel.channel_id,
-                       # force refresh
-                       refresh='true')
-
-    @classmethod
     def idx_video(cls, video: Video):
         # include the parent id in data json.
 

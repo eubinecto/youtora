@@ -25,37 +25,23 @@ def create_youtora_idx():
                     }  # subs
                 }  # properties
             },  # channel
-            "playlist": {
-                "properties": {
-                    "plist_url": {
-                        "type": "keyword"
-                    },
-                    "plist_title": {
-                        "type": "keyword"
-                    },
-                    "plist_vid_ids": {
-                        # of type array. can I leave this as blank?
-                        "type": "keyword"
-                    }
-                }  # properties
-            },  # playlist
             "video": {
                 "properties": {
                     "vid_title": {
                         "type": "text"
-                    },
+                    },  # vid_title
                     "upload_date": {
                         "type": "date"
-                    },
+                    },  # upload_date
                     "views": {
                         "type": "integer"
-                    },
+                    },  # views
                     "likes": {
                         "type": "integer"
-                    },
+                    },  # likes
                     "dislikes": {
                         "type": "integer"
-                    }
+                    }  # dislikes
                 }  # properties
             },  # video
             "caption": {
@@ -88,8 +74,8 @@ def create_youtora_idx():
             "youtora_relations": {
                 "type": "join",  # join data type
                 "relations": {
-                    # a channel is a parent of both playlist and video
-                    "channel":  ["playlist", "video"],
+                    # a channel is a parent of video
+                    "channel": "video",
                     "video": "caption",
                     "caption": "track"
                 }  # relations
