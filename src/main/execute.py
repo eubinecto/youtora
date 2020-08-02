@@ -111,4 +111,3 @@ class Executor:
         Helper.help_idx_captions(video_list)
         # index all tracks
         Helper.help_idx_tracks(video_list)
-

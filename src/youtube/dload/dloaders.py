@@ -1,7 +1,7 @@
 # the models that I'll be using.
 from typing import List
 
-from .models import Channel, Video, Caption, Track
+from .models import Video, Caption, Track
 # how do I use type aliases?
 import xmltodict
 
@@ -19,7 +19,7 @@ from .errors import CaptionNotFoundError
 # for escaping character reference entities
 import html
 
-from src.youtube.scrape.scrapers import ChannelScraper, VideoScraper
+from src.youtube.scrape.scrapers import VideoScraper
 import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
