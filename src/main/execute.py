@@ -1,14 +1,17 @@
 import logging
 from typing import List
 
-from src.youtube.dload.dloaders import ChannelDownloader, VideoDownloader, PlaylistDownloader
+from src.youtube.dload.dloaders import VideoDownloader
 from src.youtube.dload.models import Video, Caption
 from src.query.index import IdxSingle, IdxMulti
 
 import youtube_dl
 
+from selenium import webdriver
 # set the logging mode from here
 # https://stackoverflow.com/questions/11548674/logging-info-doesnt-show-up-on-console-but-warn-and-error-do/11548754
+from src.youtube.scrape.scrapers import ChannelScraper, Scraper
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -16,6 +19,7 @@ class Helper:
     @classmethod
     def help_dl_vids(cls,
                      vid_id_list: List[str],
+                     driver: webdriver.Chrome,
                      lang_code: str) -> List[Video]:
         # download videos
         # make this faster using multiple processes
@@ -32,7 +36,8 @@ class Helper:
                 .format(vid_id)
             try:
                 video = VideoDownloader.dl_video(vid_url=vid_url,
-                                                 lang_code=lang_code)
+                                                 lang_code=lang_code,
+                                                 driver=driver)
             except youtube_dl.utils.DownloadError as de:
                 # if downloading the video fails, just skip this one
                 vid_logger.warning(de)
@@ -75,29 +80,7 @@ class Helper:
 
 class Executor:
     @classmethod
-    def exec_idx_playlist(cls,
-                          playlist_url: str,
-                          lang_code: str):
-        """
-        :param playlist_url: the url of the playlist
-        :param lang_code: the lang code to be used for downloading tracks
-        :return:
-        """
-        playlist = PlaylistDownloader.dl_playlist(playlist_url)
-        # idx the channel
-        IdxSingle.idx_channel(playlist.plist_channel)
-        # idx the playlist
-        IdxSingle.idx_playlist(playlist)
-        # dl all videos
-        video_list = Helper.help_dl_vids(playlist.plist_vid_ids, lang_code)
-        # index all videos
-        Helper.help_idx_vids(video_list)
-        # index all captions
-        Helper.help_idx_captions(video_list)
-        # index all tracks
-        Helper.help_idx_tracks(video_list)
-
-    @classmethod
+    # so, we are not using idx_playlist
     def exec_idx_channel(cls,
                          channel_url: str,
                          lang_code: str):
@@ -108,15 +91,23 @@ class Executor:
         """
         # download the channel's meta data, and make it into a channel object.
         # this may change once you change the logic of dl_channel with a custom one.
-        channel = ChannelDownloader.dl_channel(channel_url=channel_url)
-        # index the channel
-        IdxSingle.idx_channel(channel=channel)
+        driver = Scraper.get_driver(is_silent=True,
+                                    is_mobile=True)
+        # scrape the channel
+        channel = ChannelScraper.scrape_channel(channel_url,
+                                                driver=driver)
         # dl all videos
-        video_list = Helper.help_dl_vids(channel.vid_id_list, lang_code)
+        video_list = Helper.help_dl_vids(channel.vid_id_list,
+                                         lang_code=lang_code,
+                                         driver=driver)
+        # close the driver after doing all that
+        driver.close()
+        # then start indexing
+        # index the channel
+        IdxSingle.idx_channel(channel)
         # index all videos
         Helper.help_idx_vids(video_list)
         # index all captions
         Helper.help_idx_captions(video_list)
         # index all tracks
         Helper.help_idx_tracks(video_list)
-

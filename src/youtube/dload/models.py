@@ -43,42 +43,6 @@ class Channel:
         return self.uploader
 
 
-class Playlist:
-    # for saving memory space
-    __slots__ = (
-        "plist_id",
-        "plist_url",
-        "plist_title",
-        "plist_vid_ids",
-        "plist_channel"
-    )
-
-    def __init__(self,
-                 plist_id: str,
-                 plist_title: str,
-                 plist_vid_ids: List[str],
-                 plist_channel: Channel):
-        # key
-        self.plist_id = plist_id
-
-        self.plist_url = "http://www.youtube.com/playlist/{}" \
-            .format(plist_id)
-
-        self.plist_title = plist_title
-
-        # no reference to actual video objects
-        # just reference video id's here. (in case there are too many videos to download)
-        self.plist_vid_ids = plist_vid_ids
-
-        self.plist_channel = plist_channel
-
-    def __str__(self) -> str:
-        """
-        overrides the dunder string method
-        """
-        return self.plist_title
-
-
 class Track:
     __slots__ = (
         'track_comp_key',
