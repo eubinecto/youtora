@@ -17,6 +17,7 @@ from .errors import CaptionNotFoundError
 # for escaping character reference entities
 import html
 
+from src.youtube.scrape.scrapers import ChannelScraper, VideoScraper
 import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
@@ -49,7 +50,8 @@ class ChannelDownloader:
         # extract this from the info.
         channel_id = info['id']
         uploader = info['uploader']
-        subs = ... # to be filled later
+        # later, you'll get channel_id & uploader from the scraper as well
+        subs = ChannelScraper.subs(channel_url)
         vid_id_list = list()
 
         # gather up the keys
@@ -90,7 +92,7 @@ class PlaylistDownloader:
         channel_id = info['entries'][0]['channel_id']
         uploader = info['entries'][0]['uploader']
         # construct a channel
-        subs = ...  # to be filled later
+        subs = ChannelScraper.subs(chan_url="https://m.youtube.com/channel/{}".format(channel_id))
         plist_channel = Channel(channel_id=channel_id,
                                 subs=subs,
                                 uploader=uploader)
@@ -138,8 +140,7 @@ class VideoDownloader:
         views = info['view_count']
 
         # better collect these info separately
-        likes = ...
-        dislikes = ...
+        likes, dislikes = VideoScraper.likes_dislikes(vid_url)
 
         # init with None
         captions = dict()

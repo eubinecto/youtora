@@ -1,7 +1,7 @@
+from typing import Tuple
 
 from selenium import webdriver
-
-from src.youtube.dload.models import Video
+import re
 import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
@@ -12,6 +12,7 @@ class Scraper:
     # for now, put the executable in the same directory
     CHROME_DRIVER_PATH = "./src/youtube/scrape/chromedriver"
 
+    # I'm using this for now..
     MOBILE_OPT = {"deviceName": "Nexus 5"}
 
     @classmethod
@@ -45,9 +46,43 @@ class Scraper:
 
 class ChannelScraper(Scraper):
     """
-    not getting the subs yet.
+    keep in mind that the subs count is only
+    a rough value.
     """
-    pass
+    @classmethod
+    def subs(cls, chan_url) -> int:
+        logger = logging.getLogger("subs")
+
+        # get the driver
+        driver = super().get_driver(is_mobile=True,
+                                    is_silent=True)
+        # try getting the driver
+        # look for the subs, get the xpath
+        logger.info("loading page...")
+        driver.get(chan_url)
+
+        subs_elem = driver.find_element_by_xpath(
+            "//*[@id=\"app\"]/div[1]/ytm-browse/ytm-c4-tabbed-header-renderer/div/div/div/span"
+        )
+
+        # get the data
+        subs_data = subs_elem.text.split(" ")[0].strip()
+
+        # Now I have to parse this
+        if re.match(r'[\d,]*[KMB]$', subs_data):
+            if subs_data[-1] == 'K':
+                subs_cnt = int(float(subs_data[:-1]) * (10**3))
+            elif subs_data[-1] == 'M':
+                subs_cnt = int(float(subs_data[:-1]) * (10**6))
+            else:
+                # has a billion subs
+                subs_cnt = int(float(subs_data[:-1]) * (10**9))
+        else:
+            # less than 1K
+            subs_cnt = int(subs_data)
+
+        # check the value for debugging
+        return subs_cnt
 
 
 class VideoScraper(Scraper):
@@ -57,7 +92,7 @@ class VideoScraper(Scraper):
     :return a tuple (likes, dislikes)
     """
     @classmethod
-    def get_likes_dislikes(cls, vid_url):
+    def likes_dislikes(cls, vid_url) -> Tuple[int, int]:
         """
         get the meta data for video,
         except for captions
@@ -95,12 +130,14 @@ class VideoScraper(Scraper):
         )
 
         # now check them out
-        like_cnt = int(like_elem.get_attribute("aria-label")
+        like_cnt = int(like_elem
+                       .get_attribute("aria-label")
                        .split(" ")[0]
                        .replace(",", ""))
 
         # dislike count
-        dislike_cnt = int(dislike_elem.get_attribute("aria-label")
+        dislike_cnt = int(dislike_elem
+                          .get_attribute("aria-label")
                           .split(" ")[0]
                           .replace(",", ""))
 
