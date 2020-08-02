@@ -37,10 +37,14 @@ def create_youtora_idx():
                         "type": "integer"
                     },  # views
                     "likes": {
-                        "type": "integer"
+                        "type": "integer",
+                        # could be null
+                        "null_value": -1
                     },  # likes
                     "dislikes": {
-                        "type": "integer"
+                        "type": "integer",
+                        # could be null
+                        "null_value": -1
                     }  # dislikes
                 }  # properties
             },  # video
