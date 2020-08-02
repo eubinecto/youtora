@@ -41,6 +41,7 @@ class VideoDownloader:
                  vid_url: str,
                  lang_code: str,
                  driver: webdriver.Chrome = None) -> Video:
+        logger = logging.getLogger("dl_video")
         """
         given a url, returns the meta data of the channel
         :param vid_url: the url of the video
@@ -95,10 +96,10 @@ class VideoDownloader:
                 print(ce)
             else:
                 # on successful download
-                print("AUTO FOUND: {}".format(title))
+                logger.info("AUTO FOUND: {}".format(title))
         else:
             # on successful download
-            print("MANUAL FOUND: {}".format(title))
+            logger.info("MANUAL FOUND: {}".format(title))
 
         # returns a video object with the properties above
         return Video(vid_id=vid_id,

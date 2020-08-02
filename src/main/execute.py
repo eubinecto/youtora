@@ -4,9 +4,10 @@ from typing import List
 from src.youtube.dload.dloaders import VideoDownloader
 from src.youtube.dload.models import Video, Caption
 from src.query.index import IdxSingle, IdxMulti
-
-import youtube_dl
-
+import pickle
+import json
+import subprocess
+import time
 from selenium import webdriver
 # set the logging mode from here
 # https://stackoverflow.com/questions/11548674/logging-info-doesnt-show-up-on-console-but-warn-and-error-do/11548754
@@ -23,29 +24,32 @@ class Helper:
                      lang_code: str) -> List[Video]:
         # download videos
         # make this faster using multiple processes
-        video_list: List[Video] = list()
-        total_vid_cnt = len(vid_id_list)
-        vid_done = 0
-        # https://stackoverflow.com/questions/11548674/logging-info-doesnt-show-up-on-console-but-warn-and-error-do/11548754
-        vid_logger = logging.getLogger("help_dl_vids")
-        # 여기를 multi-processing 으로?
-        # 어떻게 할 수 있는가?
-        for vid_id in vid_id_list:
-            # make a vid_url
-            vid_url = "https://www.youtube.com/watch?v={}" \
-                .format(vid_id)
-            try:
-                video = VideoDownloader.dl_video(vid_url=vid_url,
-                                                 lang_code=lang_code,
-                                                 driver=driver)
-            except youtube_dl.utils.DownloadError as de:
-                # if downloading the video fails, just skip this one
-                vid_logger.warning(de)
-                continue
-            else:
-                video_list.append(video)
-                vid_done += 1
-                vid_logger.info("dl vid objects done: {}/{}".format(vid_done, total_vid_cnt))
+        # total_vid_cnt = len(vid_id_list)
+        # vid_done = 0
+        # vid_logger = logging.getLogger("help_dl_vids")
+
+        # do this with multiprocessing
+        proc = subprocess.Popen(
+            [
+                "python3",
+                "-m",
+                "src.main.multi_proc_dl_vids",
+                lang_code,
+                str(10),  # num_proc
+            ],
+            stdout=subprocess.PIPE
+        )
+        # write to in
+        with open("src/main/in_json.json", "w") as fh:
+            fh.write(json.dumps(vid_id_list))
+
+        # wait for this to finish.
+        proc.wait()
+        # read the output file
+        # read byte
+        with open("src/main/out.txt", 'rb') as fh:
+            video_list = pickle.loads(fh.read())
+
         return video_list
 
     @classmethod
