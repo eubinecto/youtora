@@ -1,7 +1,7 @@
 # the models that I'll be using.
 from typing import List
 
-from .models import Channel, Video, Caption, Track, Playlist
+from .models import Channel, Video, Caption, Track
 # how do I use type aliases?
 import xmltodict
 
