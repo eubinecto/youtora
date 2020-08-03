@@ -52,6 +52,9 @@ class IdxSingle:
             "views": video.views,
             "likes": video.likes,
             "dislikes": video.dislikes,
+            # in case of zero division
+            "l_to_d": 0.0 if video.likes == 0 or video.dislikes == 0
+            else video.likes / video.dislikes,
             "youtora_relations": {
                 "name": "video",
                 # provide the parent id here

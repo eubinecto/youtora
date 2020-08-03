@@ -238,9 +238,10 @@ class VideoScraper(Scraper):
             # likes & dislikes are not displayed
             # e.g. https://www.youtube.com/watch?v=tU5D51kExcY
             logger.warning(str(nse))
-            # the null value for likes & dislikes is -1
-            like_cnt = -1
-            dislike_cnt = -1
+            # when used as a rank feature..
+            # it doesn't have a null_value field
+            like_cnt = 0
+            dislike_cnt = 0
         else:
             # if the count is zero, then the convention that youtube uses
             # is to replace the value with "No"
