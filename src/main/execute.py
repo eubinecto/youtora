@@ -32,24 +32,23 @@ class Helper:
         proc = subprocess.Popen(
             [
                 "python3",
+                "-u",  # this will allow logging? no?
                 "-m",
                 "src.main.multi_proc_dl_vids",
                 lang_code,
                 str(10),  # num_proc
             ],
-            stdout=subprocess.PIPE
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
         )
-        # write to in
-        with open("src/main/in_json.json", "w") as fh:
-            fh.write(json.dumps(vid_id_list))
-
-        # wait for this to finish.
+        # use communicate.
+        # this does not work. (maybe a deadlock)
+        # write to standard in
+        pickle.dump(vid_id_list, proc.stdin)
         proc.wait()
-        # read the output file
-        # read byte
-        with open("src/main/out.txt", 'rb') as fh:
-            video_list = pickle.loads(fh.read())
-
+        video_list = pickle.load(proc.stdout)
+        proc.terminate()
+        # wait for this to finish.
         return video_list
 
     @classmethod

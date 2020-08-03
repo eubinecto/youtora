@@ -55,12 +55,13 @@ if __name__ == "__main__":
     # just serialise it
     lang_code = sys.argv[1]
     num_proc = int(sys.argv[2])
-    with open("src/main/in_json.json") as fh:
-        vid_id_list = json.loads(fh.read())
+    # read the list
+    # from a stream
+    vid_id_list = pickle.load(sys.stdin.buffer)
 
     result = multiprocess_dl_vids(vid_id_list,
                                   lang_code,
                                   num_proc)
-    # write the binary output to standard out
-    with open("src/main/out.txt", 'wb') as fh:
-        fh.write(pickle.dumps(result))
+
+    # write the result to the output stream
+    pickle.dump(result, sys.stdout.buffer)
