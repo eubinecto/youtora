@@ -9,13 +9,10 @@ class SearchAPI(API):
     """
     @classmethod
     def get_search(cls,
-                   field: str,
-                   query: str,
+                   query: dict,
                    index: str = None,
                    _from: int = 0,
-                   _size: int = 100,
-                   # could be match, match_all, etc
-                   match_type: str = "match"):
+                   _size: int = 100,):
 
         # build the request to add on
         request = "/{index}/_search".format(index=index)
@@ -24,13 +21,7 @@ class SearchAPI(API):
         request_body = {
             "from": _from,
             "size": _size,
-            "query": {
-                match_type: {
-                    field: {
-                        "query": query
-                    }  # field
-                }  # match_type
-            }  # query
+            "query": query
         }  # request body
         # send the request
         r = requests.get(url=cls.ES_ENDPOINT + request,

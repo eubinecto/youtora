@@ -25,7 +25,7 @@ class Scraper:
 
     @classmethod
     def get_driver(cls,
-                   time_out: int = 5,
+                   time_out: int = 10,
                    is_mobile: bool = False,
                    is_silent: bool = False):
         # using mobile environment
@@ -163,7 +163,7 @@ class ChannelScraper(Scraper):
         while True:
             try:
                 # try getting the show more button
-                show_more_button = WebDriverWait(driver, 3).until(
+                show_more_button = WebDriverWait(driver, 5).until(
                     e_c.element_to_be_clickable((By.CLASS_NAME, cls.SHOW_MORE_CLASS_NAME))
                 )
             except TimeoutException as nse:
@@ -238,6 +238,8 @@ class VideoScraper(Scraper):
             # likes & dislikes are not displayed
             # e.g. https://www.youtube.com/watch?v=tU5D51kExcY
             logger.warning(str(nse))
+            # when used as a rank feature..
+            # it doesn't have a null_value field
             like_cnt = 0
             dislike_cnt = 0
         else:

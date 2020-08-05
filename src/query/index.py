@@ -39,7 +39,7 @@ class IdxSingle:
                        # automatically replaces the doc should it already exists
                        op_type='index',
                        # force refresh
-                       refresh='true')
+                       refresh='false')
 
     @classmethod
     def idx_video(cls, video: Video):
@@ -47,11 +47,14 @@ class IdxSingle:
 
         doc = {
             "type": "video",
-            "title": video.vid_title,
-            "upload_date": video.upload_date,
+            "title": video.title,
+            "upload_date": video.publish_date,
             "views": video.views,
             "likes": video.likes,
             "dislikes": video.dislikes,
+            # in case of zero division
+            "l_to_d": 0.0 if video.likes == 0 or video.dislikes == 0
+            else video.likes / video.dislikes,
             "youtora_relations": {
                 "name": "video",
                 # provide the parent id here
@@ -69,7 +72,7 @@ class IdxSingle:
                        # designate a parent id
                        routing=video.channel_id,
                        # force refresh
-                       refresh='true')
+                       refresh='false')
 
     @classmethod
     def idx_caption(cls, caption: Caption):
@@ -98,7 +101,7 @@ class IdxSingle:
                        # designate a parent id
                        routing=parent_id,
                        # force refresh (make it immediately visible to search)
-                       refresh='true')
+                       refresh='false')
 
 
 def idx_track(track: Track):
@@ -127,7 +130,7 @@ def idx_track(track: Track):
                    # designate a parent id
                    routing=parent_id,
                    # force refresh
-                   refresh='true')
+                   refresh='false')
 
 
 class IdxMulti:
@@ -189,5 +192,5 @@ class IdxMulti:
             del track
 
         BulkAPI.post_bulk(request_body=request_body,
-                          refresh='true',
+                          refresh='false',
                           index="youtora")

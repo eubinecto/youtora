@@ -109,10 +109,10 @@ class Video:
     # to save RAM space
     __slots__ = (
         'vid_id',
-        'vid_url',
-        'vid_title',
+        'url',
+        'title',
         'channel_id',
-        'upload_date',
+        'publish_date',
         'captions',
         'likes',
         'dislikes',
@@ -121,30 +121,30 @@ class Video:
 
     def __init__(self,
                  vid_id: str,
-                 vid_title: str,
+                 title: str,
                  channel_id: str,
-                 upload_date: str,
+                 publish_date: str,
                  captions: Dict[str, Caption],
                  likes: int,
                  dislikes: int,
                  views: int):
         """
         :param vid_id: the unique id at the end of the vid url
-        :param vid_title: the title of the youtube video
+        :param title: the title of the youtube video
         :param channel_id: the id of the channel this video belongs to
-        :param upload_date: the uploaded date of the video
+        :param publish_date: the uploaded date of the video
         :param captions: the dictionary of captions. keys are either auto or manual
         """
         # key
         self.vid_id = vid_id
 
         # build the url yourself... save the number of parameters.
-        self.vid_url = "https://www.youtube.com/watch?v={}"\
+        self.url = "https://www.youtube.com/watch?v={}"\
                         .format(vid_id)
 
-        self.vid_title = vid_title
+        self.title = title
         self.channel_id = channel_id
-        self.upload_date = upload_date
+        self.publish_date = publish_date
         self.captions = captions
         self.likes = likes
         self.dislikes = dislikes
@@ -152,7 +152,7 @@ class Video:
 
     # overrides the dunder string method
     def __str__(self):
-        return self.vid_title
+        return self.title
 
 
 # 이것도 재미있을 듯! <- 지금은 지금 해야하는 일에 집중.

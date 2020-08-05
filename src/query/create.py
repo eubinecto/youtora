@@ -21,27 +21,33 @@ def create_youtora_idx():
                         "type": "keyword"
                     },  # creator
                     "subs": {
-                        "type": "integer"
+                        # is used with ranking
+                        "type": "rank_feature"
                     }  # subs
                 }  # properties
             },  # channel
             "video": {
                 "properties": {
-                    "vid_title": {
+                    "title": {
                         "type": "text"
-                    },  # vid_title
+                    },  # title
                     "upload_date": {
                         "type": "date"
                     },  # upload_date
                     "views": {
-                        "type": "integer"
+                        "type": "rank_feature"
                     },  # views
                     "likes": {
-                        "type": "integer"
+                        "type": "rank_feature",
                     },  # likes
                     "dislikes": {
-                        "type": "integer"
-                    }  # dislikes
+                        "type": "rank_feature",
+                        # correlates negatively
+                        "positive_score_impact": False
+                    },  # dislikes
+                    "l_to_d": {
+                        "type": "rank_feature",
+                    }
                 }  # properties
             },  # video
             "caption": {

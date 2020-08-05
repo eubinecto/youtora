@@ -14,8 +14,21 @@ def search_tracks(query_text):
     :param query_text: the text to search for
     :return: a list of youtube urls
     """
-    response = SearchAPI.get_search(field="text",
-                                    query=query_text,
+    search_query = {
+        "bool": {
+            "must": [
+                {
+                    "match": {
+                        "text": query_text
+                    }
+                }
+            ]  # must
+        }
+    }
+
+    response = SearchAPI.get_search(query=search_query,
+                                    _from=0,
+                                    _size=20,
                                     index="youtora")
     # collect a timestamped url!
     results = list()
