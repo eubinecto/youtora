@@ -24,16 +24,20 @@ class IdxAPI(API):
          By default, the index is created automatically if it doesn’t exist.
         :param _id: (Optional, string) Unique identifier for the document.
         :param doc: the doc json dict.
-        :param refresh: force update
+        :param refresh: make the fields immediately searchable.
         :param op_type: (Optional, enum) Set to create to only index the document
          if it does not already exist (put if absent).
         :param routing: (Optional, string) Target the specified primary shard
         """
+        # simple assertions
+        assert refresh in cls.REFRESH_OPS
+
         query = cls.PUT_DOC.format(index=index, _id=_id)
 
         params = dict()
 
         if refresh:
+            # make it
             params["refresh"] = refresh
         if op_type:
             assert op_type in cls.OP_TYPE_OPS

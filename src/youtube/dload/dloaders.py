@@ -57,9 +57,9 @@ class VideoDownloader:
         title = info['title']
         channel_id = info['channel_url']
         upload_date = "{year}-{month}-{day}" \
-            .format(year=info['upload_date'][:4],
-                    month=info['upload_date'][4:6],
-                    day=info['upload_date'][6:])  # e.g. 20200610 -> 2020-06-10
+            .format(year=info['publish_date'][:4],
+                    month=info['publish_date'][4:6],
+                    day=info['publish_date'][6:])  # e.g. 20200610 -> 2020-06-10
         subtitles = info['subtitles']
         auto_captions = info['automatic_captions']
         views = info['view_count']
@@ -101,10 +101,10 @@ class VideoDownloader:
             print("MANUAL FOUND: {}".format(title))
 
         # returns a video object with the properties above
-        return Video(vid_id=vid_id,
-                     vid_title=title,
+        return Video(id=vid_id,
+                     title=title,
                      channel_id=channel_id,
-                     upload_date=upload_date,
+                     publish_date=upload_date,
                      captions=captions,
                      likes=likes,
                      dislikes=dislikes,

@@ -28,9 +28,9 @@ def create_youtora_idx():
             },  # channel
             "video": {
                 "properties": {
-                    "vid_title": {
+                    "title": {
                         "type": "text"
-                    },  # vid_title
+                    },  # title
                     "upload_date": {
                         "type": "date"
                     },  # upload_date
