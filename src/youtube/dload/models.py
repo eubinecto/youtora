@@ -5,10 +5,10 @@ class Channel:
     # for saving memory space
     __slots__ = (
         "channel_id",
-        "channel_url",
-        "uploader",
+        "url",
+        "title",
+        "subs",
         "vid_id_list",
-        "subs"
     )
 
     def __init__(self,
@@ -24,10 +24,10 @@ class Channel:
         # key
         self.channel_id = channel_id
 
-        self.channel_url = "http://www.youtube.com/channel/{}"\
+        self.url = "http://www.youtube.com/channel/{}"\
                             .format(channel_id)
 
-        self.uploader = uploader
+        self.title = uploader
 
         # social feature
         self.subs = subs
@@ -40,7 +40,7 @@ class Channel:
         """
         overrides the dunder string method
         """
-        return self.uploader
+        return self.title
 
 
 class Track:
@@ -48,19 +48,19 @@ class Track:
         'track_comp_key',
         'start',
         'duration',
-        'text'
+        'content'
     )
 
     def __init__(self,
                  track_comp_key: str,
                  start: float,
                  duration: float,
-                 text: str):
+                 content: str):
         # comp key
         self.track_comp_key = track_comp_key
         self.start = start
         self.duration = duration
-        self.text = text
+        self.content = content
 
     # overrides dunder string method
     def __str__(self) -> str:
@@ -74,24 +74,24 @@ class Caption:
 
     __slots__ = (
         'caption_comp_key',
-        'caption_type',
+        'is_auto',
         'lang_code',
-        'caption_url',
+        'url',
         'tracks'
     )
 
     def __init__(self,
                  caption_comp_key: str,
-                 caption_url: str,
+                 url: str,
                  tracks: List[Track]):
         """
-        :param caption_url: the url from which the tracks can be downloaded
+        :param url: the url from which the tracks can be downloaded
         :param tracks: the list of tracks that belongs to this caption (1 to 1)
         """
         self.caption_comp_key = caption_comp_key
-        self.caption_type = caption_comp_key.split("|")[1]
+        self.is_auto = True if caption_comp_key.split("|")[1] == "auto" else False
         self.lang_code = caption_comp_key.split("|")[2]
-        self.caption_url = caption_url
+        self.url = url
         # download the tracks on init of caption
         # list of track objects.
         self.tracks = tracks

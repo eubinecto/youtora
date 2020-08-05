@@ -19,8 +19,8 @@ class IdxSingle:
         # build the doc
         doc = {
             "type": "channel",
-            "channel_url": channel.channel_url,
-            "uploader": channel.uploader,
+            "channel_url": channel.url,
+            "uploader": channel.title,
             "subs": channel.subs,
             # "channel_theme": channel.channel_theme, <- maybe later
             # parent-child relationship.
@@ -84,9 +84,9 @@ class IdxSingle:
         # include the parent id in data json
         doc = {
             "type": "caption",
-            "caption_type": caption.caption_type,
+            "caption_type": caption.is_auto,
             "lang_code": caption.lang_code,
-            "caption_url": caption.caption_url,
+            "caption_url": caption.url,
             "youtora_relations": {
                 "name": "caption",
                 "parent": parent_id
@@ -115,7 +115,7 @@ def idx_track(track: Track):
         "type": "track",
         "start": track.start,
         "duration": track.duration,
-        "text": track.text,
+        "text": track.content,
         "youtora_relations": {
             "name": "track",
             "parent": parent_id
@@ -180,7 +180,7 @@ class IdxMulti:
                 "type": "track",
                 "start": track.start,
                 "duration": track.duration,
-                "text": track.text,
+                "text": track.content,
                 "youtora_relations": {
                     "name": "track",
                     "parent": parent_id

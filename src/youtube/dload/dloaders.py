@@ -193,7 +193,7 @@ class CaptionDownloader:
             tracks = list()
 
         return Caption(caption_comp_key=caption_comp_key,
-                       caption_url=caption_url,
+                       url=caption_url,
                        tracks=tracks)
 
 
@@ -249,7 +249,7 @@ class TrackDownloader:
             tracks.append(Track(track_comp_key=track_comp_key,
                                 start=start,
                                 duration=duration,
-                                text=text))
+                                content=text))
         else:
             for idx, trackItem in enumerate(tracks_dict['transcript']['text']):
                 start: float = float(trackItem["@start"])
