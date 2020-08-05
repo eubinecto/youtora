@@ -108,7 +108,7 @@ class Video:
 
     # to save RAM space
     __slots__ = (
-        'id',
+        'vid_id',
         'url',
         'title',
         'channel_id',
@@ -120,7 +120,7 @@ class Video:
     )
 
     def __init__(self,
-                 id: str,
+                 vid_id: str,
                  title: str,
                  channel_id: str,
                  publish_date: str,
@@ -129,18 +129,18 @@ class Video:
                  dislikes: int,
                  views: int):
         """
-        :param id: the unique id at the end of the vid url
+        :param vid_id: the unique id at the end of the vid url
         :param title: the title of the youtube video
         :param channel_id: the id of the channel this video belongs to
         :param publish_date: the uploaded date of the video
         :param captions: the dictionary of captions. keys are either auto or manual
         """
         # key
-        self.id = id
+        self.vid_id = vid_id
 
         # build the url yourself... save the number of parameters.
         self.url = "https://www.youtube.com/watch?v={}"\
-                        .format(id)
+                        .format(vid_id)
 
         self.title = title
         self.channel_id = channel_id

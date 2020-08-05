@@ -101,7 +101,7 @@ class VideoDownloader:
             print("MANUAL FOUND: {}".format(title))
 
         # returns a video object with the properties above
-        return Video(id=vid_id,
+        return Video(vid_id=vid_id,
                      title=title,
                      channel_id=channel_id,
                      publish_date=upload_date,

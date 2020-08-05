@@ -65,7 +65,7 @@ class IdxSingle:
 
         # send request
         IdxAPI.put_doc(index="youtora",
-                       _id=video.id,
+                       _id=video.vid_id,
                        doc=doc,
                        # automatically replaces the doc should it already exists
                        op_type='index',
