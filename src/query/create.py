@@ -2,93 +2,124 @@
 # for creating youtora
 from src.es.restAPIs.idxAPIs.idxManagement import CreateIdxAPI
 
+YOUTORA_TRACKS_IDX_MAPPINGS = {
+  "mappings": {
+    "properties": {
+      "start": {
+        "type": "double"
+      },
+      "duration": {
+        "type": "double"
+      },
+      "content": {
+        "type": "text"
+      },
+      "caption": {
+        "properties": {
+          "id": {
+            # keyword data type: only searchable by the exact value
+            # https://www.elastic.co/guide/en/elasticsearch/reference/current/keyword.html
+            "type": "keyword"
+          },
+          "is_auto": {
+            "type" : "boolean"
+          },
+          "lang_code": {
+            "type": "keyword"
+          },
+          "video": {
+            "properties": {
+              "id": {
+                "type": "keyword"
+              },
+              "views": {
+                "type": "rank_feature"
+              },
+              "likes": {
+                "type": "rank_feature"
+              },
+              "dislikes": {
+                "type": "rank_feature",
+                "positive_score_impact": False
+              },
+              "l_to_d": {
+                "type": "rank_feature"
+              },
+              "publish_date_int": {
+                "type": "rank_feature"
+              },
+              "channel": {
+                "properties": {
+                  "id": {
+                    "type": "keyword"
+                  },
+                  "subs": {
+                    "type": "rank_feature"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+YOUTORA_COLL_IDX_MAPPINGS = {
+  "mappings": {
+    "properties": {
+      "doc_type": {
+        "type": "keyword"
+      },
+      "url": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text"
+      },
+      "lang_code": {
+        "type": "keyword"
+      },
+      "is_auto": {
+        "type": "boolean"
+      },
+      "views": {
+        "type": "integer"
+      },
+      "dislikes": {
+        "type": "integer"
+      },
+      "l_to_d": {
+        "type": "integer"
+      },
+      "publish_date": {
+        "type": "date"
+      },
+      "publish_date_int": {
+        "type": "integer"
+      }
+    }
+  }
+}
+
 
 def create_youtora_idx():
     """
     creates the youtora index with the given configurations
     """
-    # keyword data type: only searchable by tis exact value
-    # https://www.elastic.co/guide/en/elasticsearch/reference/current/keyword.html
-    # schema for the index above is defined here
-    mappings = {
-        "properties": {
-            "channel": {
-                "properties": {
-                    "channel_url": {
-                        "type": "keyword"  # 이건 필요없을 수도.
-                    },
-                    "uploader": {
-                        "type": "keyword"
-                    },  # creator
-                    "subs": {
-                        # is used with ranking
-                        "type": "rank_feature"
-                    }  # subs
-                }  # properties
-            },  # channel
-            "video": {
-                "properties": {
-                    "title": {
-                        "type": "text"
-                    },  # title
-                    "upload_date": {
-                        "type": "date"
-                    },  # upload_date
-                    "views": {
-                        "type": "rank_feature"
-                    },  # views
-                    "likes": {
-                        "type": "rank_feature",
-                    },  # likes
-                    "dislikes": {
-                        "type": "rank_feature",
-                        # correlates negatively
-                        "positive_score_impact": False
-                    },  # dislikes
-                    "l_to_d": {
-                        "type": "rank_feature",
-                    }
-                }  # properties
-            },  # video
-            "caption": {
-                "properties": {
-                    "caption_url": {
-                        "type": "keyword"
-                    },
-                    "caption_type": {
-                        "type": "keyword"
-                    },
-                    "lang_code": {
-                        "type": "keyword"
-                    }
-                }  # properties
-            },  # caption
-            "track": {
-                "properties": {
-                    "start": {
-                        "type": "double"
-                    },
-                    "duration": {
-                        "type": "double"
-                    },
-                    "text": {
-                        "type": "text"
-                    }
-                }  # properties
-            },  # track
-            # note: the _parent thing is deprecated in elastic search 7.
-            "youtora_relations": {
-                "type": "join",  # join data type
-                "relations": {
-                    # a channel is a parent of video
-                    "channel": "video",
-                    "video": "caption",
-                    "caption": "track"
-                }  # relations
-            }  # youtora_relations
-        }  # properties
-    }  # mappings_config
+    global YOUTORA_TRACKS_IDX_MAPPINGS
+    global YOUTORA_COLL_IDX_MAPPINGS
 
-    # call to es
-    CreateIdxAPI.create_idx(index="youtora",
-                            mappings=mappings)
+    # create youtora_tracks
+    # de-normalisation of the fields.
+    CreateIdxAPI.create_idx(index="youtora_tracks",
+                            mappings=YOUTORA_TRACKS_IDX_MAPPINGS)
+
+    # create youtora_coll
+    CreateIdxAPI.create_idx(index="youtora_coll",
+                            mappings=YOUTORA_COLL_IDX_MAPPINGS)
+
+
+
