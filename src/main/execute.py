@@ -102,7 +102,7 @@ class Executor:
                                                     driver=driver)
         finally:
             # always close the driver
-            # regardless of what happens (a good practice)
+            # regardless of what happens
             # close the driver after doing all that
             logger.info("closing the selenium driver")
             # use quit, instead of close
