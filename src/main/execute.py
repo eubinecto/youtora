@@ -105,7 +105,8 @@ class Executor:
             # regardless of what happens (a good practice)
             # close the driver after doing all that
             logger.info("closing the selenium driver")
-            driver.close()
+            # use quit, instead of close
+            driver.quit()
 
         # dl all videos
         video_list = Helper.help_dl_vids(channel.vid_id_list,
