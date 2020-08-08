@@ -39,13 +39,11 @@ class VideoDownloader:
     @classmethod
     def dl_video(cls,
                  vid_url: str,
-                 lang_code: str,
-                 driver: webdriver.Chrome = None) -> Video:
+                 lang_code: str) -> Video:
         """
         given a url, returns the meta data of the channel
         :param vid_url: the url of the video
         :param lang_code: the lang code of the caption
-        :param driver
         :return: a Video object
         """
         # get the info.
@@ -65,9 +63,7 @@ class VideoDownloader:
         views = info['view_count']
 
         # better collect these info separately
-        likes, dislikes = VideoScraper.likes_dislikes(vid_url,
-                                                      # give it a driver
-                                                      driver=driver)
+        likes, dislikes = VideoScraper.likes_dislikes(vid_url)
 
         # init with None
         captions = dict()

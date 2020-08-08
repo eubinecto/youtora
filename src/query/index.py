@@ -50,7 +50,7 @@ class IdxSingle:
             "likes": video.likes,
             "dislikes": video.dislikes,
             # in case of zero division, the value should be -1
-            "like_ratio": -1 if video.likes == 0 and video.dislikes == 0
+            "like_ratio": None if not video.likes or not video.dislikes
             else video.likes / (video.dislikes + video.likes)
         }  # doc
 
@@ -153,7 +153,7 @@ class IdxMulti:
                         "likes": video.likes,
                         "dislikes": video.dislikes,
                         # if if their sum is zero, then the value defaults to -1.
-                        "like_ratio": -1 if (video.likes + video.dislikes) == 0
+                        "like_ratio": None if not video.likes or not video.dislikes
                         else video.likes / (video.dislikes + video.likes),
                         "publish_date_int": int("".join(video.publish_date.split("-"))),
                         "channel": {
