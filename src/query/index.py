@@ -109,7 +109,6 @@ class IdxMulti:
 
     @classmethod
     def idx_tracks(cls,
-                   tracks: List[Track],
                    caption: Caption,
                    video: Video,
                    channel: Channel,
@@ -117,12 +116,13 @@ class IdxMulti:
 
         """
         uses bulk api to index all the tracks at once.
-        :param tracks: the list of tracks to index
         :param caption: the caption that the track belongs to
         :param video: the video that the track belongs to
         :param channel: the channel that the track belongs to
         :param op_type: ...?
         """
+        # get the tracks
+        tracks = caption.tracks
         # build a request body
         request_body = list()
         # gather up all the docs
