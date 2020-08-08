@@ -19,7 +19,6 @@ class Helper:
     @classmethod
     def help_dl_vids(cls,
                      vid_id_list: List[str],
-                     driver: webdriver.Chrome,
                      lang_code: str) -> List[Video]:
         # download videos
         # make this faster using multiple processes
@@ -36,8 +35,7 @@ class Helper:
                 .format(vid_id)
             try:
                 video = VideoDownloader.dl_video(vid_url=vid_url,
-                                                 lang_code=lang_code,
-                                                 driver=driver)
+                                                 lang_code=lang_code)
             except youtube_dl.utils.DownloadError as de:
                 # if downloading the video fails, just skip this one
                 vid_logger.warning(de)
@@ -93,19 +91,26 @@ class Executor:
         :param lang_code: the lang code to be used for downloading tracks
         :return:
         """
+        logger = logging.getLogger("exec_idx_channel")
         # download the channel's meta data, and make it into a channel object.
         # this may change once you change the logic of dl_channel with a custom one.
         driver = Scraper.get_driver(is_silent=True,
                                     is_mobile=True)
         # scrape the channel
-        channel = ChannelScraper.scrape_channel(channel_url,
-                                                driver=driver)
+        try:
+            channel = ChannelScraper.scrape_channel(channel_url,
+                                                    driver=driver)
+        finally:
+            # always close the driver
+            # regardless of what happens (a good practice)
+            # close the driver after doing all that
+            logger.info("closing the selenium driver")
+            driver.close()
+
         # dl all videos
         video_list = Helper.help_dl_vids(channel.vid_id_list,
-                                         lang_code=lang_code,
-                                         driver=driver)
-        # close the driver after doing all that
-        driver.close()
+                                         lang_code=lang_code)
+
         # then start indexing
         # index the channel
         IdxSingle.idx_channel(channel)
