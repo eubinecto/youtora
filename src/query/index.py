@@ -1,6 +1,7 @@
 # for talking to elastic search
 from typing import Generator, List
 
+from src.query.create import IdxQuery
 from src.youtube.dload.models import Channel, Video, Caption, Track
 
 # API for indexing a single document
@@ -17,62 +18,50 @@ class IdxSingle:
         :param channel: a channel object
         """
         # build the doc
-        doc = {
-            "type": "channel",
-            "channel_url": channel.channel_url,
-            "uploader": channel.uploader,
+        doc_body = {
+            "doc_type": "channel",
+            "url": channel.url,
+            "title": channel.title,
             "subs": channel.subs,
-            # "channel_theme": channel.channel_theme, <- maybe later
-            # parent-child relationship.
-            # channel is the root, so no need for specifying
-            # the parent id. (which does not exist)
-            "youtora_relations": {
-                "name": "channel"
-            }
         }
         # send a request to es
         # channel is the root, so no need for for
         # specifying  routing
-        IdxAPI.put_doc(index="youtora",
+        IdxAPI.put_doc(index=IdxQuery.YOUTORA_COLL_IDX_NAME,
                        _id=channel.channel_id,
-                       doc=doc,
+                       doc=doc_body,
                        # automatically replaces the doc should it already exists
                        op_type='index',
-                       # force refresh
-                       refresh='false')
+                       # force refresh (immediately visible by search)
+                       refresh='true')
 
     @classmethod
     def idx_video(cls, video: Video):
         # include the parent id in data json.
 
-        doc = {
-            "type": "video",
+        doc_body = {
+            "doc_type": "video",
+            "url": video.url,
             "title": video.title,
-            "upload_date": video.publish_date,
+            "publish_date": video.publish_date,
+            # store it as an int, to be used as a ranking feature
+            "publish_date_int": int("".join(video.publish_date.split("-"))),
             "views": video.views,
             "likes": video.likes,
             "dislikes": video.dislikes,
-            # in case of zero division
-            "l_to_d": 0.0 if video.likes == 0 or video.dislikes == 0
-            else video.likes / video.dislikes,
-            "youtora_relations": {
-                "name": "video",
-                # provide the parent id here
-                # a channel is the parent of a video
-                "parent": video.channel_id
-            }  # relation key
+            # in case of zero division, the value should be -1
+            "like_ratio": -1 if video.likes == 0 and video.dislikes == 0
+            else video.likes / (video.dislikes + video.likes)
         }  # doc
 
         # send request
-        IdxAPI.put_doc(index="youtora",
+        IdxAPI.put_doc(index=IdxQuery.YOUTORA_COLL_IDX_NAME,
                        _id=video.vid_id,
-                       doc=doc,
+                       doc=doc_body,
                        # automatically replaces the doc should it already exists
                        op_type='index',
-                       # designate a parent id
-                       routing=video.channel_id,
                        # force refresh
-                       refresh='false')
+                       refresh='true')
 
     @classmethod
     def idx_caption(cls, caption: Caption):
@@ -82,55 +71,21 @@ class IdxSingle:
 
         # build the data to send to elastic search
         # include the parent id in data json
-        doc = {
-            "type": "caption",
-            "caption_type": caption.caption_type,
+        doc_body = {
+            "doc_type": "caption",
+            "url": caption.url,
             "lang_code": caption.lang_code,
-            "caption_url": caption.caption_url,
-            "youtora_relations": {
-                "name": "caption",
-                "parent": parent_id
-            }
+            "is_auto": caption.is_auto
         }
         # send a request to es
-        IdxAPI.put_doc(index="youtora",
+        IdxAPI.put_doc(index=IdxQuery.YOUTORA_COLL_IDX_NAME,
                        _id=caption.caption_comp_key,
-                       doc=doc,
+                       doc=doc_body,
                        # automatically replaces the doc should it already exists
                        op_type='index',
                        # designate a parent id
-                       routing=parent_id,
                        # force refresh (make it immediately visible to search)
-                       refresh='false')
-
-
-def idx_track(track: Track):
-    
-    # caption is the parent of track
-    parent_id = "|".join(track.track_comp_key.split("|")[:-1])
-
-    # build the data to send to elastic search
-    # include the parent id in data json
-    doc = {
-        "type": "track",
-        "start": track.start,
-        "duration": track.duration,
-        "text": track.text,
-        "youtora_relations": {
-            "name": "track",
-            "parent": parent_id
-        }
-    }
-    # make a request to es
-    IdxAPI.put_doc(index="youtora",
-                   _id=track.track_comp_key,
-                   doc=doc,
-                   # automatically replaces the doc should it already exists
-                   op_type='index',
-                   # designate a parent id
-                   routing=parent_id,
-                   # force refresh
-                   refresh='false')
+                       refresh='true')
 
 
 class IdxMulti:
@@ -154,43 +109,67 @@ class IdxMulti:
 
     @classmethod
     def idx_tracks(cls,
-                   tracks: List[Track],
+                   caption: Caption,
+                   video: Video,
+                   channel: Channel,
                    op_type: str = None):
+
         """
-        uses bulk api to store all the tracks at a single request
+        uses bulk api to index all the tracks at once.
+        :param caption: the caption that the track belongs to
+        :param video: the video that the track belongs to
+        :param channel: the channel that the track belongs to
+        :param op_type: ...?
         """
+        # get the tracks
+        tracks = caption.tracks
+        # build a request body
         request_body = list()
         # gather up all the docs
         for track in tracks:
             # extract the parent id
             parent_id = "|".join(track.track_comp_key.split("|")[:-1])
-            request = {
+            query = {
                 "index": {
-                    "_index": "youtora",
+                    "_index": IdxQuery.YOUTORA_TRACKS_IDX_NAME,
                     "_id": track.track_comp_key,
-                    # you can specify routing point for each action
-                    # https://stackoverflow.com/questions/19745515/why-doesnt-routing-work-with-elasticsearch-bulk-api
-                    "routing": parent_id
                 }  # index
-            }  # request
+            }  # query
             if op_type:
                 assert op_type in API.OP_TYPE_OPS
-                request["index"]["op_type"] = op_type
-            doc = {
-                "type": "track",
+                query["index"]["op_type"] = op_type
+            doc_body = {
+                "doc_type": "track",
                 "start": track.start,
                 "duration": track.duration,
-                "text": track.text,
-                "youtora_relations": {
-                    "name": "track",
-                    "parent": parent_id
-                }
-            }
-            request_body.append(request)
-            request_body.append(doc)
+                "content": track.content,
+                "caption": {
+                    "id": caption.caption_comp_key,
+                    "is_auto": caption.is_auto,
+                    "lang_code": caption.lang_code,
+                    "video": {
+                        "id": video.vid_id,
+                        "views": video.views,
+                        "likes": video.likes,
+                        "dislikes": video.dislikes,
+                        # if if their sum is zero, then the value defaults to -1.
+                        "like_ratio": -1 if (video.likes + video.dislikes) == 0
+                        else video.likes / (video.dislikes + video.likes),
+                        "publish_date_int": int("".join(video.publish_date.split("-"))),
+                        "channel": {
+                            "id": channel.channel_id,
+                            "subs": channel.subs
+                        }  # channel
+                    }  # video
+                }  # caption
+            }  # doc_body
+            request_body.append(query)
+            request_body.append(doc_body)
             # delete the track once used
             del track
 
+        # call to the es
         BulkAPI.post_bulk(request_body=request_body,
-                          refresh='false',
-                          index="youtora")
+                          # immediately searchable
+                          refresh='true',
+                          index=IdxQuery.YOUTORA_TRACKS_IDX_NAME)

@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 from src.youtube.dload.dloaders import VideoDownloader
-from src.youtube.dload.models import Video, Caption
+from src.youtube.dload.models import Video, Caption, Channel
 from src.query.index import IdxSingle, IdxMulti
 
 import youtube_dl
@@ -69,11 +69,15 @@ class Helper:
                 IdxSingle.idx_caption(caption)
 
     @classmethod
-    def help_idx_tracks(cls, video_list: List[Video]):
+    def help_idx_tracks(cls,
+                        channel: Channel,
+                        video_list: List[Video]):
         for vid in video_list:
             for _, caption in vid.captions.items():
                 caption: Caption
-                IdxMulti.idx_tracks(caption.tracks,
+                IdxMulti.idx_tracks(caption=caption,
+                                    channel=channel,
+                                    video=vid,
                                     # automatically replaces the doc should it already exists
                                     op_type='index')
 
@@ -110,4 +114,7 @@ class Executor:
         # index all captions
         Helper.help_idx_captions(video_list)
         # index all tracks
-        Helper.help_idx_tracks(video_list)
+        # index with channel
+        Helper.help_idx_tracks(channel=channel,
+                               video_list=video_list)
+
