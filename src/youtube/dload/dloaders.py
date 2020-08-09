@@ -38,16 +38,17 @@ class VideoDownloader:
         'quiet': True
     }  # VIDEO_DL_OPTIONS
 
+    # korean, japanese, english, british english, french
+    LANG_CODES_TO_COLLECT = {'ko', 'ja', 'en', 'en-GB', 'fr'}
+
     @classmethod
-    def dl_video(cls,
-                 vid_url: str,
-                 lang_code: str) -> Video:
+    def dl_video(cls, vid_url: str) -> Video:
         """
         given a url, returns the meta data of the channel
         :param vid_url: the url of the video
-        :param lang_code: the lang code of the caption
         :return: a Video object
         """
+        logger = logging.getLogger("dl_video")
         # get the info.
         with youtube_dl.YoutubeDL(cls.VIDEO_DL_OPTS) as ydl:
             info = ydl.extract_info(url=vid_url, download=False)
@@ -55,7 +56,7 @@ class VideoDownloader:
         # access the results
         vid_id = info['id']
         title = info['title']
-        channel_id = info['channel_url']
+        channel_id = info['channel_id']
         upload_date = "{year}-{month}-{day}" \
             .format(year=info['upload_date'][:4],
                     month=info['upload_date'][4:6],
@@ -67,36 +68,44 @@ class VideoDownloader:
         # better collect these info separately
         likes, dislikes = VideoScraper.likes_dislikes(vid_url)
 
-        # init with None
-        captions = dict()
-        # try getting caption of type manual
-        try:
-            # manual
-            caption_type = CaptionDownloader.CAPTION_TYPES[0]
-            captions[caption_type] = CaptionDownloader.dl_caption(vid_id=vid_id,
-                                                                  video_subtitles=subtitles,
-                                                                  video_auto_captions=auto_captions,
-                                                                  caption_type=caption_type,
-                                                                  lang_code=lang_code)
-        except CaptionNotFoundError as ce:
-            print(ce)
-            # if manual is not found, try getting the caption of type auto
+        # captions now should be a list of captions
+        captions = list()
+
+        # first get all available manual captions.
+        for lang_code in cls.LANG_CODES_TO_COLLECT:
             try:
-                # auto
-                caption_type = CaptionDownloader.CAPTION_TYPES[1]
-                captions[caption_type] = CaptionDownloader.dl_caption(vid_id=vid_id,
-                                                                      video_subtitles=subtitles,
-                                                                      video_auto_captions=auto_captions,
-                                                                      caption_type=caption_type,
-                                                                      lang_code=lang_code)
+                # manual
+                caption_type = "manual"
+                manual_caption = CaptionDownloader.dl_caption(vid_id=vid_id,
+                                                              video_subtitles=subtitles,
+                                                              video_auto_captions=auto_captions,
+                                                              caption_type=caption_type,
+                                                              lang_code=lang_code)
             except CaptionNotFoundError as ce:
-                print(ce)
+                logger.info(str(ce))
+                # try getting an automatic one
+                try:
+                    caption_type = "auto"
+                    auto_caption = CaptionDownloader.dl_caption(vid_id=vid_id,
+                                                                video_subtitles=subtitles,
+                                                                video_auto_captions=auto_captions,
+                                                                caption_type=caption_type,
+                                                                lang_code=lang_code)
+                except CaptionNotFoundError as ce:
+                    # automatic one was not found either
+                    logger.info(str(ce))
+                else:
+                    # collect the automatic caption
+                    captions.append(auto_caption)
+                    logger.info("FOUND: {},{}".format(caption_type, lang_code))
+
             else:
-                # on successful download
-                print("AUTO FOUND: {}".format(title))
-        else:
-            # on successful download
-            print("MANUAL FOUND: {}".format(title))
+                # collect the manual caption
+                captions.append(manual_caption)
+                logger.info("FOUND: {},{}".format(caption_type, lang_code))
+
+        # if there are no captions at all... then.. what do we do?
+        # should we still index the video? yeah, we do. why not?
 
         # returns a video object with the properties above
         return Video(vid_id=vid_id,
@@ -116,10 +125,8 @@ class CaptionDownloader:
     # the caption format I'll be using
     CAPTION_FORMAT = 'srv1'
 
-    # korean, japanese, english, british english, french
-    LANG_CODES_TO_COLLECT = {'ko', 'ja', 'en', 'en-GB', 'fr'}
-
     # list of caption formats
+    # used by youtube_dl
     FORMAT_IDX = {
         'srv1': 0,
         'srv2': 1,
@@ -134,7 +141,7 @@ class CaptionDownloader:
                    video_subtitles,
                    video_auto_captions,
                    caption_type: str,
-                   lang_code: str = 'en'):
+                   lang_code: str):
         """
         extract the caption from the video object
         need to handle the case where the lang code does not exist.
@@ -143,7 +150,7 @@ class CaptionDownloader:
         :param video_subtitles:
         :param video_auto_captions:
         :param caption_type: manual = manually written, auto = ASR. the default is auto.
-        :param lang_code: default is english
+        :param lang_code: the language code should be given
         :return: a caption object
         """
         # input check - must be either  "manual" or "auto"
@@ -170,22 +177,17 @@ class CaptionDownloader:
         # refers to the same memory location. ("NULL" in C)
         # so it makes sense to use is operator rather than equality operator.
         if not caption_url:
-            raise CaptionNotFoundError("NOT FOUND: caption type={}, lang code={}"
+            raise CaptionNotFoundError("NOT FOUND: {},{}"
                                        .format(caption_type, lang_code))
 
         # this will be the id of each caption
         caption_comp_key = "|".join([vid_id, caption_type, lang_code])
 
         # get the tracks with the given caption url
-        try:
-            tracks = TrackDownloader.dl_tracks(caption_comp_key=caption_comp_key,
+        tracks = TrackDownloader.dl_tracks(caption_comp_key=caption_comp_key,
                                                caption_url=caption_url)
-        except requests.exceptions.HTTPError as he:
-            # print the error message
-            print(he)
-            # and tracks is an empty list
-            tracks = list()
 
+        # return the caption object with tracks
         return Caption(caption_comp_key=caption_comp_key,
                        vid_id=vid_id,
                        url=caption_url,
@@ -206,7 +208,7 @@ class TrackDownloader:
         :return: a list of Track objects
         """
         logger = logging.getLogger("dl_tracks")
-        # first, get the response
+        # first, get the response (download)
         response = requests.get(caption_url)
         # check if the response was erroneous
         response.raise_for_status()

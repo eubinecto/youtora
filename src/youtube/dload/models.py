@@ -133,7 +133,7 @@ class Video:
                  title: str,
                  channel_id: str,
                  publish_date: str,
-                 captions: Dict[str, Caption],
+                 captions: List[Caption],
                  likes: int,
                  dislikes: int,
                  views: int):
@@ -142,7 +142,7 @@ class Video:
         :param title: the title of the youtube video
         :param channel_id: the id of the channel this video belongs to
         :param publish_date: the uploaded date of the video
-        :param captions: the dictionary of captions. keys are either auto or manual
+        :param captions: the list of captions. contains all collected captions.
         """
         # key
         self.vid_id = vid_id

@@ -1,5 +1,5 @@
 # for talking to elastic search
-from typing import Generator, List
+from typing import Generator
 
 from src.query.create import Youtora
 from src.youtube.dload.models import Channel, Video, Caption
@@ -53,7 +53,7 @@ class IdxSingle:
             "likes": video.likes,
             "dislikes": video.dislikes,
             # in case of zero division, the value should be -1
-            "like_ratio": None if not video.likes or not video.dislikes
+            "like_ratio": 0 if (video.likes + video.dislikes) == 0
             else video.likes / (video.dislikes + video.likes)
         }  # doc
 
@@ -68,14 +68,11 @@ class IdxSingle:
 
     @classmethod
     def idx_caption(cls, caption: Caption):
-
-        # video is the parent of caption
-        parent_id = caption.caption_comp_key.split("|")[0]
-
         # build the data to send to elastic search
         # include the parent id in data json
         doc_body = {
             "doc_type": "caption",
+            # video is the parent of caption
             "parent_id": caption.vid_id,
             "url": caption.url,
             "lang_code": caption.lang_code,
@@ -133,7 +130,6 @@ class IdxMulti:
         # gather up all the docs
         for track in tracks:
             # extract the parent id
-            parent_id = "|".join(track.track_comp_key.split("|")[:-1])
             query = {
                 "index": {
                     "_index": Youtora.YOUTORA_TRACKS_IDX_NAME,
@@ -155,11 +151,6 @@ class IdxMulti:
                     "video": {
                         "id": video.vid_id,
                         "views": video.views,
-                        "likes": video.likes,
-                        "dislikes": video.dislikes,
-                        # if if their sum is zero, then the value defaults to -1.
-                        "like_ratio": None if not video.likes or not video.dislikes
-                        else video.likes / (video.dislikes + video.likes),
                         "publish_date_int": int("".join(video.publish_date.split("-"))),
                         "channel": {
                             "id": channel.channel_id,
@@ -169,6 +160,20 @@ class IdxMulti:
                     }  # video
                 }  # caption
             }  # doc_body
+            if video.likes > 0 or video.dislikes > 0:
+                if video.likes > 0:
+                    # add like cnt
+                    doc_body['caption']['video']['likes'] = video.likes
+
+                    # like ratio must be greater than zero as well
+                    doc_body['caption']['video']['like_ratio']: float = video.likes / (video.likes + video.dislikes)
+
+                # dislike cnt
+                if video.dislikes > 0:
+                    # add dislike cnt
+                    doc_body['caption']['video']['dislikes'] = video.dislikes
+
+            # append to the request
             request_body.append(query)
             request_body.append(doc_body)
             # delete the track once used

@@ -34,8 +34,7 @@ class Helper:
             vid_url = "https://www.youtube.com/watch?v={}" \
                 .format(vid_id)
             try:
-                video = VideoDownloader.dl_video(vid_url=vid_url,
-                                                 lang_code=lang_code)
+                video = VideoDownloader.dl_video(vid_url=vid_url)
             except youtube_dl.utils.DownloadError as de:
                 # if downloading the video fails, just skip this one
                 vid_logger.warning(de)
@@ -44,6 +43,7 @@ class Helper:
                 video_list.append(video)
                 vid_done += 1
                 vid_logger.info("dl vid objects done: {}/{}".format(vid_done, total_vid_cnt))
+
         return video_list
 
     @classmethod
@@ -61,7 +61,7 @@ class Helper:
         """
         # index all captions
         for video in video_list:
-            for caption_type, caption in video.captions.items():
+            for caption in video.captions:
                 caption_type: str
                 caption: Caption
                 IdxSingle.idx_caption(caption)
@@ -71,7 +71,7 @@ class Helper:
                         channel: Channel,
                         video_list: List[Video]):
         for vid in video_list:
-            for _, caption in vid.captions.items():
+            for caption in vid.captions:
                 caption: Caption
                 IdxMulti.idx_tracks(caption=caption,
                                     channel=channel,
@@ -92,7 +92,7 @@ class Executor:
         :return:
         """
         # pre condition
-        assert lang_code in CaptionDownloader.LANG_CODES_TO_COLLECT, "the lang code is invalid"
+        assert lang_code in VideoDownloader.LANG_CODES_TO_COLLECT, "the lang code is invalid"
 
         logger = logging.getLogger("exec_idx_channel")
         # download the channel's meta data, and make it into a channel object.
