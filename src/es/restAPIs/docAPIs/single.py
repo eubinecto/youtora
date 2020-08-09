@@ -47,7 +47,7 @@ class IdxAPI(API):
             assert refresh in cls.REFRESH_OPS
             params["routing"] = routing
 
-        r = requests.put(url=super().ES_ENDPOINT + query,
+        r = requests.put(url=super().ES_ENDPOINT_LOCAL + query,
                          json=doc,
                          params=params)
 
@@ -68,7 +68,7 @@ class GetAPI(API):
     def get_doc(cls, index: str, _id: str) -> dict:
         query = cls.GET_DOC.format(index=index, _id=_id)
 
-        r = requests.get(url=super().ES_ENDPOINT + query)
+        r = requests.get(url=super().ES_ENDPOINT_LOCAL + query)
 
         # check if the request was successful
         return r.json()

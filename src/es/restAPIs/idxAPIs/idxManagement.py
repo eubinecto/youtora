@@ -30,7 +30,7 @@ class CreateIdxAPI(API):
             request_body["mappings"] = mappings
 
         # send the request
-        r = requests.put(url=super().ES_ENDPOINT + "/{index}".format(index=index),
+        r = requests.put(url=super().ES_ENDPOINT_LOCAL + "/{index}".format(index=index),
                          json=request_body)
         # log it
         super().Utils.log_response(r, "create_idx")
@@ -50,7 +50,7 @@ class DeleteIdxAPI(API):
         :return : the response from es
         """
         # send the request
-        r = requests.delete(url=super().ES_ENDPOINT + "/{index}".format(index=index))
+        r = requests.delete(url=super().ES_ENDPOINT_LOCAL + "/{index}".format(index=index))
         # log it
         super().Utils.log_response(r, "delete_idx")
         # if no exception is thrown, then return the json
@@ -71,7 +71,7 @@ class GetIdxAPI(API):
         :return: the response from es
         """
         # send the request
-        r = requests.get(url=super().ES_ENDPOINT + "/{index}".format(index=index))
+        r = requests.get(url=super().ES_ENDPOINT_LOCAL + "/{index}".format(index=index))
         # log it
         super().Utils.log_response(r, "delete_idx")
         # if no exception is thrown, then return the json

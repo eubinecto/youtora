@@ -11,7 +11,10 @@ class API:
     # currently the end point of elastic search is set to local host.
     # with the port number used by the elastic search.
     # change this to AWS endpoint after deploying the engine to AWS.
-    ES_ENDPOINT = "http://localhost:9200"
+    ES_ENDPOINT_LOCAL = "http://localhost:9200"
+
+    # the one to use for deployment
+    ES_ENDPOINT_DEPLOY = "https://7cc32be9e722450490af8fb6942f5cf1.asia-northeast1.gcp.cloud.es.io:9243"
 
     # options to be used for validation
     REFRESH_OPS = ('true', 'false', 'wait_for')

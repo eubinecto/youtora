@@ -9,44 +9,66 @@ import re
 from src.query.create import Youtora
 
 
-def search_tracks(query_text):
+def search_tracks(query_text,
+                  chan_lang_code: str = 'en',
+                  caption_lang_code: str = 'en',
+                  views_boost: int = 10,
+                  like_ratio_boost: int = 5,
+                  subs_boost: int = 2):
     """
-    # should return a list of youtube url's,
+    # should return a list of youtube urls,
     # each starting with the exact moment the track is uttered!
+    :param caption_lang_code:
+    :param chan_lang_code:
     :param query_text: the text to search for
+    :param views_boost:
+    :param like_ratio_boost
+    :param subs_boost
     :return: a list of youtube urls
     """
     search_query = {
         "bool": {
-            "must": [
-                {
-                    "match": {
-                        "content": query_text
-                    }
-                }
-            ],  # must
-            "should": [
-                {
-                    "rank_feature": {
-                        "field": "caption.video.views",
-                        "boost": 70
-                    }
-                },
-                {
-                    "rank_feature": {
-                        "field": "caption.video.like_ratio",
-                        "boost": 20
-                    }
-                },
-                {
-                    "rank_feature": {
-                        "field": "caption.video.channel.subs",
-                        "boost": 10
-                    }
-                }
-            ]  # should
+          "must": [
+            {
+              "match": {
+                "content": query_text
+              }
+            }
+          ],
+          "should": [
+            {
+              "rank_feature": {
+                "field": "caption.video.views",
+                "boost": views_boost
+              }
+            },
+            {
+              "rank_feature": {
+                "field": "caption.video.like_ratio",
+                "boost": like_ratio_boost
+              }
+            },
+            {
+              "rank_feature": {
+                "field": "caption.video.channel.subs",
+                "boost": subs_boost
+              }
+            }
+          ],
+          "filter": [
+            {
+              "term": {
+                "caption.video.channel.lang_code": chan_lang_code
+              }
+            },
+            {
+              "term": {
+                "caption.lang_code": caption_lang_code
+              }
+            }
+          ]
         }
-    }
+      }
 
     response = SearchAPI.get_search(query=search_query,
                                     _from=0,
@@ -60,6 +82,7 @@ def search_tracks(query_text):
         match_idx = int(track_comp_key.split("|")[-1])
         match_start = int(hit['_source']['start'])
 
+        # this is the format of the result
         res = {
             'match': {
                 'content': hit['_source']['content'],
@@ -102,6 +125,11 @@ def search_tracks(query_text):
         if 'next' in res:
             print("next : ", end="")
             print(res['next']['content'], "\t", res['next']['context'])
+
+        # print these out, just to see the metrics
+        print("views:", hit['_source']['caption']['video']['views'])
+        print("like ratio:", hit['_source']['caption']['video']['like_ratio'])
+        print("subs:", hit['_source']['caption']['video']['channel']['subs'])
         print("---")
         results.append(res)
 

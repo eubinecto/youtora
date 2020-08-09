@@ -34,7 +34,7 @@ class BulkAPI(API):
         request_serialised = "\n".join([json.dumps(data) for data in request_body])
         # terminate it by a newline
         request_serialised += "\n"
-        r = requests.post(url=super().ES_ENDPOINT + query,
+        r = requests.post(url=super().ES_ENDPOINT_LOCAL + query,
                           data=request_serialised,
                           params=params,
                           headers=headers)

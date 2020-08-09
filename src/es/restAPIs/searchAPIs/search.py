@@ -24,12 +24,12 @@ class SearchAPI(API):
             "query": query
         }  # request body
         # send the request
-        r = requests.get(url=cls.ES_ENDPOINT + request,
+        r = requests.get(url=cls.ES_ENDPOINT_LOCAL + request,
                          json=request_body)
 
         # log the response
         # log it
-        # super().Utils.log_response(r, "get_search")
+        #super().Utils.log_response(r, "get_search")
 
         # if no exception is thrown, then return the json
         # this will be the search result
