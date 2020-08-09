@@ -58,6 +58,9 @@ class IdxQuery:
                       },
                       "subs": {
                         "type": "rank_feature"
+                      },
+                      "lang_code": {
+                        "type": "keyword"
                       }
                     }
                   }

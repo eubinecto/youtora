@@ -23,6 +23,7 @@ class IdxSingle:
             "url": channel.url,
             "title": channel.title,
             "subs": channel.subs,
+            "lang_code": channel.lang_code
         }
         # send a request to es
         # channel is the root, so no need for for
@@ -158,7 +159,8 @@ class IdxMulti:
                         "publish_date_int": int("".join(video.publish_date.split("-"))),
                         "channel": {
                             "id": channel.channel_id,
-                            "subs": channel.subs
+                            "subs": channel.subs,
+                            "lang_code": channel.lang_code
                         }  # channel
                     }  # video
                 }  # caption

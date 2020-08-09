@@ -8,6 +8,7 @@ class Channel:
         "url",
         "title",
         "subs",
+        "lang_code",
         "vid_id_list",
     )
 
@@ -15,6 +16,7 @@ class Channel:
                  channel_id: str,
                  uploader: str,
                  subs: int,
+                 lang_code: str,
                  vid_id_list: list = None):
         """
         :param channel_id:
@@ -31,6 +33,10 @@ class Channel:
 
         # social feature
         self.subs = subs
+
+        # the lang code of the channel
+        # the code will be manually given
+        self.lang_code = lang_code
 
         # no reference to actual video objects
         # just reference video id's here. (in case there are too many videos to download)

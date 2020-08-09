@@ -11,7 +11,7 @@ import requests
 # use youtube_dl for getting the automatic captions
 import youtube_dl
 
-from selenium import webdriver
+from pytube import YouTube
 
 # to be raised when no caption was found
 from .errors import CaptionNotFoundError
@@ -22,6 +22,8 @@ import html
 from src.youtube.scrape.scrapers import VideoScraper
 import logging
 import sys
+
+
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -118,7 +120,7 @@ class CaptionDownloader:
     # when looking for english language, look for these codes.
     LANG_CODES_ENG = ('en', 'en-GB')
 
-    # other languages
+    # other languages that you might use
     LANG_CODES_OTHERS = ('ko', 'ja')
 
     # list of caption formats
