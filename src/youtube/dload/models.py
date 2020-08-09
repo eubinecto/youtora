@@ -8,6 +8,7 @@ class Channel:
         "url",
         "title",
         "subs",
+        "lang_code",
         "vid_id_list",
     )
 
@@ -15,6 +16,7 @@ class Channel:
                  channel_id: str,
                  uploader: str,
                  subs: int,
+                 lang_code: str,
                  vid_id_list: list = None):
         """
         :param channel_id:
@@ -31,6 +33,10 @@ class Channel:
 
         # social feature
         self.subs = subs
+
+        # the lang code of the channel
+        # the code will be manually given
+        self.lang_code = lang_code
 
         # no reference to actual video objects
         # just reference video id's here. (in case there are too many videos to download)
@@ -74,6 +80,7 @@ class Caption:
 
     __slots__ = (
         'caption_comp_key',
+        'vid_id',
         'is_auto',
         'lang_code',
         'url',
@@ -82,6 +89,7 @@ class Caption:
 
     def __init__(self,
                  caption_comp_key: str,
+                 vid_id: str,
                  url: str,
                  tracks: List[Track]):
         """
@@ -89,6 +97,7 @@ class Caption:
         :param tracks: the list of tracks that belongs to this caption (1 to 1)
         """
         self.caption_comp_key = caption_comp_key
+        self.vid_id = vid_id
         self.is_auto = True if caption_comp_key.split("|")[1] == "auto" else False
         self.lang_code = caption_comp_key.split("|")[2]
         self.url = url
@@ -124,7 +133,7 @@ class Video:
                  title: str,
                  channel_id: str,
                  publish_date: str,
-                 captions: Dict[str, Caption],
+                 captions: List[Caption],
                  likes: int,
                  dislikes: int,
                  views: int):
@@ -133,7 +142,7 @@ class Video:
         :param title: the title of the youtube video
         :param channel_id: the id of the channel this video belongs to
         :param publish_date: the uploaded date of the video
-        :param captions: the dictionary of captions. keys are either auto or manual
+        :param captions: the list of captions. contains all collected captions.
         """
         # key
         self.vid_id = vid_id

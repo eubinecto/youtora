@@ -71,6 +71,7 @@ class ChannelScraper(Scraper):
     @classmethod
     def scrape_channel(cls,
                        chan_url: str,
+                       lang_code: str,
                        driver: webdriver.Chrome = None) -> Channel:
         """
         now you might be able to do this.
@@ -79,6 +80,7 @@ class ChannelScraper(Scraper):
         subs
         vid_id_list
         :param chan_url: the id of the channel
+        :param lang_code
         :param driver:
         :return: a channel object
         """
@@ -110,7 +112,12 @@ class ChannelScraper(Scraper):
             # then close the driver
             driver.close()
 
-        return Channel(channel_id, uploader, subs, vid_id_list)
+        # the channel is given a lang code
+        return Channel(channel_id=channel_id,
+                       uploader=uploader,
+                       subs=subs,
+                       lang_code=lang_code,
+                       vid_id_list=vid_id_list)
 
     @classmethod
     def _channel_id(cls, driver: webdriver.Chrome) -> str:
@@ -219,8 +226,10 @@ class VideoScraper(Scraper):
         dislike_info = results[1].strip()
 
         if like_info == "I like this" and dislike_info == "I dislike this":
-            like_cnt = None
-            dislike_cnt = None
+            # like count and dislike count does not exist
+            # which means their values are zero.
+            like_cnt = 0
+            dislike_cnt = 0
             logging.info("no likes & dislikes for video:" + vid_url)
         else:
             like_cnt_info = like_info.split(" ")[0].strip()

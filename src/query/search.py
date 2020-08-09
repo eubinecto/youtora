@@ -6,7 +6,7 @@ from src.es.restAPIs.docAPIs.single import GetAPI
 
 import re
 
-from src.query.create import IdxQuery
+from src.query.create import Youtora
 
 
 def search_tracks(query_text):
@@ -51,7 +51,7 @@ def search_tracks(query_text):
     response = SearchAPI.get_search(query=search_query,
                                     _from=0,
                                     _size=20,
-                                    index=IdxQuery.YOUTORA_TRACKS_IDX_NAME)
+                                    index=Youtora.YOUTORA_TRACKS_IDX_NAME)
     # collect a timestamped url!
     results = list()
     for hit in response['hits']['hits']:
@@ -69,11 +69,11 @@ def search_tracks(query_text):
 
         # find the prev, match, next
         prev_dict = GetAPI.get_doc(
-            index=IdxQuery.YOUTORA_TRACKS_IDX_NAME,
+            index=Youtora.YOUTORA_TRACKS_IDX_NAME,
             _id=re.sub(r'[0-9]+$', str(match_idx - 1), track_comp_key)
         )
         next_dict = GetAPI.get_doc(
-            index=IdxQuery.YOUTORA_TRACKS_IDX_NAME,
+            index=Youtora.YOUTORA_TRACKS_IDX_NAME,
             _id=re.sub(r'[0-9]+$', str(match_idx + 1), track_comp_key)
         )
 

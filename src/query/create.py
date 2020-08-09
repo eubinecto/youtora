@@ -3,7 +3,8 @@
 from src.es.restAPIs.idxAPIs.idxManagement import CreateIdxAPI
 
 
-class IdxQuery:
+class Youtora:
+    # index to store the tracks
     YOUTORA_TRACKS_IDX_NAME = "youtora_tracks"
     YOUTORA_TRACKS_IDX_MAPPINGS = {
       "mappings": {
@@ -58,6 +59,9 @@ class IdxQuery:
                       },
                       "subs": {
                         "type": "rank_feature"
+                      },
+                      "lang_code": {
+                        "type": "keyword"
                       }
                     }
                   }
@@ -69,11 +73,15 @@ class IdxQuery:
       }
     }
 
+    # index to store captions, videos, channels.
     YOUTORA_COLL_IDX_NAME = "youtora_coll"
     YOUTORA_COLL_IDX_MAPPINGS = {
       "mappings": {
         "properties": {
           "doc_type": {
+            "type": "keyword"
+          },
+          "parent_id": {
             "type": "keyword"
           },
           "url": {
