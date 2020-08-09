@@ -8,6 +8,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as e_c
 from selenium.webdriver.common.by import By
 
+
+import requests
 import re
 import logging
 import sys
@@ -69,6 +71,7 @@ class ChannelScraper(Scraper):
     @classmethod
     def scrape_channel(cls,
                        chan_url: str,
+                       lang_code: str,
                        driver: webdriver.Chrome = None) -> Channel:
         """
         now you might be able to do this.
@@ -77,6 +80,7 @@ class ChannelScraper(Scraper):
         subs
         vid_id_list
         :param chan_url: the id of the channel
+        :param lang_code
         :param driver:
         :return: a channel object
         """
@@ -108,7 +112,12 @@ class ChannelScraper(Scraper):
             # then close the driver
             driver.close()
 
-        return Channel(channel_id, uploader, subs, vid_id_list)
+        # the channel is given a lang code
+        return Channel(channel_id=channel_id,
+                       uploader=uploader,
+                       subs=subs,
+                       lang_code=lang_code,
+                       vid_id_list=vid_id_list)
 
     @classmethod
     def _channel_id(cls, driver: webdriver.Chrome) -> str:
@@ -197,67 +206,49 @@ class VideoScraper(Scraper):
     just focus on this for now
     likes, dislikes.
     """
-    LIKES_XPATH = "//*[@id=\"app\"]/div[2]/ytm-watch/ytm-single-column-watch-next-results-renderer/" \
-                   + "ytm-item-section-renderer[1]/lazy-list/ytm-slim-video-metadata-renderer/div[2]/" \
-                   + "c3-material-button[1]/button/div/div/span"
-    DISLIKES_XPATH = "//*[@id=\"app\"]/div[2]/ytm-watch/ytm-single-column-watch-next-results-renderer/" \
-                      + "ytm-item-section-renderer[1]/lazy-list/ytm-slim-video-metadata-renderer/div[2]/" \
-                      + "c3-material-button[2]/button/div/div/span"
-
     @classmethod
     def likes_dislikes(cls,
-                       vid_url,
-                       driver: webdriver.Chrome = None) -> Tuple[int, int]:
+                       vid_url) -> Tuple[int, int]:
         """
         get the meta data for video,
         except for captions
         """
-        logger = logging.getLogger("get_likes_dislikes")
+        headers = {
+            # get the english page
+            "Accept-Language": "en"
+        }
+        # get the page
+        html = requests.get(url=vid_url, headers=headers).text
+        # the first will be like info, the latter will be dislike info
+        results = re.findall(r'"toggleButtonRenderer":{.*?"accessibilityData":{"label":"(.*?)"}}', html)
+        # search for like counts
+        like_info = results[0].strip()
+        dislike_info = results[1].strip()
 
-        if not driver:
-            driver_given = False
-            driver = super().get_driver(is_silent=True,
-                                        is_mobile=True)
-        else:
-            driver_given = True
-
-        # get the url - this might take a while
-        logger.info("downloading video page...")
-        driver.get(vid_url)
-
-        # get the elements by xpath
-        try:
-            like_info = driver.find_element_by_xpath(cls.LIKES_XPATH)\
-                              .get_attribute("aria-label")\
-                              .split(" ")[0]
-
-            dislike_info = driver.find_element_by_xpath(cls.DISLIKES_XPATH) \
-                                 .get_attribute("aria-label") \
-                                 .split(" ")[0]
-        except NoSuchElementException as nse:
-            # likes & dislikes are not displayed
-            # e.g. https://www.youtube.com/watch?v=tU5D51kExcY
-            logger.warning(str(nse))
-            # when used as a rank feature..
-            # it doesn't have a null_value field
+        if like_info == "I like this" and dislike_info == "I dislike this":
+            # like count and dislike count does not exist
+            # which means their values are zero.
             like_cnt = 0
             dislike_cnt = 0
+            logging.info("no likes & dislikes for video:" + vid_url)
         else:
-            # if the count is zero, then the convention that youtube uses
-            # is to replace the value with "No"
-            if like_info == "No":
+            like_cnt_info = like_info.split(" ")[0].strip()
+            dislike_cnt_info = dislike_info.split(" ")[0].strip()
+
+            # get the like cnt
+            if like_cnt_info == "No":
                 like_cnt = 0
+                logging.info("like_cnt:0:video:" + vid_url)
             else:
-                like_cnt = int(like_info.replace(",", ""))
+                like_cnt = int(like_cnt_info.replace(",", ""))
+                logging.info("like_cnt:{}:video:{}".format(like_cnt, vid_url))
 
-            if dislike_info == "No":
+            # get the dislike cnt
+            if dislike_cnt_info == "No":
                 dislike_cnt = 0
+                logging.info("dislike_cnt:0:video:"+vid_url)
             else:
-                dislike_cnt = int(dislike_info.replace(",", ""))
-
-        if not driver_given:
-            # if driver has been made within this method,
-            # then close the driver
-            driver.close()
+                dislike_cnt = int(dislike_cnt_info.replace(",", ""))
+                logging.info("dislike_cnt:{}:video:{}".format(dislike_cnt, vid_url))
 
         return like_cnt, dislike_cnt
