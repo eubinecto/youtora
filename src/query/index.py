@@ -1,8 +1,8 @@
 # for talking to elastic search
 from typing import Generator, List
 
-from src.query.create import IdxQuery
-from src.youtube.dload.models import Channel, Video, Caption, Track
+from src.query.create import Youtora
+from src.youtube.dload.models import Channel, Video, Caption
 
 # API for indexing a single document
 from src.es.restAPIs.API import API
@@ -28,7 +28,7 @@ class IdxSingle:
         # send a request to es
         # channel is the root, so no need for for
         # specifying  routing
-        IdxAPI.put_doc(index=IdxQuery.YOUTORA_COLL_IDX_NAME,
+        IdxAPI.put_doc(index=Youtora.YOUTORA_COLL_IDX_NAME,
                        _id=channel.channel_id,
                        doc=doc_body,
                        # automatically replaces the doc should it already exists
@@ -42,6 +42,8 @@ class IdxSingle:
 
         doc_body = {
             "doc_type": "video",
+            # should add this field
+            "parent_id": video.channel_id,
             "url": video.url,
             "title": video.title,
             "publish_date": video.publish_date,
@@ -56,7 +58,7 @@ class IdxSingle:
         }  # doc
 
         # send request
-        IdxAPI.put_doc(index=IdxQuery.YOUTORA_COLL_IDX_NAME,
+        IdxAPI.put_doc(index=Youtora.YOUTORA_COLL_IDX_NAME,
                        _id=video.vid_id,
                        doc=doc_body,
                        # automatically replaces the doc should it already exists
@@ -74,12 +76,13 @@ class IdxSingle:
         # include the parent id in data json
         doc_body = {
             "doc_type": "caption",
+            "parent_id": caption.vid_id,
             "url": caption.url,
             "lang_code": caption.lang_code,
             "is_auto": caption.is_auto
         }
         # send a request to es
-        IdxAPI.put_doc(index=IdxQuery.YOUTORA_COLL_IDX_NAME,
+        IdxAPI.put_doc(index=Youtora.YOUTORA_COLL_IDX_NAME,
                        _id=caption.caption_comp_key,
                        doc=doc_body,
                        # automatically replaces the doc should it already exists
@@ -116,7 +119,8 @@ class IdxMulti:
                    op_type: str = None):
 
         """
-        uses bulk api to index all the tracks at once.
+        uses bulk api to index all the tracks at once. maybe change this to use
+        generator later?
         :param caption: the caption that the track belongs to
         :param video: the video that the track belongs to
         :param channel: the channel that the track belongs to
@@ -132,7 +136,7 @@ class IdxMulti:
             parent_id = "|".join(track.track_comp_key.split("|")[:-1])
             query = {
                 "index": {
-                    "_index": IdxQuery.YOUTORA_TRACKS_IDX_NAME,
+                    "_index": Youtora.YOUTORA_TRACKS_IDX_NAME,
                     "_id": track.track_comp_key,
                 }  # index
             }  # query
@@ -174,4 +178,4 @@ class IdxMulti:
         BulkAPI.post_bulk(request_body=request_body,
                           # immediately searchable
                           refresh='true',
-                          index=IdxQuery.YOUTORA_TRACKS_IDX_NAME)
+                          index=Youtora.YOUTORA_TRACKS_IDX_NAME)

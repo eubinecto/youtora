@@ -92,8 +92,7 @@ class Executor:
         :return:
         """
         # pre condition
-        assert lang_code in CaptionDownloader.LANG_CODES_ENG \
-            or lang_code in CaptionDownloader.LANG_CODES_OTHERS, "the lang code is invalid"
+        assert lang_code in CaptionDownloader.LANG_CODES_TO_COLLECT, "the lang code is invalid"
 
         logger = logging.getLogger("exec_idx_channel")
         # download the channel's meta data, and make it into a channel object.

@@ -116,12 +116,8 @@ class CaptionDownloader:
     # the caption format I'll be using
     CAPTION_FORMAT = 'srv1'
 
-    # english, british english. they are different.
-    # when looking for english language, look for these codes.
-    LANG_CODES_ENG = ('en', 'en-GB')
-
-    # other languages that you might use
-    LANG_CODES_OTHERS = ('ko', 'ja')
+    # korean, japanese, english, british english, french
+    LANG_CODES_TO_COLLECT = {'ko', 'ja', 'en', 'en-GB', 'fr'}
 
     # list of caption formats
     FORMAT_IDX = {
@@ -173,7 +169,7 @@ class CaptionDownloader:
         # So whatever variable that is assigned to None keyword
         # refers to the same memory location. ("NULL" in C)
         # so it makes sense to use is operator rather than equality operator.
-        if caption_url is None:
+        if not caption_url:
             raise CaptionNotFoundError("NOT FOUND: caption type={}, lang code={}"
                                        .format(caption_type, lang_code))
 
@@ -191,6 +187,7 @@ class CaptionDownloader:
             tracks = list()
 
         return Caption(caption_comp_key=caption_comp_key,
+                       vid_id=vid_id,
                        url=caption_url,
                        tracks=tracks)
 

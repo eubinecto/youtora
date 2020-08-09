@@ -80,6 +80,7 @@ class Caption:
 
     __slots__ = (
         'caption_comp_key',
+        'vid_id',
         'is_auto',
         'lang_code',
         'url',
@@ -88,6 +89,7 @@ class Caption:
 
     def __init__(self,
                  caption_comp_key: str,
+                 vid_id: str,
                  url: str,
                  tracks: List[Track]):
         """
@@ -95,6 +97,7 @@ class Caption:
         :param tracks: the list of tracks that belongs to this caption (1 to 1)
         """
         self.caption_comp_key = caption_comp_key
+        self.vid_id = vid_id
         self.is_auto = True if caption_comp_key.split("|")[1] == "auto" else False
         self.lang_code = caption_comp_key.split("|")[2]
         self.url = url
