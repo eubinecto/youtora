@@ -6,11 +6,17 @@ from src.main.index import Youtora
 from src.youtube.dload.dloaders import VideoDownloader
 import logging
 
+
 class UpdateTracks:
 
     @classmethod
-    def update_videos(cls):
-        pass
+    def update_tracks(cls):
+        """
+        update all the track fields, except for captions.
+        """
+        QUERY_GET_ALL_TRACKS = {
+
+        }
 
 
 class UpdateColl:
@@ -46,11 +52,17 @@ class UpdateColl:
         response = SearchAPI.get_search(query=cls.QUERY_GET_ALL_VIDEOS,
                                         index=Youtora.YOUTORA_COLL_IDX_NAME)
 
+        # keep these for logging
         total = response['hits']['total']['value']
-
         done = 0
-        for hit in response['hits']['hits']:
-            vid_id = hit['_id']
+
+        # multiprocessing pattern 1
+        # get the video ids to update
+        vid_id_list = [hit['_id'] for hit in response['hits']['hits']]
+
+        # multiprocessing pattern 2
+        # loop through the video ids.
+        for vid_id in vid_id_list:
             # download video
             # this will download it with the updated fields
             vid = VideoDownloader.dl_video("https://www.youtube.com/watch?v={}".format(vid_id))
