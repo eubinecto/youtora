@@ -71,12 +71,16 @@ class GetAPI(API):
         r = requests.get(url=super().ES_ENDPOINT_LOCAL + query)
 
         # check if the request was successful
+        super().Utils.log_response(r, "get_doc")
+
+        # if that was successful, return the json
         return r.json()
 
 
 class UpdateAPI(API):
     """
     Updates a document using the specified script.
+    maybe try doing this with all the videos?
     https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-update.html
     """
     pass
