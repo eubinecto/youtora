@@ -125,7 +125,8 @@ class Video:
         'captions',
         'likes',
         'dislikes',
-        'views'
+        'views',
+        'category'
     )
 
     def __init__(self,
@@ -136,13 +137,14 @@ class Video:
                  captions: List[Caption],
                  likes: int,
                  dislikes: int,
-                 views: int):
+                 views: int,
+                 category: str):
         """
         :param vid_id: the unique id at the end of the vid url
         :param title: the title of the youtube video
         :param channel_id: the id of the channel this video belongs to
         :param publish_date: the uploaded date of the video
-        :param captions: the list of captions. contains all collected captions.
+        :param captions: the list of captions. contains all collected captions
         """
         # key
         self.vid_id = vid_id
@@ -158,6 +160,7 @@ class Video:
         self.likes = likes
         self.dislikes = dislikes
         self.views = views
+        self.category = category
 
     # overrides the dunder string method
     def __str__(self):

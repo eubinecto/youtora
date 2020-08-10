@@ -64,6 +64,9 @@ class VideoDownloader:
         subtitles = info['subtitles']
         auto_captions = info['automatic_captions']
         views = info['view_count']
+        # the length is always greater than zero
+        # use the first one as the category of this video
+        category = info['categories'][0]
 
         # better collect these info separately
         likes, dislikes = VideoScraper.likes_dislikes(vid_url)
@@ -115,7 +118,8 @@ class VideoDownloader:
                      captions=captions,
                      likes=likes,
                      dislikes=dislikes,
-                     views=views)
+                     views=views,
+                     category=category)
 
 
 class CaptionDownloader:

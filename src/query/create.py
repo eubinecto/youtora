@@ -52,6 +52,9 @@ class Youtora:
                   "publish_date_int": {
                     "type": "rank_feature"
                   },
+                  "category": {
+                    "type": "text"
+                  },
                   "channel": {
                     "properties": {
                       "id": {
@@ -110,6 +113,10 @@ class Youtora:
           },
           "publish_date_int": {
             "type": "integer"
+          },
+          "category": {
+            # just in case you want to search for the category
+            "type": "text"
           }
         }
       }
