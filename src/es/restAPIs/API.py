@@ -29,6 +29,7 @@ class API:
                          r,
                          logger_name):
             """
+            log the response.
             :param r: the response object
             :param logger_name: the name to be given to this logger
             """
@@ -36,11 +37,12 @@ class API:
             try:
                 r.raise_for_status()
             except requests.exceptions.HTTPError as he:
-                # log the error, just for debugging purposes
-                logger.error(he)
-                logger.error(json.dumps(r.json(), indent=2))
-                # then raise the exception again
-                raise he
+                # check if this was an error
+                if "error" in r.json():
+                    # this was indeed a fatal error
+                    # so raise the exception
+                    logger.error(json.dumps(r.json(), indent=2))
+                    raise he
             else:
                 logger.info(json.dumps(r.json(), indent=2))
 

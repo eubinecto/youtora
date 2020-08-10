@@ -10,8 +10,8 @@ from src.query.create import Youtora
 
 
 def search_tracks(query_text,
-                  chan_lang_code: str = 'en',
-                  caption_lang_code: str = 'en',
+                  chan_lang_code: str = None,
+                  caption_lang_code: str = None,
                   views_boost: int = 10,
                   like_ratio_boost: int = 5,
                   subs_boost: int = 2):
@@ -56,23 +56,32 @@ def search_tracks(query_text,
             }
           ],
           "filter": [
-            {
-              "term": {
-                "caption.video.channel.lang_code": chan_lang_code
-              }
-            },
-            {
-              "term": {
-                "caption.lang_code": caption_lang_code
-              }
-            }
           ]
         }
       }
 
+    if caption_lang_code:
+        search_query['bool']['filter'].append(
+            {
+                "term": {
+                    "caption.lang_code": caption_lang_code
+                }
+            }
+        )
+
+    # if the channel language is given
+    if chan_lang_code:
+        search_query['bool']['filter'].append(
+            {
+                "term": {
+                    "caption.video.channel.lang_code": chan_lang_code
+                }
+            }
+        )
+
     response = SearchAPI.get_search(query=search_query,
                                     _from=0,
-                                    _size=20,
+                                    _size=10,
                                     index=Youtora.YOUTORA_TRACKS_IDX_NAME)
     # collect a timestamped url!
     results = list()
@@ -133,4 +142,4 @@ def search_tracks(query_text,
         print("---")
         results.append(res)
 
-    return results
+    # return results
