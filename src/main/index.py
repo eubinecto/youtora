@@ -54,7 +54,8 @@ class IdxSingle:
             "dislikes": video.dislikes,
             # in case of zero division, the value should be -1
             "like_ratio": 0 if (video.likes + video.dislikes) == 0
-            else video.likes / (video.dislikes + video.likes)
+            else video.likes / (video.dislikes + video.likes),
+            "category": video.category
         }  # doc
 
         # send request
@@ -152,6 +153,7 @@ class IdxMulti:
                         "id": video.vid_id,
                         "views": video.views,
                         "publish_date_int": int("".join(video.publish_date.split("-"))),
+                        "category": video.category,
                         "channel": {
                             "id": channel.channel_id,
                             "subs": channel.subs,
@@ -160,14 +162,14 @@ class IdxMulti:
                     }  # video
                 }  # caption
             }  # doc_body
+
+            # add likes & dislikes only if they are greater than zero.
             if video.likes > 0 or video.dislikes > 0:
                 if video.likes > 0:
                     # add like cnt
                     doc_body['caption']['video']['likes'] = video.likes
-
                     # like ratio must be greater than zero as well
                     doc_body['caption']['video']['like_ratio']: float = video.likes / (video.likes + video.dislikes)
-
                 # dislike cnt
                 if video.dislikes > 0:
                     # add dislike cnt

@@ -222,6 +222,7 @@ class VideoScraper(Scraper):
         # the first will be like info, the latter will be dislike info
         results = re.findall(r'"toggleButtonRenderer":{.*?"accessibilityData":{"label":"(.*?)"}}', html)
         # search for like counts
+
         like_info = results[0].strip()
         dislike_info = results[1].strip()
 

@@ -1,13 +1,12 @@
 import logging
 from typing import List
 
-from src.youtube.dload.dloaders import VideoDownloader, CaptionDownloader
+from src.youtube.dload.dloaders import VideoDownloader
 from src.youtube.dload.models import Video, Caption, Channel
-from src.query.index import IdxSingle, IdxMulti
+from src.main.index import IdxSingle, IdxMulti
 
 import youtube_dl
 
-from selenium import webdriver
 # set the logging mode from here
 # https://stackoverflow.com/questions/11548674/logging-info-doesnt-show-up-on-console-but-warn-and-error-do/11548754
 from src.youtube.scrape.scrapers import ChannelScraper, Scraper
