@@ -12,7 +12,7 @@ class SearchAPI(API):
                    query: dict,
                    index: str = None,
                    _from: int = 0,
-                   _size: int = 100,):
+                   _size: int = 10000):
 
         # build the request to add on
         request = "/{index}/_search".format(index=index)
@@ -29,7 +29,7 @@ class SearchAPI(API):
 
         # log the response
         # log it
-        #super().Utils.log_response(r, "get_search")
+        super().Utils.log_response(r, "get_search")
 
         # if no exception is thrown, then return the json
         # this will be the search result
