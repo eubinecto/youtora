@@ -10,7 +10,6 @@ class Stash:
     def stash_tracks(cls):
         # we want to build a request body
         request_body = list()
-
         # get all the tracks
         # this is going to consume A LOT OF SPACE.
         # we have to use logstash for this I think...

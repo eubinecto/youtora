@@ -1,4 +1,8 @@
-from typing import List
+import logging
+
+from typing import Generator, List
+
+from src.youtora.youtube.errors import CaptionNotFoundError
 
 
 class Channel:
@@ -52,6 +56,7 @@ class Channel:
 class Track:
     __slots__ = (
         'track_comp_key',
+        'parent_id',
         'start',
         'duration',
         'content'
@@ -59,11 +64,13 @@ class Track:
 
     def __init__(self,
                  track_comp_key: str,
+                 parent_id: str,
                  start: float,
                  duration: float,
                  content: str):
         # comp key
         self.track_comp_key = track_comp_key
+        self.parent_id = parent_id
         self.start = start
         self.duration = duration
         self.content = content
@@ -84,17 +91,14 @@ class Caption:
         'is_auto',
         'lang_code',
         'url',
-        'tracks'
     )
 
     def __init__(self,
                  caption_comp_key: str,
                  vid_id: str,
-                 url: str,
-                 tracks: List[Track]):
+                 url: str):
         """
         :param url: the url from which the tracks can be downloaded
-        :param tracks: the list of tracks that belongs to this caption (1 to 1)
         """
         self.caption_comp_key = caption_comp_key
         self.vid_id = vid_id
@@ -103,7 +107,6 @@ class Caption:
         self.url = url
         # download the tracks on init of caption
         # list of track objects.
-        self.tracks = tracks
 
     # overrides dunder string method
     def __str__(self) -> str:
@@ -127,7 +130,28 @@ class Video:
         'category',
         'manual_sub_info',
         'auto_sub_info',
+        'captions',
     )
+
+    # the caption types defined
+    CAPTION_TYPES = ("manual", "auto")
+
+    # the caption format I'll be using
+    CAPTION_FORMAT = 'srv1'
+
+    # list of caption formats
+    # used by youtube_dl
+    FORMAT_IDX = {
+        'srv1': 0,
+        'srv2': 1,
+        'srv3': 2,
+        'ttml': 3,
+        'vtt': 4
+    }
+
+    # korean, japanese, english, british english, french
+    # we are only downloading captions of these languages .
+    LANG_CODES_TO_COLLECT = {'ko', 'ja', 'en', 'en-GB', 'fr'}
 
     def __init__(self,
                  vid_id: str,
@@ -162,6 +186,94 @@ class Video:
         self.category = category
         self.manual_sub_info = manual_sub_info
         self.auto_sub_info = auto_sub_info
+        # init as an empty list
+        self.captions: List[Caption] = list()
+
+    def _add_caption(self,
+                     caption_type: str,
+                     lang_code: str):
+        """
+        extract the caption from the video object
+        need to handle the case where the lang code does not exist.
+        I think you might need to download the list of lang codes.
+        :param caption_type: manual = manually written, auto = ASR. the default is auto.
+        :param lang_code: the language code should be given
+        :return: a caption object
+        """
+
+        # input check - must be either  "manual" or "auto"
+        if caption_type not in self.CAPTION_TYPES:
+            raise ValueError(caption_type)
+
+        # set the desired caption format in the CaptionScraper class.
+        format_idx = self.FORMAT_IDX[self.CAPTION_FORMAT]
+
+        # this is initially None
+        caption_url = None
+
+        # switch statement
+        if caption_type == "manual":
+            if lang_code in self.manual_sub_info:  # manual exists
+                caption_url = self.manual_sub_info[lang_code][format_idx]['url']
+        elif caption_type == "auto":  # auto exists
+            if lang_code in self.auto_sub_info:
+                caption_url = self.auto_sub_info[lang_code][format_idx]['url']
+
+        # Note: a None is a singleton object.
+        # there can only be 1 None.
+        # So whatever variable that is assigned to None keyword
+        # refers to the same memory location. ("NULL" in C)
+        # so it makes sense to use is operator rather than equality operator.
+        if not caption_url:
+            raise CaptionNotFoundError("NOT FOUND: {},{}"
+                                       .format(caption_type, lang_code))
+
+        # this will be the id of each caption
+        caption_comp_key = "|".join([self.vid_id, caption_type, lang_code])
+
+        # return the caption object with tracks
+        caption = Caption(caption_comp_key=caption_comp_key,
+                          vid_id=self.vid_id,
+                          url=caption_url)
+
+        # append to the caption list
+        self.captions.append(caption)
+
+    def add_captions(self):
+        """
+        given a list of videos, downloads all captions for each video.
+        """
+        logger = logging.getLogger("dl_captions")
+
+        # captions now should be a list of captions
+        captions = list()
+
+        # loop through all of the videos.
+        for lang_code in self.LANG_CODES_TO_COLLECT:
+            try:
+                # manual
+                # first get all available manual captions.
+                caption_type = "manual"
+                manual_caption = self._add_caption(caption_type=caption_type,
+                                                   lang_code=lang_code)
+            except CaptionNotFoundError as ce:
+                logger.info(str(ce))
+                # try getting an automatic one
+                try:
+                    caption_type = "auto"
+                    auto_caption = self._add_caption(caption_type=caption_type,
+                                                     lang_code=lang_code)
+                except CaptionNotFoundError as ce:
+                    # automatic one was not found either
+                    logger.info(str(ce))
+                else:
+                    # collect the automatic caption
+                    captions.append(auto_caption)
+                    logger.info("FOUND: {},{}".format(caption_type, lang_code))
+            else:
+                # collect the manual caption
+                captions.append(manual_caption)
+                logger.info("FOUND: {},{}".format(caption_type, lang_code))
 
     # overrides the dunder string method
     def __str__(self):

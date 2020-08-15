@@ -20,7 +20,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 class Scraper:
     # for now, put the executable in the same directory
-    CHROME_DRIVER_PATH = "src/data/youtube/chromedriver"
+    CHROME_DRIVER_PATH = "./data/youtube/chromedriver"
 
     # I'm using this for now..
     MOBILE_OPT = {"deviceName": "Nexus 5"}
