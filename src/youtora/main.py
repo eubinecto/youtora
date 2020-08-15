@@ -12,6 +12,9 @@ from pymongo.errors import DuplicateKeyError, BulkWriteError
 
 import numpy as np
 
+# for multiprocessing
+from multiprocessing import Process, Manager
+
 
 class Store:
     """
@@ -66,25 +69,6 @@ class Store:
             channel = ChannelScraper.scrape_channel(channel_url,
                                                     lang_code,
                                                     driver=driver)
-        except Exception as e:
-            # raise an exception on failure
-            raise e
-        else:
-            # on successful completion, store the channel
-            # stores the channel
-            cls._store_channel(channel=channel)
-            # split the video ids into batches
-            batches = np.array_split(channel.vid_id_list, n_proc)
-            if len(batches) < n_proc:
-                logger.info("resetting the number of processes")
-                n_proc = len(batches)
-
-            for vid_id_batch in batches:
-                # get the videos for this batch
-                vid_gen = VideoDownloader.dl_videos(vid_id_list=vid_id_batch)
-                # get the tracks for this batch
-                # stores all videos
-                cls._store_videos(vid_gen=vid_gen)
         finally:
             # always close the driver
             # regardless of what happens
@@ -92,6 +76,23 @@ class Store:
             logger.info("closing the selenium driver")
             # use quit, instead of close
             driver.quit()
+
+        # on successful completion, store the channel
+        # stores the channel
+        cls._store_channel(channel=channel)
+        # split the video ids into batches
+        batches = np.array_split(channel.vid_id_list, n_proc)
+        if len(batches) < n_proc:
+            logger.info("resetting the number of processes")
+            batches = np.array_split(channel.vid_id_list, len(batches))
+        # try multiprocessing
+
+        for batch in batches:
+            # get the videos for this batch
+            vid_gen = VideoDownloader.dl_videos(vid_id_list=batch)
+            # get the tracks for this batch
+            # stores all videos
+            cls._store_videos(vid_gen=vid_gen)
 
     @classmethod
     def _store_channel(cls,
