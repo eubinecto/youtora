@@ -1,13 +1,16 @@
 import logging
-from typing import List
+from typing import Generator
 
-from src.youtora.youtube.dloaders import VideoDownloader, TrackDownloader
-from src.youtora.youtube.models import Channel, Video, Track
+from src.youtora.youtube.dloaders import VideoDownloader
+from src.youtora.youtube.models import Channel, Video
 from src.youtora.youtube.scrapers import Scraper, ChannelScraper
 
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
+from pymongo.errors import DuplicateKeyError, BulkWriteError
+
+import numpy as np
 
 
 class Store:
@@ -20,25 +23,35 @@ class Store:
     # https://api.mongodb.com/python/current/tutorial.html
     MONGO_URL = "mongodb://localhost:27017"
 
+    # global access points
+    youtora_db: Database = None
+    channel_coll: Collection = None
+    video_coll: Collection = None
+    caption_coll: Collection = None
+    track_coll: Collection = None
+
     @classmethod
     def store_youtora_db(cls,
                          channel_url: str,
-                         lang_code: str):
+                         lang_code: str,
+                         n_proc: int = 4):
         """
         scrapes the desired information from the given channel url
         and stores it in the local mongoDB.
         :param channel_url:
         :param lang_code: the language of the channel. need this info on query time.
+        :param n_proc: the number of processes to use
         """
         # pre condition
         assert lang_code in Video.LANG_CODES_TO_COLLECT, "the lang code is invalid"
 
+        # set up the global access points
         client = MongoClient(cls.MONGO_URL)
-        youtora_db: Database = client['youtora_db']
-        channel_coll: Collection = youtora_db['channel_coll']
-        video_coll: Collection = youtora_db['video_coll']
-        caption_coll: Collection = youtora_db['caption_coll']
-        track_coll: Collection = youtora_db['track_coll']
+        cls.youtora_db: Database = client['youtora_db']
+        cls.channel_coll: Collection = cls.youtora_db['channel_coll']
+        cls.video_coll: Collection = cls.youtora_db['video_coll']
+        cls.caption_coll: Collection = cls.youtora_db['caption_coll']
+        cls.track_coll: Collection = cls.youtora_db['track_coll']
 
         logger = logging.getLogger("exec_idx_channel")
         # download the channel's meta data, and make it into a channel object.
@@ -59,24 +72,19 @@ class Store:
         else:
             # on successful completion, store the channel
             # stores the channel
-            cls._store_channel(channel_coll=channel_coll,
-                               channel=channel)
-            # download & store in batches
-            for idx in range(0, len(channel.vid_id_list), cls.BATCH_SIZE):
-                vid_id_batch = channel.vid_id_list[idx:cls.BATCH_SIZE]
+            cls._store_channel(channel=channel)
+            # split the video ids into batches
+            batches = np.array_split(channel.vid_id_list, n_proc)
+            if len(batches) < n_proc:
+                logger.info("resetting the number of processes")
+                n_proc = len(batches)
+
+            for vid_id_batch in batches:
                 # get the videos for this batch
-                vid_list = VideoDownloader.dl_videos(vid_id_list=vid_id_batch)
+                vid_gen = VideoDownloader.dl_videos(vid_id_list=vid_id_batch)
                 # get the tracks for this batch
-                track_list = TrackDownloader.dl_tracks(vid_list=vid_list)
                 # stores all videos
-                cls._store_videos(video_coll=video_coll,
-                                  vid_list=vid_list)
-                # store all the captions
-                cls._store_captions(caption_coll=caption_coll,
-                                    vid_list=vid_list)
-                # store all the tracks of the captions
-                cls._store_tracks(track_coll=track_coll,
-                                  track_list=track_list)
+                cls._store_videos(vid_gen=vid_gen)
         finally:
             # always close the driver
             # regardless of what happens
@@ -87,8 +95,9 @@ class Store:
 
     @classmethod
     def _store_channel(cls,
-                       channel_coll: Collection,
-                       channel: Channel):
+                       channel: Channel,
+                       overwrite: bool = True):
+        logger = logging.getLogger("_store_channel")
         # build the doc
         doc = {
             "_id": channel.channel_id,
@@ -98,17 +107,30 @@ class Store:
             "lang_code": channel.lang_code
         }
         # before and update
-        channel_coll.update_one(filter={"_id": channel.channel_id},
-                                update={"$set": doc},
-                                upsert=True)
+        # what was that exception?
+        try:
+            cls.channel_coll.insert_one(document=doc)
+        except DuplicateKeyError as dke:
+            if not overwrite:
+                raise dke
+            else:
+                logger.warning(str(dke))
+                # delete the channel and then reinsert
+                cls.channel_coll.delete_one(filter={"_id": channel.channel_id})
+                cls.channel_coll.insert_one(document=doc)
+                logger.info("channel overwritten: " + str(channel))
+        else:
+            logger.info("channel stored: " + str(channel))
 
     @classmethod
     def _store_videos(cls,
-                      video_coll: Collection,
-                      vid_list: List[Video]):
+                      vid_gen: Generator[Video, None, None],
+                      overwrite: bool = True):
         # stores all the videos
-        docs = [
-            {
+        logger = logging.getLogger("_store_videos")
+        for video in vid_gen:
+            # downloading the video will be initiated here
+            doc = {
                 # should add this field
                 "_id": video.vid_id,
                 "parent_id": video.channel_id,
@@ -119,55 +141,93 @@ class Store:
                 "likes": video.likes,
                 "dislikes": video.dislikes,
             }  # doc
-            for video in vid_list
-        ]
-        video_coll.update_many(filter=[{"_id": vid_doc["_id"]} for vid_doc in docs],
-                               update={"$set": docs},
-                               upsert=True)
+            try:
+                cls.video_coll.insert_one(document=doc)
+            except DuplicateKeyError as dke:
+                if not overwrite:
+                    raise dke
+                else:
+                    # delete the video
+                    cls.video_coll.delete_one(filter={"_id": video.vid_id})
+                    # and reinsert
+                    cls.video_coll.insert_one(document=doc)
+                    logger.info("video overwritten: " + str(video))
+
+            else:
+                logger.info("video stored: " + str(video))
+
+            # store captions & tracks.
+            cls._store_captions(video)
+            cls._store_tracks(video)
 
     @classmethod
     def _store_captions(cls,
-                        caption_coll: Collection,
-                        vid_list: List[Video]):
+                        video: Video,
+                        overwrite: bool = True):
         # this part stores tracks as well
         # does mongoDB also support something like bulk API in elastic search?
         # first, stores the captions
+        logger = logging.getLogger("_store_captions")
         docs = list()
-        for vid in vid_list:
-            for caption in vid.captions:
-                doc = {
-                    # video is the parent of caption
-                    "_id": caption.caption_comp_key,
-                    "parent_id": caption.vid_id,
-                    "url": caption.url,
-                    "lang_code": caption.lang_code,
-                    "is_auto": caption.is_auto
-                }
-                docs.append(doc)
-        caption_coll.update_many(filter=[{"_id": caption_doc["_id"]} for caption_doc in docs],
-                                 update={"$set": docs},
-                                 upsert=True)
+        for caption in video.captions:
+            doc = {
+                # video is the parent of caption
+                "_id": caption.caption_comp_key,
+                "parent_id": caption.vid_id,
+                "url": caption.url,
+                "lang_code": caption.lang_code,
+                "is_auto": caption.is_auto
+            }
+            docs.append(doc)
+
+        # insert all captions
+        try:
+            cls.caption_coll.insert_many(documents=docs)
+        except BulkWriteError as bwe:
+            # delete all those tracks
+            if not overwrite:
+                raise bwe
+            else:
+                logger.warning(str(bwe))
+                # delete and overwrite
+                cls.caption_coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
+                cls.caption_coll.insert_many(documents=docs)
+                logger.info("All captions overwritten: " + str(video))
+        else:
+            logger.info("All captions stored: " + str(video))
 
     @classmethod
     def _store_tracks(cls,
-                      track_coll: Collection,
-                      track_list: List[Track]):
+                      video: Video,
+                      overwrite: bool = True):
         """
+        doing this separately, because we'll be adding image to these tracks.
+        and much more!
         stores all listed tracks.
-        :param track_list:
         """
-        docs = [
-            {
-                "_id": track.track_comp_key,
-                "parent_id": track.parent_id,
-                "start": track.start,
-                "duration": track.duration,
-                "content": track.content,
-            }
-            for track in track_list
-        ]
+        logger = logging.getLogger("_store_tracks")
+        docs = list()
+        for caption in video.captions:
+            for track in caption.tracks:
+                doc = {
+                        "_id": track.track_comp_key,
+                        "parent_id": track.parent_id,
+                        "start": track.start,
+                        "duration": track.duration,
+                        "content": track.content,
+                }
+                docs.append(doc)
 
-        # updating
-        track_coll.update_many(filter=[{"_id": track_doc["_id"]} for track_doc in docs],
-                               update={"$set": docs},
-                               upsert=True)
+        try:
+            # insert all tracks
+            cls.track_coll.insert_many(documents=docs)
+        except BulkWriteError as bwe:
+            if not overwrite:
+                raise bwe
+            else:
+                # delete and overwrite tracks
+                cls.track_coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
+                cls.track_coll.insert_many(documents=docs)
+                logger.info("all tracks overwritten: " + str(video))
+        else:
+            logger.info("all tracks stored: " + str(video))

@@ -79,137 +79,51 @@ class VideoDownloader:
                       manual_sub_info=manual_sub_info,
                       auto_sub_info=auto_sub_info)
 
-        # add captions
-        # this doesn't require any download
-        video.add_captions()
+        # download the tracks
+        done = 0
+        total = len(video.captions)
+        for idx, caption in enumerate(video.captions):
+            caption.dl_tracks()
+            done += 1
+            logger.info("({}/{}), downloading tracks complete for caption:{}"
+                        .format(done, total, caption))
 
         # then return the video
         return video
 
     @classmethod
-    def dl_videos(cls, vid_id_list: List[str]) -> List[Video]:
+    def dl_videos(cls, vid_id_list: List[str]) -> Generator[Video, None, None]:
         """
         given a list of video ids, downloads video objects.
+        only yields values
         :param vid_id_list:
         :return:
         """
-        # download videos
-        # make this faster using multiple processes
-        vids = list()
         total_vid_cnt = len(vid_id_list)
         vid_done = 0
         # https://stackoverflow.com/questions/11548674/logging-info-doesnt-show-up-on-console-but-warn-and-error-do/11548754
         vid_logger = logging.getLogger("help_dl_vids")
         # 여기를 multi-processing 으로?
         # 어떻게 할 수 있는가?
-        for vid_id in vid_id_list:
-            # make a vid_url
-            vid_url = "https://www.youtube.com/watch?v={}" \
-                .format(vid_id)
-            try:
-                video = VideoDownloader.dl_video(vid_url=vid_url)
-            except youtube_dl.utils.DownloadError as de:
-                # if downloading the video fails, just skip this one
-                vid_logger.warning(de)
-                continue
-            else:
-                vids.append(video)
-                vid_done += 1
-                vid_logger.info("dl vid objects done: {}/{}".format(vid_done, total_vid_cnt))
+        if not len(vid_id_list):
+            # if there are no ids, then yield None
+            yield None
         else:
-            # if there are no video id's, just yield an empty list
-            return vids
-
-
-class TrackDownloader:
-    @classmethod
-    def dl_tracks(cls, vid_list: List[Video]) -> List[Track]:
-        """
-        this is where most of the errors occur.
-        make sure to refactor this later in such a way that this is
-        robust to all potential errors.
-        :param vid_list:
-        :return: a list of Track objects
-        """
-        tracks = list()
-        for vid in vid_list:
-            for caption in vid.captions:
-                caption_comp_key = caption.caption_comp_key
-                caption_url = caption.url
-
-                logger = logging.getLogger("dl_tracks")
-                # first, get the response (download)
-                response = requests.get(caption_url)
-                # check if the response was erroneous
-                response.raise_for_status()
-                # get the xml. escape the character reference entities
-                tracks_xml = html.unescape(response.text)
-                # deserialize the xml to dict
-                tracks_dict = xmltodict.parse(tracks_xml)
-                # prepare a bucket for tracks
-                # get the tracks
-                # error handling for the case when there is only 1 track.
-                # quirk of youtube_dl
-                # e.g. https://www.youtube.com/watch?v=1SMmc9gQmHQ
-                if isinstance(tracks_dict['transcript']['text'], dict):
-                    # just one item
-                    start = float(tracks_dict['transcript']['text']["@start"])
-                    try:
-                        duration: float = float(tracks_dict['transcript']['text']["@dur"])
-                    except KeyError as ke:
-                        # duration may not exist
-                        logger.warning(ke)
-                        # if duration does not exist, then it is zero
-                        duration = 0.0
-                    try:
-                        text = tracks_dict['transcript']['text']["#text"]
-                    except KeyError as ke:
-                        logger = logging.getLogger("@text")
-                        # log the error
-                        logger.warning(ke)
-                        # but execution should continue
-                        # empty string to state an error
-                        text = ""
-                    # there is only one item, so the id should end with 0.
-                    track_comp_key = "|".join([caption_comp_key, '0'])
-                    tracks.append(Track(track_comp_key=track_comp_key,
-                                        parent_id=caption_comp_key,
-                                        start=start,
-                                        duration=duration,
-                                        content=text))
+            for vid_id in vid_id_list:
+                # make a vid_url
+                vid_url = "https://www.youtube.com/watch?v={}" \
+                    .format(vid_id)
+                try:
+                    video = VideoDownloader.dl_video(vid_url=vid_url)
+                except youtube_dl.utils.DownloadError as de:
+                    # if downloading the video fails, just skip this one
+                    vid_logger.warning(de)
+                    continue
                 else:
-                    for idx, trackItem in enumerate(tracks_dict['transcript']['text']):
-                        start: float = float(trackItem["@start"])
-                        try:
-                            duration: float = float(trackItem["@dur"])
-                        except KeyError as ke:
-                            # duration may not exist
-                            logger.warning(ke)
-                            # if duration does not exist, then it is zero
-                            duration = 0.0
-                        try:
-                            text = trackItem["#text"]
-                        except KeyError as ke:
-                            # log the error
-                            logger.warning(ke)
-                            # but execution should continue
-                            # empty string to state an error
-                            text = ""
-                        # adding the index instead of start is crucial
-                        # for quickly referencing prev & next track.
-                        track_comp_key = "|".join([caption_comp_key, str(idx)])
-
-                        # generate the track
-                        tracks.append(Track(track_comp_key=track_comp_key,
-                                            parent_id=caption_comp_key,
-                                            start=start,
-                                            duration=duration,
-                                            content=text))
-
-        else:
-            # on successful completion of getting all the tracks
-            # return the result
-            return tracks
+                    # yield the video
+                    yield video
+                    vid_done += 1
+                    vid_logger.info("dl vid objects done: {}/{}".format(vid_done, total_vid_cnt))
 
 
 

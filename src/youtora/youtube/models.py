@@ -1,6 +1,9 @@
+import html
 import logging
+import requests
+from typing import List
 
-from typing import Generator, List
+import xmltodict
 
 from src.youtora.youtube.errors import CaptionNotFoundError
 
@@ -91,6 +94,7 @@ class Caption:
         'is_auto',
         'lang_code',
         'url',
+        'tracks',
     )
 
     def __init__(self,
@@ -105,8 +109,82 @@ class Caption:
         self.is_auto = True if caption_comp_key.split("|")[1] == "auto" else False
         self.lang_code = caption_comp_key.split("|")[2]
         self.url = url
-        # download the tracks on init of caption
         # list of track objects.
+        self.tracks: List[Track] = list()
+
+    def dl_tracks(self):
+        if self.tracks:
+            raise ValueError("tracks have already been downloaded")
+
+        logger = logging.getLogger("dl_tracks")
+        # first, get the response (download)
+        response = requests.get(self.url)
+        # check if the response was erroneous
+        response.raise_for_status()
+        # get the xml. escape the character reference entities
+        tracks_xml = html.unescape(response.text)
+        # deserialize the xml to dict
+        tracks_dict = xmltodict.parse(tracks_xml)
+        # prepare a bucket for tracks
+        # get the tracks
+        # error handling for the case when there is only 1 track.
+        # quirk of youtube_dl
+        # e.g. https://www.youtube.com/watch?v=1SMmc9gQmHQ
+        if isinstance(tracks_dict['transcript']['text'], dict):
+            # just one item
+            start = float(tracks_dict['transcript']['text']["@start"])
+            try:
+                duration: float = float(tracks_dict['transcript']['text']["@dur"])
+            except KeyError as ke:
+                # duration may not exist
+                logger.warning(ke)
+                # if duration does not exist, then it is zero
+                duration = 0.0
+            try:
+                text = tracks_dict['transcript']['text']["#text"]
+            except KeyError as ke:
+                logger = logging.getLogger("@text")
+                # log the error
+                logger.warning(ke)
+                # but execution should continue
+                # empty string to state an error
+                text = ""
+            # there is only one item, so the id should end with 0.
+            track_comp_key = "|".join([self.caption_comp_key, '0'])
+            # append to the tracks
+            self.tracks.append(Track(track_comp_key=track_comp_key,
+                                     parent_id=self.caption_comp_key,
+                                     start=start,
+                                     duration=duration,
+                                     content=text))
+        else:
+            for idx, trackItem in enumerate(tracks_dict['transcript']['text']):
+                start: float = float(trackItem["@start"])
+                try:
+                    duration: float = float(trackItem["@dur"])
+                except KeyError as ke:
+                    # duration may not exist
+                    logger.warning(ke)
+                    # if duration does not exist, then it is zero
+                    duration = 0.0
+                try:
+                    text = trackItem["#text"]
+                except KeyError as ke:
+                    # log the error
+                    logger.warning(ke)
+                    # but execution should continue
+                    # empty string to state an error
+                    text = ""
+                # adding the index instead of start is crucial
+                # for quickly referencing prev & next track.
+                track_comp_key = "|".join([self.caption_comp_key, str(idx)])
+
+                # append to the tracks
+                self.tracks.append(Track(track_comp_key=track_comp_key,
+                                         parent_id=self.caption_comp_key,
+                                         start=start,
+                                         duration=duration,
+                                         content=text))
 
     # overrides dunder string method
     def __str__(self) -> str:
@@ -188,6 +266,8 @@ class Video:
         self.auto_sub_info = auto_sub_info
         # init as an empty list
         self.captions: List[Caption] = list()
+        # add captions on init
+        self.add_captions()
 
     def _add_caption(self,
                      caption_type: str,
@@ -257,7 +337,6 @@ class Video:
                 manual_caption = self._add_caption(caption_type=caption_type,
                                                    lang_code=lang_code)
             except CaptionNotFoundError as ce:
-                logger.info(str(ce))
                 # try getting an automatic one
                 try:
                     caption_type = "auto"
@@ -265,15 +344,13 @@ class Video:
                                                      lang_code=lang_code)
                 except CaptionNotFoundError as ce:
                     # automatic one was not found either
-                    logger.info(str(ce))
+                    logger.warning("NOT FOUND: manual & auto:" + lang_code)
                 else:
                     # collect the automatic caption
                     captions.append(auto_caption)
-                    logger.info("FOUND: {},{}".format(caption_type, lang_code))
             else:
                 # collect the manual caption
                 captions.append(manual_caption)
-                logger.info("FOUND: {},{}".format(caption_type, lang_code))
 
     # overrides the dunder string method
     def __str__(self):
