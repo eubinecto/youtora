@@ -18,6 +18,10 @@ class Stash:
 
     @classmethod
     def stash_tracks(cls):
+        """
+        get all the tracks from youtora mongo db, and stashes the data into
+        the pre-defined track index. this will take pretty long time to finish.
+        """
         # set up the handlers for the mongodb
         cls.youtora_mongo = YoutoraMongo()
         logger = logging.getLogger("stash_tracks")
@@ -25,7 +29,8 @@ class Stash:
         request_body = list()
         # get all the tracks
         total_track_num = cls.youtora_mongo.track_coll.estimated_document_count()
-        track_coll_cursor: Cursor = cls.youtora_mongo.track_coll.find()
+        # note: this is done on the server side.
+        track_coll_cursor: Cursor = cls.youtora_mongo.track_coll.find().batch_size(cls.STASH_BATCH_SIZE)
         for idx, track in enumerate(track_coll_cursor):
             track: dict  # the result is a dictionary.
             # get the caption, video, and channel that the track belongs to
