@@ -5,15 +5,11 @@ from src.youtora.youtube.dloaders import VideoDownloader
 from src.youtora.youtube.models import Channel, Video
 from src.youtora.youtube.scrapers import Scraper, ChannelScraper
 
-from pymongo import MongoClient
-from pymongo.collection import Collection
-from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError, BulkWriteError
 
 import numpy as np
 
-# for multiprocessing
-from multiprocessing import Process, Manager
+from src.mongo.settings import YoutoraMongo
 
 
 class Store:
@@ -23,15 +19,7 @@ class Store:
     # process batch size
     BATCH_SIZE = 10
 
-    # https://api.mongodb.com/python/current/tutorial.html
-    MONGO_URL = "mongodb://localhost:27017"
-
-    # global access points
-    youtora_db: Database = None
-    channel_coll: Collection = None
-    video_coll: Collection = None
-    caption_coll: Collection = None
-    track_coll: Collection = None
+    youtora_mongo: YoutoraMongo = None
 
     @classmethod
     def store_youtora_db(cls,
@@ -40,6 +28,7 @@ class Store:
                          n_proc: int = 4):
         """
         scrapes the desired information from the given channel url
+        this is the main function to be used
         and stores it in the local mongoDB.
         :param channel_url:
         :param lang_code: the language of the channel. need this info on query time.
@@ -47,21 +36,13 @@ class Store:
         """
         # pre condition
         assert lang_code in Video.LANG_CODES_TO_COLLECT, "the lang code is invalid"
-
-        # set up the global access points
-        client = MongoClient(cls.MONGO_URL)
-        cls.youtora_db: Database = client['youtora_db']
-        cls.channel_coll: Collection = cls.youtora_db['channel_coll']
-        cls.video_coll: Collection = cls.youtora_db['video_coll']
-        cls.caption_coll: Collection = cls.youtora_db['caption_coll']
-        cls.track_coll: Collection = cls.youtora_db['track_coll']
-
         logger = logging.getLogger("exec_idx_channel")
-        # download the channel's meta data, and make it into a channel object.
-        # this may change once you change the logic of dl_channel with a custom one.
+
+        # get the handler
+        cls.youtora_mongo = YoutoraMongo()
+
         driver = Scraper.get_driver(is_silent=True,
                                     is_mobile=True)
-
         # scrape the channel
         try:
             # get the channel object
@@ -85,11 +66,12 @@ class Store:
         if len(batches) < n_proc:
             logger.info("resetting the number of processes")
             batches = np.array_split(channel.vid_id_list, len(batches))
-        # try multiprocessing
 
-        for batch in batches:
+        for idx, batch in enumerate(batches):
             # get the videos for this batch
-            vid_gen = VideoDownloader.dl_videos(vid_id_list=batch)
+            vid_gen = VideoDownloader.dl_videos(vid_id_list=batch,
+                                                batch_info="current={}/total={}"
+                                                           .format(idx + 1, len(batches)))
             # get the tracks for this batch
             # stores all videos
             cls._store_videos(vid_gen=vid_gen)
@@ -110,15 +92,15 @@ class Store:
         # before and update
         # what was that exception?
         try:
-            cls.channel_coll.insert_one(document=doc)
+            cls.youtora_mongo.channel_coll.insert_one(document=doc)
         except DuplicateKeyError as dke:
             if not overwrite:
                 raise dke
             else:
                 logger.warning(str(dke))
                 # delete the channel and then reinsert
-                cls.channel_coll.delete_one(filter={"_id": channel.channel_id})
-                cls.channel_coll.insert_one(document=doc)
+                cls.youtora_mongo.channel_coll.delete_one(filter={"_id": channel.channel_id})
+                cls.youtora_mongo.channel_coll.insert_one(document=doc)
                 logger.info("channel overwritten: " + str(channel))
         else:
             logger.info("channel stored: " + str(channel))
@@ -141,25 +123,26 @@ class Store:
                 "views": video.views,
                 "likes": video.likes,
                 "dislikes": video.dislikes,
+                "category": video.category
             }  # doc
             try:
-                cls.video_coll.insert_one(document=doc)
+                cls.youtora_mongo.video_coll.insert_one(document=doc)
             except DuplicateKeyError as dke:
                 if not overwrite:
                     raise dke
                 else:
-                    # delete the video
-                    cls.video_coll.delete_one(filter={"_id": video.vid_id})
-                    # and reinsert
-                    cls.video_coll.insert_one(document=doc)
+                    logger.warning(str(dke))
+                    # delete the video and reinsert
+                    cls.youtora_mongo.video_coll.delete_one(filter={"_id": video.vid_id})
+                    cls.youtora_mongo.video_coll.insert_one(document=doc)
                     logger.info("video overwritten: " + str(video))
 
             else:
                 logger.info("video stored: " + str(video))
-
             # store captions & tracks.
             cls._store_captions(video)
             cls._store_tracks(video)
+            del video  # memory management
 
     @classmethod
     def _store_captions(cls,
@@ -180,10 +163,10 @@ class Store:
                 "is_auto": caption.is_auto
             }
             docs.append(doc)
-
+            del caption  # memory management
         # insert all captions
         try:
-            cls.caption_coll.insert_many(documents=docs)
+            cls.youtora_mongo.caption_coll.insert_many(documents=docs)
         except BulkWriteError as bwe:
             # delete all those tracks
             if not overwrite:
@@ -191,8 +174,8 @@ class Store:
             else:
                 logger.warning(str(bwe))
                 # delete and overwrite
-                cls.caption_coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
-                cls.caption_coll.insert_many(documents=docs)
+                cls.youtora_mongo.caption_coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
+                cls.youtora_mongo.caption_coll.insert_many(documents=docs)
                 logger.info("All captions overwritten: " + str(video))
         else:
             logger.info("All captions stored: " + str(video))
@@ -218,17 +201,18 @@ class Store:
                         "content": track.content,
                 }
                 docs.append(doc)
-
+                del track  # memory management
         try:
             # insert all tracks
-            cls.track_coll.insert_many(documents=docs)
+            cls.youtora_mongo.track_coll.insert_many(documents=docs)
         except BulkWriteError as bwe:
             if not overwrite:
                 raise bwe
             else:
+                logger.warning(str(bwe))
                 # delete and overwrite tracks
-                cls.track_coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
-                cls.track_coll.insert_many(documents=docs)
+                cls.youtora_mongo.track_coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
+                cls.youtora_mongo.track_coll.insert_many(documents=docs)
                 logger.info("all tracks overwritten: " + str(video))
         else:
             logger.info("all tracks stored: " + str(video))

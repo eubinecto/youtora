@@ -92,11 +92,14 @@ class VideoDownloader:
         return video
 
     @classmethod
-    def dl_videos(cls, vid_id_list: List[str]) -> Generator[Video, None, None]:
+    def dl_videos(cls,
+                  vid_id_list: List[str],
+                  batch_info: str = None) -> Generator[Video, None, None]:
         """
         given a list of video ids, downloads video objects.
         only yields values
         :param vid_id_list:
+        :param batch_info:
         :return:
         """
         total_vid_cnt = len(vid_id_list)
@@ -123,7 +126,8 @@ class VideoDownloader:
                     # yield the video
                     yield video
                     vid_done += 1
-                    vid_logger.info("dl vid objects done: {}/{}".format(vid_done, total_vid_cnt))
+                    vid_logger.info("dl vid objects done: {}/{}/batch={}"
+                                    .format(vid_done, total_vid_cnt, batch_info))
 
 
 

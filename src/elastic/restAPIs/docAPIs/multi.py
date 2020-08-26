@@ -1,6 +1,6 @@
 import json
 
-from src.es.restAPIs.API import API
+from src.elastic.restAPIs.API import API
 import requests
 
 

@@ -1,5 +1,5 @@
-from src.es.restAPIs.API import API
 import requests
+from src.elastic.restAPIs import API
 
 
 class CreateIdxAPI(API):
