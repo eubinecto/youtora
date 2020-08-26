@@ -11,7 +11,7 @@ from src.youtora.youtube.errors import CaptionNotFoundError
 class Channel:
     # for saving memory space
     __slots__ = (
-        "channel_id",
+        "id",
         "url",
         "title",
         "subs",
@@ -21,22 +21,22 @@ class Channel:
 
     def __init__(self,
                  channel_id: str,
-                 uploader: str,
+                 title: str,
                  subs: int,
                  lang_code: str,
                  vid_id_list: list = None):
         """
         :param channel_id:
-        :param uploader:
+        :param title:
         :param vid_id_list: default is None (have a look at dl_playlist)
         """
         # key
-        self.channel_id = channel_id
+        self.id = channel_id
 
         self.url = "http://www.youtube.com/channel/{}"\
                             .format(channel_id)
 
-        self.title = uploader
+        self.title = title
 
         # social feature
         self.subs = subs
@@ -58,7 +58,7 @@ class Channel:
 
 class Track:
     __slots__ = (
-        'track_comp_key',
+        'id',
         'parent_id',
         'start',
         'duration',
@@ -66,14 +66,14 @@ class Track:
     )
 
     def __init__(self,
-                 track_comp_key: str,
-                 parent_id: str,
+                 track_id: str,
+                 caption_id: str,
                  start: float,
                  duration: float,
                  content: str):
         # comp key
-        self.track_comp_key = track_comp_key
-        self.parent_id = parent_id
+        self.id = track_id
+        self.parent_id = caption_id
         self.start = start
         self.duration = duration
         self.content = content
@@ -83,14 +83,14 @@ class Track:
         """
         overrides the dunder string method
         """
-        return self.track_comp_key
+        return self.id
 
 
 class Caption:
 
     __slots__ = (
-        'caption_comp_key',
-        'vid_id',
+        'id',
+        'parent_id',
         'is_auto',
         'lang_code',
         'url',
@@ -98,19 +98,23 @@ class Caption:
     )
 
     def __init__(self,
-                 caption_comp_key: str,
+                 caption_id: str,
                  vid_id: str,
-                 url: str):
+                 url: str,
+                 tracks: List[Track] = None):
         """
         :param url: the url from which the tracks can be downloaded
         """
-        self.caption_comp_key = caption_comp_key
-        self.vid_id = vid_id
-        self.is_auto = True if caption_comp_key.split("|")[1] == "auto" else False
-        self.lang_code = caption_comp_key.split("|")[2]
+        self.id = caption_id
+        self.parent_id = vid_id
+        self.is_auto = True if caption_id.split("|")[1] == "auto" else False
+        self.lang_code = caption_id.split("|")[2]
         self.url = url
         # list of track objects.
-        self.tracks: List[Track] = list()
+        if tracks:
+            self.tracks = tracks
+        else:
+            self.tracks: List[Track] = list()
 
     def dl_tracks(self):
         if self.tracks:
@@ -150,10 +154,10 @@ class Caption:
                 # empty string to state an error
                 text = ""
             # there is only one item, so the id should end with 0.
-            track_comp_key = "|".join([self.caption_comp_key, '0'])
+            track_comp_key = "|".join([self.id, '0'])
             # append to the tracks
-            self.tracks.append(Track(track_comp_key=track_comp_key,
-                                     parent_id=self.caption_comp_key,
+            self.tracks.append(Track(track_id=track_comp_key,
+                                     caption_id=self.id,
                                      start=start,
                                      duration=duration,
                                      content=text))
@@ -177,11 +181,11 @@ class Caption:
                     text = ""
                 # adding the index instead of start is crucial
                 # for quickly referencing prev & next track.
-                track_comp_key = "|".join([self.caption_comp_key, str(idx)])
+                track_comp_key = "|".join([self.id, str(idx)])
 
                 # append to the tracks
-                self.tracks.append(Track(track_comp_key=track_comp_key,
-                                         parent_id=self.caption_comp_key,
+                self.tracks.append(Track(track_id=track_comp_key,
+                                         caption_id=self.id,
                                          start=start,
                                          duration=duration,
                                          content=text))
@@ -191,14 +195,14 @@ class Caption:
         """
         overrides the dunder string method
         """
-        return self.caption_comp_key
+        return self.id
 
 
 class Video:
     # to save RAM space
     __slots__ = (
-        'vid_id',
-        'channel_id',
+        'id',
+        'parent_id',
         'url',
         'title',
         'publish_date',
@@ -233,15 +237,16 @@ class Video:
 
     def __init__(self,
                  vid_id: str,
-                 title: str,
                  channel_id: str,
+                 title: str,
                  publish_date: str,
                  likes: int,
                  dislikes: int,
                  views: int,
                  category: str,
-                 manual_sub_info: dict,
-                 auto_sub_info: dict):
+                 captions: List[Caption] = None,
+                 manual_sub_info: dict = None,
+                 auto_sub_info: dict = None):
         """
         :param vid_id: the unique id at the end of the vid url
         :param title: the title of the youtube video
@@ -249,25 +254,32 @@ class Video:
         :param publish_date: the uploaded date of the video
         """
         # key
-        self.vid_id = vid_id
+        self.id = vid_id
 
         # build the url yourself... save the number of parameters.
         self.url = "https://www.youtube.com/watch?v={}"\
                         .format(vid_id)
 
         self.title = title
-        self.channel_id = channel_id
+        self.parent_id = channel_id
         self.publish_date = publish_date
         self.likes = likes
         self.dislikes = dislikes
         self.views = views
         self.category = category
-        self.manual_sub_info = manual_sub_info
-        self.auto_sub_info = auto_sub_info
         # init as an empty list
-        self.captions: List[Caption] = list()
-        # add captions on init
-        self.add_captions()
+        if captions:
+            # captions are explicitly given
+            self.captions = captions
+        else:
+            if manual_sub_info or auto_sub_info:
+                self.manual_sub_info = manual_sub_info
+                self.auto_sub_info = auto_sub_info
+                self.captions: List[Caption] = list()
+                # add captions on init
+                self.add_captions()
+            else:
+                raise ValueError("one of the info must be given")
 
     def _add_caption(self,
                      caption_type: str,
@@ -309,11 +321,11 @@ class Video:
                                        .format(caption_type, lang_code))
 
         # this will be the id of each caption
-        caption_comp_key = "|".join([self.vid_id, caption_type, lang_code])
+        caption_comp_key = "|".join([self.id, caption_type, lang_code])
 
         # return the caption object with tracks
-        caption = Caption(caption_comp_key=caption_comp_key,
-                          vid_id=self.vid_id,
+        caption = Caption(caption_id=caption_comp_key,
+                          vid_id=self.id,
                           url=caption_url)
 
         # append to the caption list

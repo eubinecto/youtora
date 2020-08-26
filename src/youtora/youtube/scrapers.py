@@ -114,7 +114,7 @@ class ChannelScraper(Scraper):
 
         # the channel is given a lang code
         return Channel(channel_id=channel_id,
-                       uploader=uploader,
+                       title=uploader,
                        subs=subs,
                        lang_code=lang_code,
                        vid_id_list=vid_id_list)

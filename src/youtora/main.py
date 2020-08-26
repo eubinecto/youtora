@@ -5,6 +5,8 @@ from src.youtora.youtube.dloaders import VideoDownloader
 from src.youtora.youtube.models import Channel, Video
 from src.youtora.youtube.scrapers import Scraper, ChannelScraper
 
+from src.elastic.main import Index
+
 from pymongo.errors import DuplicateKeyError, BulkWriteError
 
 import numpy as np
@@ -38,43 +40,38 @@ class Store:
         assert lang_code in Video.LANG_CODES_TO_COLLECT, "the lang code is invalid"
         logger = logging.getLogger("exec_idx_channel")
 
-        # get the handler
+        # init the the handler
         cls.youtora_mongo = YoutoraMongo()
-
+        # get the driver
         driver = Scraper.get_driver(is_silent=True,
                                     is_mobile=True)
         # scrape the channel
         try:
-            # get the channel object
             # this will get the video ids of all uploaded videos
-            channel = ChannelScraper.scrape_channel(channel_url,
-                                                    lang_code,
-                                                    driver=driver)
+            channel = ChannelScraper.scrape_channel(channel_url, lang_code, driver=driver)
         finally:
-            # always close the driver
-            # regardless of what happens
-            # close the driver after doing all that
+            # always close the driver regardless of what happens
             logger.info("closing the selenium driver")
             # use quit, instead of close
             driver.quit()
 
         # on successful completion, store the channel
-        # stores the channel
         cls._store_channel(channel=channel)
         # split the video ids into batches
         batches = np.array_split(channel.vid_id_list, n_proc)
         if len(batches) < n_proc:
             logger.info("resetting the number of processes")
-            batches = np.array_split(channel.vid_id_list, len(batches))
+            n_proc = len(batches)
 
         for idx, batch in enumerate(batches):
             # get the videos for this batch
-            vid_gen = VideoDownloader.dl_videos(vid_id_list=batch,
-                                                batch_info="current={}/total={}"
-                                                           .format(idx + 1, len(batches)))
-            # get the tracks for this batch
-            # stores all videos
-            cls._store_videos(vid_gen=vid_gen)
+            vid_gen = VideoDownloader.dl_videos(vid_id_list=batch, batch_info="current={}/total={}"
+                                                                              .format(idx + 1, len(batches)))
+            for video in vid_gen:   # dl and iterate over each video in this batch
+                cls._store_video(video=video)
+                # on insertion, store the indices as well
+                # this should be done on mongo db side, but as of right now, do it this way
+                Index.index_tracks(channel=channel, videos=[video])
 
     @classmethod
     def _store_channel(cls,
@@ -83,7 +80,7 @@ class Store:
         logger = logging.getLogger("_store_channel")
         # build the doc
         doc = {
-            "_id": channel.channel_id,
+            "_id": channel.id,
             "url": channel.url,
             "title": channel.title,
             "subs": channel.subs,
@@ -99,50 +96,48 @@ class Store:
             else:
                 logger.warning(str(dke))
                 # delete the channel and then reinsert
-                cls.youtora_mongo.channel_coll.delete_one(filter={"_id": channel.channel_id})
+                cls.youtora_mongo.channel_coll.delete_one(filter={"_id": channel.id})
                 cls.youtora_mongo.channel_coll.insert_one(document=doc)
                 logger.info("channel overwritten: " + str(channel))
         else:
             logger.info("channel stored: " + str(channel))
 
     @classmethod
-    def _store_videos(cls,
-                      vid_gen: Generator[Video, None, None],
-                      overwrite: bool = True):
+    def _store_video(cls,
+                     video: Video,
+                     overwrite: bool = True):
         # stores all the videos
         logger = logging.getLogger("_store_videos")
-        for video in vid_gen:
-            # downloading the video will be initiated here
-            doc = {
-                # should add this field
-                "_id": video.vid_id,
-                "parent_id": video.channel_id,
-                "url": video.url,
-                "title": video.title,
-                "publish_date": video.publish_date,
-                "views": video.views,
-                "likes": video.likes,
-                "dislikes": video.dislikes,
-                "category": video.category
-            }  # doc
-            try:
-                cls.youtora_mongo.video_coll.insert_one(document=doc)
-            except DuplicateKeyError as dke:
-                if not overwrite:
-                    raise dke
-                else:
-                    logger.warning(str(dke))
-                    # delete the video and reinsert
-                    cls.youtora_mongo.video_coll.delete_one(filter={"_id": video.vid_id})
-                    cls.youtora_mongo.video_coll.insert_one(document=doc)
-                    logger.info("video overwritten: " + str(video))
-
+        # downloading the video will be initiated here
+        doc = {
+            # should add this field
+            "_id": video.id,
+            "parent_id": video.parent_id,
+            "url": video.url,
+            "title": video.title,
+            "publish_date": video.publish_date,
+            "views": video.views,
+            "likes": video.likes,
+            "dislikes": video.dislikes,
+            "category": video.category
+        }  # doc
+        try:
+            cls.youtora_mongo.video_coll.insert_one(document=doc)
+        except DuplicateKeyError as dke:
+            if not overwrite:
+                raise dke
             else:
-                logger.info("video stored: " + str(video))
-            # store captions & tracks.
-            cls._store_captions(video)
-            cls._store_tracks(video)
-            del video  # memory management
+                logger.warning(str(dke))
+                # delete the video and reinsert
+                cls.youtora_mongo.video_coll.delete_one(filter={"_id": video.id})
+                cls.youtora_mongo.video_coll.insert_one(document=doc)
+                logger.info("video overwritten: " + str(video))
+
+        else:
+            logger.info("video stored: " + str(video))
+        # store captions & tracks.
+        cls._store_captions(video)
+        cls._store_tracks(video)
 
     @classmethod
     def _store_captions(cls,
@@ -156,8 +151,8 @@ class Store:
         for caption in video.captions:
             doc = {
                 # video is the parent of caption
-                "_id": caption.caption_comp_key,
-                "parent_id": caption.vid_id,
+                "_id": caption.id,
+                "parent_id": caption.parent_id,
                 "url": caption.url,
                 "lang_code": caption.lang_code,
                 "is_auto": caption.is_auto
@@ -194,7 +189,7 @@ class Store:
         for caption in video.captions:
             for track in caption.tracks:
                 doc = {
-                        "_id": track.track_comp_key,
+                        "_id": track.id,
                         "parent_id": track.parent_id,
                         "start": track.start,
                         "duration": track.duration,
