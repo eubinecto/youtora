@@ -1,5 +1,4 @@
 import logging
-from typing import Generator
 
 from src.youtora.youtube.dloaders import VideoDownloader
 from src.youtora.youtube.models import Channel, Video
@@ -40,8 +39,9 @@ class Store:
         assert lang_code in Video.LANG_CODES_TO_COLLECT, "the lang code is invalid"
         logger = logging.getLogger("exec_idx_channel")
 
-        # init the the handler
+        # init the clients
         cls.youtora_mongo = YoutoraMongo()
+
         # get the driver
         driver = Scraper.get_driver(is_silent=True,
                                     is_mobile=True)

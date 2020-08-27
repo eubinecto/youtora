@@ -1,3 +1,7 @@
+
+# list of nodes we should connect to.
+HOSTS = [{"host": "localhost", "port": 9200}]
+
 # index to store the tracks
 YOUTORA_TRACKS_IDX_NAME = "youtora_tracks"
 YOUTORA_TRACKS_IDX_MAPPINGS = {
@@ -69,3 +73,4 @@ YOUTORA_TRACKS_IDX_MAPPINGS = {
     }
   }
 }
+
