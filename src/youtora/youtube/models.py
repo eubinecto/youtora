@@ -229,7 +229,6 @@ class Chapter(YouTubeModel):
         return self.content
 
 
-
 # class Frame(YouTubeModel):
 #
 #     __slots__ = (
@@ -252,6 +251,3 @@ class Chapter(YouTubeModel):
 #         self.id = frame_id
 #         self.parent_id = vid_id
 #         self.timestamp = timestamp
-
-
-
