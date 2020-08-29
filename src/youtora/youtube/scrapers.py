@@ -75,10 +75,6 @@ class ChannelScraper(Scraper):
                        driver: webdriver.Chrome = None) -> Channel:
         """
         now you might be able to do this.
-        channel_id
-        uploader
-        subs
-        vid_id_list
         :param chan_url: the id of the channel
         :param lang_code
         :param driver:

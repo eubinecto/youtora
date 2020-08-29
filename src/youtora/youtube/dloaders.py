@@ -1,34 +1,71 @@
 # the models that I'll be using.
 from typing import List, Generator
 
-from .models import Video, Caption, Track
-# how do I use type aliases?
-import xmltodict
-
-# for getting the xml caption from timed text api.
-import requests
+from .builders import CaptionBuilder
+from .models import Video, Track, Caption, Frame
 
 # use youtube_dl for getting the automatic captions
 import youtube_dl
-
-
-# to be raised when no caption was found
-from .errors import CaptionNotFoundError
-
-# for escaping character reference entities
+import requests
 import html
+import xmltodict
 
 from src.youtora.youtube.scrapers import VideoScraper
 import logging
-import sys
+
+# for downloading the frames
+import subprocess
+
+import numpy as np
 
 
-# https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+class TrackDownloader:
+    @classmethod
+    def dl_tracks(cls, caption: Caption):
+        """
+        dl all the tracks of the given caption
+        :param caption
+        :return:
+        """
+        logger = logging.getLogger("dl_tracks")
+        # bucket to collect tracks
+        tracks = list()
+        # first, get the response (download)
+        response = requests.get(caption.url)
+        # check if the response was erroneous
+        response.raise_for_status()
+        # get the xml. escape the character reference entities
+        tracks_xml = html.unescape(response.text)
+        # deserialize the xml to dict
+        tracks_dict = xmltodict.parse(tracks_xml)
+        # if not a  list, ignore. quirk of youtube_dl - if there is only one track,
+        # then the value of text is a dict, not a list.
+        # e.g. https://www.youtube.com/watch?v=1SMmc9gQmHQ
+        if isinstance(tracks_dict['transcript']['text'], list):
+            for idx, trackItem in enumerate(tracks_dict['transcript']['text']):
+                try:
+                    start: float = float(trackItem["@start"])
+                    duration: float = float(trackItem["@dur"])
+                    text = trackItem["#text"]
+                except KeyError as ke:
+                    # if either one of them does not exist,then just skip this track
+                    # as it is not worthy of storing
+                    logger.warning("SKIP: track does not have:" + str(ke))
+                    continue
+                else:
+                    # adding the index instead of start is crucial
+                    # for quickly referencing prev & next track.
+                    track_comp_key = "|".join([caption.id, str(idx)])
+                    # append to the tracks
+                    tracks.append(Track(track_id=track_comp_key,
+                                        caption_id=caption.id,
+                                        start=start,
+                                        duration=duration,
+                                        content=text))
+        return tracks
 
 
 class VideoDownloader:
-    # get all of the captions, whether it be manual or auto.
     VIDEO_DL_OPTS = {
         'writesubtitles': True,
         'allsubtitles': True,
@@ -36,6 +73,44 @@ class VideoDownloader:
         'writeinfojson': True,
         'quiet': True
     }  # VIDEO_DL_OPTIONS
+
+    @classmethod
+    def dl_videos_lazy(cls,
+                       vid_id_list: List[str],
+                       batch_info: str = None) -> Generator[Video, None, None]:
+        """
+        returns a generator that yields videos.
+        :param vid_id_list:
+        :param batch_info:
+        :return:
+        """
+        total_vid_cnt = len(vid_id_list)
+        vid_done = 0
+        # https://stackoverflow.com/questions/11548674/logging-info-doesnt-show-up-on-console-but-warn-and-error-do/11548754
+        vid_logger = logging.getLogger("help_dl_vids")
+        # 여기를 multi-processing 으로?
+        # 어떻게 할 수 있는가?
+        if not len(vid_id_list):
+            # if there are no ids, then yield None
+            yield None
+        else:
+            for vid_id in vid_id_list:
+                # make a vid_url
+                vid_url = "https://www.youtube.com/watch?v={}" \
+                    .format(vid_id)
+                try:
+                    video = VideoDownloader.dl_video(vid_url=vid_url)
+                except youtube_dl.utils.DownloadError as de:
+                    # if downloading the video fails, just skip this one
+                    vid_logger.warning(de)
+                    continue
+                else:
+                    # report
+                    vid_done += 1
+                    vid_logger.info("dl vid objects done: {}/{}/batch={}"
+                                    .format(vid_done, total_vid_cnt, batch_info))
+                    # yield the video
+                    yield video
 
     @classmethod
     def dl_video(cls, vid_url: str) -> Video:
@@ -78,12 +153,18 @@ class VideoDownloader:
                       category=category,
                       manual_sub_info=manual_sub_info,
                       auto_sub_info=auto_sub_info)
+        # build & set the captions
+        captions = CaptionBuilder(video).build_captions()
+        video.set_captions(captions)
 
         # download the tracks
+        # ahh...this part.. downloading videos trigger downloading tracks..?
         done = 0
         total = len(video.captions)
         for idx, caption in enumerate(video.captions):
-            caption.dl_tracks()
+            # download and set tracks
+            tracks = TrackDownloader.dl_tracks(caption)
+            caption.set_tracks(tracks)
             done += 1
             logger.info("({}/{}), downloading tracks complete for caption:{}"
                         .format(done, total, caption))
@@ -91,44 +172,51 @@ class VideoDownloader:
         # then return the video
         return video
 
+
+class FrameDownloader:
+    # the format code used by youtube dl
+    # https://askubuntu.com/questions/486297/how-to-select-video-quality-from-youtube-dl
+    # we are using 240p resolution
+    # as for just text detection, this will suffice
+    FORMAT_CODE: str = '133'
+
     @classmethod
-    def dl_videos(cls,
-                  vid_id_list: List[str],
-                  batch_info: str = None) -> Generator[Video, None, None]:
+    def dl_frames(cls, vid_url, timestamps) -> List[Frame]:
         """
-        given a list of video ids, downloads video objects.
-        only yields values
-        :param vid_id_list:
-        :param batch_info:
-        :return:
+
+        :param vid_url: the video from which to download the frames
+        :param timestamps: the list of timestamps at which to capture the frame
+        :return: a list of Frame objects
         """
-        total_vid_cnt = len(vid_id_list)
-        vid_done = 0
-        # https://stackoverflow.com/questions/11548674/logging-info-doesnt-show-up-on-console-but-warn-and-error-do/11548754
-        vid_logger = logging.getLogger("help_dl_vids")
-        # 여기를 multi-processing 으로?
-        # 어떻게 할 수 있는가?
-        if not len(vid_id_list):
-            # if there are no ids, then yield None
-            yield None
-        else:
-            for vid_id in vid_id_list:
-                # make a vid_url
-                vid_url = "https://www.youtube.com/watch?v={}" \
-                    .format(vid_id)
-                try:
-                    video = VideoDownloader.dl_video(vid_url=vid_url)
-                except youtube_dl.utils.DownloadError as de:
-                    # if downloading the video fails, just skip this one
-                    vid_logger.warning(de)
-                    continue
-                else:
-                    # yield the video
-                    yield video
-                    vid_done += 1
-                    vid_logger.info("dl vid objects done: {}/{}/batch={}"
-                                    .format(vid_done, total_vid_cnt, batch_info))
+        # complete this later
+        pass
 
+    @classmethod
+    def dl_frame(cls, vid_url, timestamp) -> Frame:
+        """
+        :param vid_url: the video from which to download the frames
+        :param timestamp: the timestamp at which to capture the frame
+        :return: a Frame object
+        """
 
+        # credit: http://zulko.github.io/blog/2013/09/27/read-and-write-video-frames-in-python-using-ffmpeg/
+        cmd = "ffmpeg -ss '{timestamp}'" \
+              " -i $(youtube-dl -f {format_code} --get-url '{vid_url}')" \
+              " -f image2pipe" \
+              " -vframes 1" \
+              " -q:v 2" \
+              " -" \
+            .format(timestamp=timestamp, format_code=cls.FORMAT_CODE, vid_url=vid_url)
 
+        proc = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            bufsize=10 ** 8  # should be bigger than the size of the frame
+        )
+
+        raw_image = proc.communicate()
+
+        # complete this later.
+        pass
 
