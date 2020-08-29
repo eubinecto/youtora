@@ -41,7 +41,7 @@ class TrackDownloader:
         # then the value of text is a dict, not a list.
         # e.g. https://www.youtube.com/watch?v=1SMmc9gQmHQ
         if isinstance(tracks_dict['transcript']['text'], list):
-            for idx, trackItem in enumerate(tracks_dict['transcript']['text']):
+            for trackItem in tracks_dict['transcript']['text']:
                 try:
                     start: float = float(trackItem["@start"])
                     duration: float = float(trackItem["@dur"])
@@ -52,9 +52,7 @@ class TrackDownloader:
                     logger.warning("SKIP: track does not have:" + str(ke))
                     continue
                 else:
-                    # adding the index instead of start is crucial
-                    # for quickly referencing prev & next track.
-                    track_comp_key = "|".join([caption.id, str(idx)])
+                    track_comp_key = "|".join([caption.id, str(start)])
                     # append to the tracks
                     tracks.append(Track(track_id=track_comp_key,
                                         caption_id=caption.id,
