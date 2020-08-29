@@ -13,6 +13,11 @@ import xmltodict
 from src.youtora.youtube.scrapers import VideoScraper
 import logging
 
+# for downloading the frames
+import subprocess
+
+import numpy as np
+
 
 class TrackDownloader:
     @classmethod
@@ -176,20 +181,42 @@ class FrameDownloader:
     FORMAT_CODE: str = '133'
 
     @classmethod
-    def dl_frames(cls, vid_id, timestamps) -> List[Frame]:
+    def dl_frames(cls, vid_url, timestamps) -> List[Frame]:
         """
 
-        :param vid_id: the video from which to download the frames
+        :param vid_url: the video from which to download the frames
         :param timestamps: the list of timestamps at which to capture the frame
         :return: a list of Frame objects
         """
+        # complete this later
         pass
 
     @classmethod
-    def dl_frame(cls, vid_id, timestamp) -> Frame:
+    def dl_frame(cls, vid_url, timestamp) -> Frame:
         """
-        :param vid_id: the video from which to download the frames
+        :param vid_url: the video from which to download the frames
         :param timestamp: the timestamp at which to capture the frame
         :return: a Frame object
         """
+
+        # credit: http://zulko.github.io/blog/2013/09/27/read-and-write-video-frames-in-python-using-ffmpeg/
+        cmd = "ffmpeg -ss '{timestamp}'" \
+              " -i $(youtube-dl -f {format_code} --get-url '{vid_url}')" \
+              " -f image2pipe" \
+              " -vframes 1" \
+              " -q:v 2" \
+              " -" \
+            .format(timestamp=timestamp, format_code=cls.FORMAT_CODE, vid_url=vid_url)
+
+        proc = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            bufsize=10 ** 8  # should be bigger than the size of the frame
+        )
+
+        raw_image = proc.communicate()
+
+        # complete this later.
         pass
+
