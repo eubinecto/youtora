@@ -2,7 +2,7 @@
 from typing import List, Generator
 
 from .builders import CaptionBuilder
-from .models import Video, Track, Caption, Frame
+from .models import Video, Track, Caption
 
 # use youtube_dl for getting the automatic captions
 import youtube_dl
@@ -14,9 +14,8 @@ from src.youtora.youtube.scrapers import VideoScraper
 import logging
 
 # for downloading the frames
-import subprocess
-
-import numpy as np
+# import subprocess
+# import numpy as np
 
 
 class TrackDownloader:
@@ -173,50 +172,49 @@ class VideoDownloader:
         return video
 
 
-class FrameDownloader:
-    # the format code used by youtube dl
-    # https://askubuntu.com/questions/486297/how-to-select-video-quality-from-youtube-dl
-    # we are using 240p resolution
-    # as for just text detection, this will suffice
-    FORMAT_CODE: str = '133'
-
-    @classmethod
-    def dl_frames(cls, vid_url, timestamps) -> List[Frame]:
-        """
-
-        :param vid_url: the video from which to download the frames
-        :param timestamps: the list of timestamps at which to capture the frame
-        :return: a list of Frame objects
-        """
-        # complete this later
-        pass
-
-    @classmethod
-    def dl_frame(cls, vid_url, timestamp) -> Frame:
-        """
-        :param vid_url: the video from which to download the frames
-        :param timestamp: the timestamp at which to capture the frame
-        :return: a Frame object
-        """
-
-        # credit: http://zulko.github.io/blog/2013/09/27/read-and-write-video-frames-in-python-using-ffmpeg/
-        cmd = "ffmpeg -ss '{timestamp}'" \
-              " -i $(youtube-dl -f {format_code} --get-url '{vid_url}')" \
-              " -f image2pipe" \
-              " -vframes 1" \
-              " -q:v 2" \
-              " -" \
-            .format(timestamp=timestamp, format_code=cls.FORMAT_CODE, vid_url=vid_url)
-
-        proc = subprocess.Popen(
-            cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            bufsize=10 ** 8  # should be bigger than the size of the frame
-        )
-
-        raw_image = proc.communicate()
-
-        # complete this later.
-        pass
-
+# class FrameDownloader:
+#     # the format code used by youtube dl
+#     # https://askubuntu.com/questions/486297/how-to-select-video-quality-from-youtube-dl
+#     # we are using 240p resolution
+#     # as for just text detection, this will suffice
+#     FORMAT_CODE: str = '133'
+#
+#     @classmethod
+#     def dl_frames(cls, vid_url, timestamps) -> List[Frame]:
+#         """
+#
+#         :param vid_url: the video from which to download the frames
+#         :param timestamps: the list of timestamps at which to capture the frame
+#         :return: a list of Frame objects
+#         """
+#         # complete this later
+#         pass
+#
+#     @classmethod
+#     def dl_frame(cls, vid_url, timestamp) -> Frame:
+#         """
+#         :param vid_url: the video from which to download the frames
+#         :param timestamp: the timestamp at which to capture the frame
+#         :return: a Frame object
+#         """
+#
+#         # credit: http://zulko.github.io/blog/2013/09/27/read-and-write-video-frames-in-python-using-ffmpeg/
+#         cmd = "ffmpeg -ss '{timestamp}'" \
+#               " -i $(youtube-dl -f {format_code} --get-url '{vid_url}')" \
+#               " -f image2pipe" \
+#               " -vframes 1" \
+#               " -q:v 2" \
+#               " -" \
+#             .format(timestamp=timestamp, format_code=cls.FORMAT_CODE, vid_url=vid_url)
+#
+#         proc = subprocess.Popen(
+#             cmd,
+#             shell=True,
+#             stdout=subprocess.PIPE,
+#             bufsize=10 ** 8  # should be bigger than the size of the frame
+#         )
+#
+#         raw_image = proc.communicate()
+#
+#         # complete this later.
+#         pass

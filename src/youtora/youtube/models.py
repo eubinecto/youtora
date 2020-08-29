@@ -195,31 +195,62 @@ class Video(YouTubeModel):
         return self.title
 
 
-class Frame(YouTubeModel):
-
+class Chapter(YouTubeModel):
     __slots__ = (
         "id",
         "parent_id",
-        "timestamp"
+        "start",
+        "duration",
+        "title",
+        "prev_id",
+        "next_id"
     )
 
     def __init__(self,
-                 frame_id: str,
+                 chap_id: str,
                  vid_id: str,
-                 timestamp: int):
-        """
-        :param frame_id:
-        :param vid_id:
-        :param timestamp: the should be an integer.
-        """
-
+                 start: float,
+                 duration: float,
+                 title: str):
         super().__init__()
-        self.id = frame_id
-        self.parent_id = vid_id
-        self.timestamp = timestamp
+        self.id: str = chap_id
+        self.vid_id: str = vid_id
+        self.start: float = start
+        self.duration: float = duration
+        self.title: str = title
+        self.prev_id = None
+        self.next_id = None
+
+    # setter methods
+    def set_prev_id(self, prev_chap_id):
+        self.prev_id = prev_chap_id
+
+    def set_next_id(self, next_chap_id):
+        self.next_id = next_chap_id
+
+    def __str__(self) -> str:
+        return self.title
 
 
-# 이것도 재미있을 듯! <- 지금은 지금 해야하는 일에 집중.
-# 어차피 개발 단계이므로, 계속 해나가면 된다.
-class Chapter(YouTubeModel):
-    pass
+# class Frame(YouTubeModel):
+#
+#     __slots__ = (
+#         "id",
+#         "parent_id",
+#         "timestamp"
+#     )
+#
+#     def __init__(self,
+#                  frame_id: str,
+#                  vid_id: str,
+#                  timestamp: int):
+#         """
+#         :param frame_id:
+#         :param vid_id:
+#         :param timestamp: the should be an integer.
+#         """
+#
+#         super().__init__()
+#         self.id = frame_id
+#         self.parent_id = vid_id
+#         self.timestamp = timestamp
