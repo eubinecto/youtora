@@ -41,8 +41,7 @@ class Channel:
         # social feature
         self.subs = subs
 
-        # the lang code of the channel
-        # the code will be manually given
+        # the lang code of the channel the code will be manually given
         self.lang_code = lang_code
 
         # no reference to actual video objects
@@ -100,8 +99,7 @@ class Caption:
     def __init__(self,
                  caption_id: str,
                  vid_id: str,
-                 url: str,
-                 tracks: List[Track] = None):
+                 url: str):
         """
         :param url: the url from which the tracks can be downloaded
         """
@@ -110,85 +108,11 @@ class Caption:
         self.is_auto = True if caption_id.split("|")[1] == "auto" else False
         self.lang_code = caption_id.split("|")[2]
         self.url = url
-        # list of track objects.
-        if tracks:
-            self.tracks = tracks
-        else:
-            self.tracks: List[Track] = list()
+        self.tracks: List[Track] = list()
 
-    def dl_tracks(self):
-        if self.tracks:
-            raise ValueError("tracks have already been downloaded")
-
-        logger = logging.getLogger("dl_tracks")
-        # first, get the response (download)
-        response = requests.get(self.url)
-        # check if the response was erroneous
-        response.raise_for_status()
-        # get the xml. escape the character reference entities
-        tracks_xml = html.unescape(response.text)
-        # deserialize the xml to dict
-        tracks_dict = xmltodict.parse(tracks_xml)
-        # prepare a bucket for tracks
-        # get the tracks
-        # error handling for the case when there is only 1 track.
-        # quirk of youtube_dl
-        # e.g. https://www.youtube.com/watch?v=1SMmc9gQmHQ
-        if isinstance(tracks_dict['transcript']['text'], dict):
-            # just one item
-            start = float(tracks_dict['transcript']['text']["@start"])
-            try:
-                duration: float = float(tracks_dict['transcript']['text']["@dur"])
-            except KeyError as ke:
-                # duration may not exist
-                logger.warning(ke)
-                # if duration does not exist, then it is zero
-                duration = 0.0
-            try:
-                text = tracks_dict['transcript']['text']["#text"]
-            except KeyError as ke:
-                logger = logging.getLogger("@text")
-                # log the error
-                logger.warning(ke)
-                # but execution should continue
-                # empty string to state an error
-                text = ""
-            # there is only one item, so the id should end with 0.
-            track_comp_key = "|".join([self.id, '0'])
-            # append to the tracks
-            self.tracks.append(Track(track_id=track_comp_key,
-                                     caption_id=self.id,
-                                     start=start,
-                                     duration=duration,
-                                     content=text))
-        else:
-            for idx, trackItem in enumerate(tracks_dict['transcript']['text']):
-                start: float = float(trackItem["@start"])
-                try:
-                    duration: float = float(trackItem["@dur"])
-                except KeyError as ke:
-                    # duration may not exist
-                    logger.warning(ke)
-                    # if duration does not exist, then it is zero
-                    duration = 0.0
-                try:
-                    text = trackItem["#text"]
-                except KeyError as ke:
-                    # log the error
-                    logger.warning(ke)
-                    # but execution should continue
-                    # empty string to state an error
-                    text = ""
-                # adding the index instead of start is crucial
-                # for quickly referencing prev & next track.
-                track_comp_key = "|".join([self.id, str(idx)])
-
-                # append to the tracks
-                self.tracks.append(Track(track_id=track_comp_key,
-                                         caption_id=self.id,
-                                         start=start,
-                                         duration=duration,
-                                         content=text))
+    # setter method
+    def set_tracks(self, tracks: List[Track]):
+        self.tracks = tracks
 
     # overrides dunder string method
     def __str__(self) -> str:
@@ -221,8 +145,7 @@ class Video:
     # the caption format I'll be using
     CAPTION_FORMAT = 'srv1'
 
-    # list of caption formats
-    # used by youtube_dl
+    # list of caption formats used by youtube_dl
     FORMAT_IDX = {
         'srv1': 0,
         'srv2': 1,
@@ -267,6 +190,7 @@ class Video:
         self.dislikes = dislikes
         self.views = views
         self.category = category
+        self.captions: List[Caption] = list()
         # init as an empty list
         if captions:
             # captions are explicitly given
@@ -275,11 +199,8 @@ class Video:
             if manual_sub_info or auto_sub_info:
                 self.manual_sub_info = manual_sub_info
                 self.auto_sub_info = auto_sub_info
-                self.captions: List[Caption] = list()
                 # add captions on init
                 self.add_captions()
-            else:
-                raise ValueError("one of the info must be given")
 
     def _add_caption(self,
                      caption_type: str,
@@ -292,7 +213,6 @@ class Video:
         :param lang_code: the language code should be given
         :return: a caption object
         """
-
         # input check - must be either  "manual" or "auto"
         if caption_type not in self.CAPTION_TYPES:
             raise ValueError(caption_type)
@@ -311,11 +231,6 @@ class Video:
             if lang_code in self.auto_sub_info:
                 caption_url = self.auto_sub_info[lang_code][format_idx]['url']
 
-        # Note: a None is a singleton object.
-        # there can only be 1 None.
-        # So whatever variable that is assigned to None keyword
-        # refers to the same memory location. ("NULL" in C)
-        # so it makes sense to use is operator rather than equality operator.
         if not caption_url:
             raise CaptionNotFoundError("NOT FOUND: {},{}"
                                        .format(caption_type, lang_code))
@@ -332,15 +247,12 @@ class Video:
         self.captions.append(caption)
 
     def add_captions(self):
-        """
-        given a list of videos, downloads all captions for each video.
-        """
-        logger = logging.getLogger("dl_captions")
+        logger = logging.getLogger("add_captions")
 
         # captions now should be a list of captions
         captions = list()
 
-        # loop through all of the videos.
+        # loop through all of the lang codes
         for lang_code in self.LANG_CODES_TO_COLLECT:
             try:
                 # manual
@@ -367,6 +279,10 @@ class Video:
     # overrides the dunder string method
     def __str__(self):
         return self.title
+
+
+class Image:
+    pass
 
 
 # 이것도 재미있을 듯! <- 지금은 지금 해야하는 일에 집중.

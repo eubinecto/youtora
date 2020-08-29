@@ -192,6 +192,7 @@ class Index:
     def _gen_youtora_tracks(cls,
                             channel: Channel,
                             videos: List[Video]) -> Generator[list, None, None]:
+        # list of requests
         request_body = list()
         for video in videos:
             for caption in video.captions:

@@ -55,8 +55,6 @@ class Store:
             # use quit, instead of close
             driver.quit()
 
-        # on successful completion, store the channel
-        cls._store_channel(channel=channel)
         # split the video ids into batches
         batches = np.array_split(channel.vid_id_list, n_proc)
         if len(batches) < n_proc:
@@ -65,13 +63,19 @@ class Store:
 
         for idx, batch in enumerate(batches):
             # get the videos for this batch
-            vid_gen = VideoDownloader.dl_videos(vid_id_list=batch, batch_info="current={}/total={}"
-                                                                              .format(idx + 1, len(batches)))
+            vid_gen = VideoDownloader.dl_videos_lazy(vid_id_list=batch, batch_info="current={}/total={}"
+                                                     .format(idx + 1, len(batches)))
             for video in vid_gen:   # dl and iterate over each video in this batch
+                if not video.captions:
+                    logger.info("SKIP: skipping storing the video because it has no captions at all")
+                    continue
                 cls._store_video(video=video)
                 # on insertion, store the indices as well
                 # this should be done on mongo db side, but as of right now, do it this way
                 Index.index_tracks(channel=channel, videos=[video])
+        else:
+            # on successful completion, store the channel. channel is stored at the end.
+            cls._store_channel(channel=channel)
 
     @classmethod
     def _store_channel(cls,
