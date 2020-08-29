@@ -80,6 +80,10 @@ class Track(YouTubeModel):
         self.start = start
         self.duration = duration
         self.content = content
+        self.text_area_rel_img = None
+
+    def set_text_area_rel_img(self, text_area_rel_img: float):
+        self.text_area_rel_img: float = text_area_rel_img
 
     # overrides dunder string method
     def __str__(self) -> str:
@@ -181,16 +185,12 @@ class Video(YouTubeModel):
         self.manual_sub_info = manual_sub_info
         self.auto_sub_info = auto_sub_info
         self.captions = None
-        self.text_area_rel_img = None
 
     def set_captions(self, captions: List[Caption]):
         self.captions: List[Caption] = captions
 
-    def set_text_area_rel_img(self, text_area_rel_img: float):
-        self.text_area_rel_img: float = text_area_rel_img
-
     # overrides the dunder string method
-    def __str__(self):
+    def __str__(self) -> str:
         return self.title
 
 
