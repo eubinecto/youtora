@@ -1,6 +1,6 @@
 from typing import List, Generator
 
-from src.youtora.youtube.models import Channel, Video
+from src.youtora.youtube.models import Channel, Video, Track
 
 from elasticsearch import Elasticsearch
 from src.elastic.settings import HOSTS, YOUTORA_TRACKS_IDX_NAME
@@ -209,6 +209,8 @@ class Index:
                         "start": track.start,
                         "duration": track.duration,
                         "content": track.content,
+                        "text_area_rel_img": track.text_area_rel_img,
+                        "non_text_area_rel_img": 1 - track.text_area_rel_img,
                         "caption": {
                             "_id": caption.id,
                             "is_auto": caption.is_auto,
