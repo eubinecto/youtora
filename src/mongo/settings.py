@@ -20,4 +20,4 @@ class YoutoraMongo:
         self.video_coll: Collection = self.youtora_db['video_coll']
         self.caption_coll: Collection = self.youtora_db['caption_coll']
         self.track_coll: Collection = self.youtora_db['track_coll']
-        self.frame_coll: Collection = self.youtora_db['frame_coll']
+        # self.frame_coll: Collection = self.youtora_db['frame_coll']

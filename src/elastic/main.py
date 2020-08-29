@@ -209,8 +209,8 @@ class Index:
                         "start": track.start,
                         "duration": track.duration,
                         "content": track.content,
-                        "text_area_rel_img": track.text_area_rel_img,
-                        "non_text_area_rel_img": 1 - track.text_area_rel_img,
+                        # "text_area_rel_img": track.text_area_rel_img,
+                        # "non_text_area_rel_img": 1 - track.text_area_rel_img,
                         "caption": {
                             "_id": caption.id,
                             "is_auto": caption.is_auto,

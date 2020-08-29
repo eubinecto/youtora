@@ -63,7 +63,8 @@ class Track(YouTubeModel):
         'parent_id',
         'start',
         'duration',
-        'content'
+        'content',
+        # 'text_area_rel_img'
     )
 
     def __init__(self,
@@ -80,10 +81,10 @@ class Track(YouTubeModel):
         self.start = start
         self.duration = duration
         self.content = content
-        self.text_area_rel_img = None
+        # self.text_area_rel_img = None
 
-    def set_text_area_rel_img(self, text_area_rel_img: float):
-        self.text_area_rel_img: float = text_area_rel_img
+    # def set_text_area_rel_img(self, text_area_rel_img: float):
+    #     self.text_area_rel_img: float = text_area_rel_img
 
     # overrides dunder string method
     def __str__(self) -> str:
