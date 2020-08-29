@@ -1,11 +1,4 @@
-import html
-import logging
-import requests
 from typing import List
-
-import xmltodict
-
-from src.youtora.youtube.errors import CaptionNotFoundError
 
 
 class YouTubeModel:
@@ -121,11 +114,11 @@ class Caption(YouTubeModel):
         self.is_auto = True if caption_id.split("|")[1] == "auto" else False
         self.lang_code = caption_id.split("|")[2]
         self.url = url
-        self.tracks: List[Track] = list()
+        self.tracks = None
 
     # setter method
     def set_tracks(self, tracks: List[Track]):
-        self.tracks = tracks
+        self.tracks: List[Track] = tracks
 
     # overrides dunder string method
     def __str__(self) -> str:
@@ -197,8 +190,28 @@ class Video(YouTubeModel):
         return self.title
 
 
-class Image(YouTubeModel):
-    pass
+class Frame(YouTubeModel):
+
+    __slots__ = (
+        "id",
+        "parent_id",
+        "time_stamp"
+    )
+
+    def __init__(self,
+                 frame_id: str,
+                 vid_id: str,
+                 time_stamp: int):
+        """
+        :param frame_id:
+        :param vid_id:
+        :param time_stamp: the should be an integer.
+        """
+
+        super().__init__()
+        self.id = frame_id
+        self.parent_id = vid_id
+        self.time_stamp = time_stamp
 
 
 # 이것도 재미있을 듯! <- 지금은 지금 해야하는 일에 집중.
