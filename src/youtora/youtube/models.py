@@ -167,9 +167,8 @@ class Video:
                  dislikes: int,
                  views: int,
                  category: str,
-                 captions: List[Caption] = None,
-                 manual_sub_info: dict = None,
-                 auto_sub_info: dict = None):
+                 manual_sub_info: dict,
+                 auto_sub_info: dict):
         """
         :param vid_id: the unique id at the end of the vid url
         :param title: the title of the youtube video
@@ -191,16 +190,10 @@ class Video:
         self.views = views
         self.category = category
         self.captions: List[Caption] = list()
-        # init as an empty list
-        if captions:
-            # captions are explicitly given
-            self.captions = captions
-        else:
-            if manual_sub_info or auto_sub_info:
-                self.manual_sub_info = manual_sub_info
-                self.auto_sub_info = auto_sub_info
-                # add captions on init
-                self.add_captions()
+        self.manual_sub_info = manual_sub_info
+        self.auto_sub_info = auto_sub_info
+        # add captions on init
+        self.add_captions()
 
     def _add_caption(self,
                      caption_type: str,
