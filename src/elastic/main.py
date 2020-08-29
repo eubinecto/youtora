@@ -228,6 +228,12 @@ class Index:
                             }  # video
                         }  # caption
                     }  # doc_body
+                    # add prev_id and next_id, only if they exist
+                    if track.prev_id:
+                        doc_body['prev_id'] = track.prev_id
+                    if track.next_id:
+                        doc_body['next_id'] = track.next_id
+
                     # add likes & dislikes only if they are greater than zero.
                     if video.likes > 0 or video.dislikes > 0:
                         if video.likes > 0:

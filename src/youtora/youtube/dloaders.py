@@ -1,6 +1,8 @@
 # the models that I'll be using.
 from typing import List, Generator
 
+import re
+
 from .builders import CaptionBuilder
 from .models import Video, Track, Caption
 
@@ -59,7 +61,32 @@ class TrackDownloader:
                                         start=start,
                                         duration=duration,
                                         content=text))
+        # set the prev_id & next_id in this tracks batch
+        cls._set_neighbours(tracks=tracks)
         return tracks
+
+    @classmethod
+    def _set_neighbours(cls, tracks: List[Track]):
+        """
+        sets the prev_id & next_id of all the tracks in the list
+        """
+        for idx, track in enumerate(tracks):
+            # get the current id
+            curr_id = track.id
+            if idx == 0:
+                # the first track has no prev_id; it only has next_id
+                next_start = tracks[idx + 1].start
+                track.set_next_id(next_id=re.sub(r'[0-9.]+$', str(next_start), curr_id))
+            elif idx == (len(tracks) - 1):
+                # the last track has no next_id; it only has prev_id
+                prev_start = tracks[idx - 1].start
+                track.set_prev_id(prev_id=re.sub(r'[0-9.]+$', str(prev_start), curr_id))
+            else:
+                # middle tracks have both prev_id and next_id
+                prev_start = tracks[idx - 1].start
+                next_start = tracks[idx + 1].start
+                track.set_prev_id(prev_id=re.sub(r'[0-9.]+$', str(prev_start), curr_id))
+                track.set_next_id(next_id=re.sub(r'[0-9.]+$', str(next_start), curr_id))
 
 
 class VideoDownloader:
