@@ -1,5 +1,6 @@
 import logging
 
+from src.youtora.youtube.builders import CaptionBuilder
 from src.youtora.youtube.dloaders import VideoDownloader
 from src.youtora.youtube.models import Channel, Video
 from src.youtora.youtube.scrapers import Scraper, ChannelScraper
@@ -25,62 +26,62 @@ class Store:
     @classmethod
     def store_youtora_db(cls,
                          channel_url: str,
-                         lang_code: str,
-                         n_proc: int = 4):
+                         lang_code: str):
         """
         scrapes the desired information from the given channel url
         this is the main function to be used
         and stores it in the local mongoDB.
         :param channel_url:
         :param lang_code: the language of the channel. need this info on query time.
-        :param n_proc: the number of processes to use
         """
-        # pre condition
-        assert lang_code in Video.LANG_CODES_TO_COLLECT, "the lang code is invalid"
+        # check  pre-condition
+        assert lang_code in CaptionBuilder.LANG_CODES_TO_COLLECT, "the lang code is invalid"
         logger = logging.getLogger("exec_idx_channel")
-
         # init the clients
         cls.youtora_mongo = YoutoraMongo()
 
         # get the driver
-        driver = Scraper.get_driver(is_silent=True,
-                                    is_mobile=True)
-        # scrape the channel
+        driver = Scraper.get_driver(is_silent=True, is_mobile=True)
         try:
+            # try scraping the channel
             # this will get the video ids of all uploaded videos
             channel = ChannelScraper.scrape_channel(channel_url, lang_code, driver=driver)
         finally:
-            # always close the driver regardless of what happens
+            # always quit the driver regardless of what happens
             logger.info("closing the selenium driver")
-            # use quit, instead of close
             driver.quit()
 
         # split the video ids into batches
-        batches = np.array_split(channel.vid_id_list, n_proc)
-        if len(batches) < n_proc:
-            logger.info("resetting the number of processes")
-            n_proc = len(batches)
-
+        batches = np.array_split(channel.vid_id_list, cls.BATCH_SIZE)
         for idx, batch in enumerate(batches):
-            # get the videos for this batch
-            vid_gen = VideoDownloader.dl_videos_lazy(vid_id_list=batch, batch_info="current={}/total={}"
+            vid_gen = VideoDownloader.dl_videos_lazy(vid_id_list=batch,
+                                                     batch_info="current={}/total={}"
                                                      .format(idx + 1, len(batches)))
             for video in vid_gen:   # dl and iterate over each video in this batch
                 if not video.captions:
                     logger.info("SKIP: skipping storing the video because it has no captions at all")
                     continue
-                cls._store_video(video=video)
-                # on insertion, store the indices as well
+                # store video, captions, and tracks
+                cls._store_video(video)
+                cls._store_captions_of(video)
+                cls._store_tracks_of(video)
+                # on storing everything, store the indices as well
                 # this should be done on mongo db side, but as of right now, do it this way
                 Index.index_tracks(channel=channel, videos=[video])
         else:
-            # on successful completion, store the channel. channel is stored at the end.
+            # on storing all batches, store the channel. channel is stored at the end.
             cls._store_channel(channel=channel)
 
     @classmethod
     def _store_channel(cls,
                        channel: Channel,
                        overwrite: bool = True):
+        """
+        store the given channel in MongoDB.
+        :param channel:
+        :param overwrite:
+        :return:
+        """
         logger = logging.getLogger("_store_channel")
         # build the doc
         doc = {
@@ -110,7 +111,12 @@ class Store:
     def _store_video(cls,
                      video: Video,
                      overwrite: bool = True):
-        # stores all the videos
+        """
+        store the given video in MongoDB.
+        :param video:
+        :param overwrite:
+        :return:
+        """
         logger = logging.getLogger("_store_videos")
         # downloading the video will be initiated here
         doc = {
@@ -139,17 +145,17 @@ class Store:
 
         else:
             logger.info("video stored: " + str(video))
-        # store captions & tracks.
-        cls._store_captions(video)
-        cls._store_tracks(video)
 
     @classmethod
-    def _store_captions(cls,
-                        video: Video,
-                        overwrite: bool = True):
-        # this part stores tracks as well
-        # does mongoDB also support something like bulk API in elastic search?
-        # first, stores the captions
+    def _store_captions_of(cls,
+                           video: Video,
+                           overwrite: bool = True):
+        """
+        store all tracks of the given video in MongoDB.
+        :param video:
+        :param overwrite:
+        :return:
+        """
         logger = logging.getLogger("_store_captions")
         docs = list()
         for caption in video.captions:
@@ -180,13 +186,11 @@ class Store:
             logger.info("All captions stored: " + str(video))
 
     @classmethod
-    def _store_tracks(cls,
-                      video: Video,
-                      overwrite: bool = True):
+    def _store_tracks_of(cls,
+                         video: Video,
+                         overwrite: bool = True):
         """
-        doing this separately, because we'll be adding image to these tracks.
-        and much more!
-        stores all listed tracks.
+        store all tracks of the given video in MongoDB.
         """
         logger = logging.getLogger("_store_tracks")
         docs = list()

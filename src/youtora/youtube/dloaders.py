@@ -1,6 +1,8 @@
 # the models that I'll be using.
 from typing import List, Generator
-from .models import Video, Track
+
+from .builders import CaptionBuilder
+from .models import Video, Track, Caption
 
 # use youtube_dl for getting the automatic captions
 import youtube_dl
@@ -18,16 +20,18 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 class TrackDownloader:
-
     @classmethod
-    def dl_tracks(cls,
-                  caption_id,
-                  caption_url):
+    def dl_tracks(cls, caption: Caption):
+        """
+        dl all the tracks of the given caption
+        :param caption
+        :return:
+        """
         logger = logging.getLogger("dl_tracks")
         # bucket to collect tracks
         tracks = list()
         # first, get the response (download)
-        response = requests.get(caption_url)
+        response = requests.get(caption.url)
         # check if the response was erroneous
         response.raise_for_status()
         # get the xml. escape the character reference entities
@@ -51,10 +55,10 @@ class TrackDownloader:
                 else:
                     # adding the index instead of start is crucial
                     # for quickly referencing prev & next track.
-                    track_comp_key = "|".join([caption_id, str(idx)])
+                    track_comp_key = "|".join([caption.id, str(idx)])
                     # append to the tracks
                     tracks.append(Track(track_id=track_comp_key,
-                                        caption_id=caption_id,
+                                        caption_id=caption.id,
                                         start=start,
                                         duration=duration,
                                         content=text))
@@ -75,7 +79,6 @@ class VideoDownloader:
                        vid_id_list: List[str],
                        batch_info: str = None) -> Generator[Video, None, None]:
         """
-        given a list of video ids, downloads video objects.
         returns a generator that yields videos.
         :param vid_id_list:
         :param batch_info:
@@ -102,11 +105,12 @@ class VideoDownloader:
                     vid_logger.warning(de)
                     continue
                 else:
-                    # yield the video
-                    yield video
+                    # report
                     vid_done += 1
                     vid_logger.info("dl vid objects done: {}/{}/batch={}"
                                     .format(vid_done, total_vid_cnt, batch_info))
+                    # yield the video
+                    yield video
 
     @classmethod
     def dl_video(cls, vid_url: str) -> Video:
@@ -149,12 +153,17 @@ class VideoDownloader:
                       category=category,
                       manual_sub_info=manual_sub_info,
                       auto_sub_info=auto_sub_info)
+        # build & set the captions
+        captions = CaptionBuilder(video).build_captions()
+        video.set_captions(captions)
 
         # download the tracks
+        # ahh...this part.. downloading videos trigger downloading tracks..?
         done = 0
         total = len(video.captions)
         for idx, caption in enumerate(video.captions):
-            tracks = TrackDownloader.dl_tracks(caption.id, caption.url)
+            # download and set tracks
+            tracks = TrackDownloader.dl_tracks(caption)
             caption.set_tracks(tracks)
             done += 1
             logger.info("({}/{}), downloading tracks complete for caption:{}"
