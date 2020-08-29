@@ -2,7 +2,7 @@
 from typing import List, Generator
 
 from .builders import CaptionBuilder
-from .models import Video, Track, Caption
+from .models import Video, Track, Caption, Frame
 
 # use youtube_dl for getting the automatic captions
 import youtube_dl
@@ -166,3 +166,30 @@ class VideoDownloader:
 
         # then return the video
         return video
+
+
+class FrameDownloader:
+    # the format code used by youtube dl
+    # https://askubuntu.com/questions/486297/how-to-select-video-quality-from-youtube-dl
+    # we are using 240p resolution
+    # as for just text detection, this will suffice
+    FORMAT_CODE: str = '133'
+
+    @classmethod
+    def dl_frames(cls, vid_id, timestamps) -> List[Frame]:
+        """
+
+        :param vid_id: the video from which to download the frames
+        :param timestamps: the list of timestamps at which to capture the frame
+        :return: a list of Frame objects
+        """
+        pass
+
+    @classmethod
+    def dl_frame(cls, vid_id, timestamp) -> Frame:
+        """
+        :param vid_id: the video from which to download the frames
+        :param timestamp: the timestamp at which to capture the frame
+        :return: a Frame object
+        """
+        pass

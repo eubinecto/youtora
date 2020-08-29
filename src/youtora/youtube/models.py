@@ -199,23 +199,23 @@ class Frame(YouTubeModel):
     __slots__ = (
         "id",
         "parent_id",
-        "time_stamp"
+        "timestamp"
     )
 
     def __init__(self,
                  frame_id: str,
                  vid_id: str,
-                 time_stamp: int):
+                 timestamp: int):
         """
         :param frame_id:
         :param vid_id:
-        :param time_stamp: the should be an integer.
+        :param timestamp: the should be an integer.
         """
 
         super().__init__()
         self.id = frame_id
         self.parent_id = vid_id
-        self.time_stamp = time_stamp
+        self.timestamp = timestamp
 
 
 # 이것도 재미있을 듯! <- 지금은 지금 해야하는 일에 집중.
