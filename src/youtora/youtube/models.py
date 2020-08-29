@@ -199,8 +199,9 @@ class Chapter(YouTubeModel):
     __slots__ = (
         "id",
         "parent_id",
-        "timestamp",
-        "content",
+        "start",
+        "duration",
+        "title",
         "prev_id",
         "next_id"
     )
@@ -208,13 +209,15 @@ class Chapter(YouTubeModel):
     def __init__(self,
                  chap_id: str,
                  vid_id: str,
-                 timestamp: float,
-                 content: str):
+                 start: float,
+                 duration: float,
+                 title: str):
         super().__init__()
         self.id: str = chap_id
         self.vid_id: str = vid_id
-        self.timestamp: float = timestamp
-        self.content: str = content
+        self.start: float = start
+        self.duration: float = duration
+        self.title: str = title
         self.prev_id = None
         self.next_id = None
 
@@ -226,7 +229,7 @@ class Chapter(YouTubeModel):
         self.next_id = next_chap_id
 
     def __str__(self) -> str:
-        return self.content
+        return self.title
 
 
 # class Frame(YouTubeModel):
