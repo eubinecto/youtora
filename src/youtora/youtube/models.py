@@ -8,7 +8,15 @@ import xmltodict
 from src.youtora.youtube.errors import CaptionNotFoundError
 
 
-class Channel:
+class YouTubeModel:
+    def __init__(self):
+        self.id = None
+        self.parent_id = None
+
+    pass
+
+
+class Channel(YouTubeModel):
     # for saving memory space
     __slots__ = (
         "id",
@@ -30,6 +38,7 @@ class Channel:
         :param title:
         :param vid_id_list: default is None (have a look at dl_playlist)
         """
+        super().__init__()
         # key
         self.id = channel_id
 
@@ -55,7 +64,7 @@ class Channel:
         return self.title
 
 
-class Track:
+class Track(YouTubeModel):
     __slots__ = (
         'id',
         'parent_id',
@@ -70,6 +79,8 @@ class Track:
                  start: float,
                  duration: float,
                  content: str):
+        super().__init__()
+
         # comp key
         self.id = track_id
         self.parent_id = caption_id
@@ -85,7 +96,7 @@ class Track:
         return self.id
 
 
-class Caption:
+class Caption(YouTubeModel):
 
     __slots__ = (
         'id',
@@ -103,6 +114,8 @@ class Caption:
         """
         :param url: the url from which the tracks can be downloaded
         """
+        super().__init__()
+
         self.id = caption_id
         self.parent_id = vid_id
         self.is_auto = True if caption_id.split("|")[1] == "auto" else False
@@ -122,7 +135,7 @@ class Caption:
         return self.id
 
 
-class Video:
+class Video(YouTubeModel):
     # to save RAM space
     __slots__ = (
         'id',
@@ -156,6 +169,8 @@ class Video:
         :param channel_id: the id of the channel this video belongs to
         :param publish_date: the uploaded date of the video
         """
+        super().__init__()
+
         # key
         self.id = vid_id
 
@@ -182,11 +197,11 @@ class Video:
         return self.title
 
 
-class Image:
+class Image(YouTubeModel):
     pass
 
 
 # 이것도 재미있을 듯! <- 지금은 지금 해야하는 일에 집중.
 # 어차피 개발 단계이므로, 계속 해나가면 된다.
-class Chapter:
+class Chapter(YouTubeModel):
     pass

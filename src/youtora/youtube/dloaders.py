@@ -12,11 +12,6 @@ import xmltodict
 
 from src.youtora.youtube.scrapers import VideoScraper
 import logging
-import sys
-
-
-# https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 class TrackDownloader:
@@ -171,4 +166,3 @@ class VideoDownloader:
 
         # then return the video
         return video
-

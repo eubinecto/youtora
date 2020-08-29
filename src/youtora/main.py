@@ -1,17 +1,27 @@
 import logging
+from logging import Logger
+from typing import List
+
+from pymongo.collection import Collection
 
 from src.youtora.youtube.builders import CaptionBuilder
 from src.youtora.youtube.dloaders import VideoDownloader
-from src.youtora.youtube.models import Channel, Video
+from src.youtora.youtube.models import Channel, Video, YouTubeModel
 from src.youtora.youtube.scrapers import Scraper, ChannelScraper
 
 from src.elastic.main import Index
+from src.mongo.settings import YoutoraMongo
+
+# for splitting the videos into batches.
+import numpy as np
 
 from pymongo.errors import DuplicateKeyError, BulkWriteError
 
-import numpy as np
+import sys
 
-from src.mongo.settings import YoutoraMongo
+# global logger setting
+# https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 class Store:
@@ -73,13 +83,10 @@ class Store:
             cls._store_channel(channel=channel)
 
     @classmethod
-    def _store_channel(cls,
-                       channel: Channel,
-                       overwrite: bool = True):
+    def _store_channel(cls, channel: Channel):
         """
         store the given channel in MongoDB.
         :param channel:
-        :param overwrite:
         :return:
         """
         logger = logging.getLogger("_store_channel")
@@ -91,30 +98,17 @@ class Store:
             "subs": channel.subs,
             "lang_code": channel.lang_code
         }
-        # before and update
-        # what was that exception?
-        try:
-            cls.youtora_mongo.channel_coll.insert_one(document=doc)
-        except DuplicateKeyError as dke:
-            if not overwrite:
-                raise dke
-            else:
-                logger.warning(str(dke))
-                # delete the channel and then reinsert
-                cls.youtora_mongo.channel_coll.delete_one(filter={"_id": channel.id})
-                cls.youtora_mongo.channel_coll.insert_one(document=doc)
-                logger.info("channel overwritten: " + str(channel))
-        else:
-            logger.info("channel stored: " + str(channel))
+        # store the channel
+        cls._store_one(coll=cls.youtora_mongo.channel_coll,
+                       doc=doc,
+                       model=channel,
+                       logger=logger)
 
     @classmethod
-    def _store_video(cls,
-                     video: Video,
-                     overwrite: bool = True):
+    def _store_video(cls, video: Video):
         """
         store the given video in MongoDB.
         :param video:
-        :param overwrite:
         :return:
         """
         logger = logging.getLogger("_store_videos")
@@ -131,32 +125,21 @@ class Store:
             "dislikes": video.dislikes,
             "category": video.category
         }  # doc
-        try:
-            cls.youtora_mongo.video_coll.insert_one(document=doc)
-        except DuplicateKeyError as dke:
-            if not overwrite:
-                raise dke
-            else:
-                logger.warning(str(dke))
-                # delete the video and reinsert
-                cls.youtora_mongo.video_coll.delete_one(filter={"_id": video.id})
-                cls.youtora_mongo.video_coll.insert_one(document=doc)
-                logger.info("video overwritten: " + str(video))
 
-        else:
-            logger.info("video stored: " + str(video))
+        # store the video
+        cls._store_one(coll=cls.youtora_mongo.video_coll,
+                       doc=doc,
+                       model=video,
+                       logger=logger)
 
     @classmethod
-    def _store_captions_of(cls,
-                           video: Video,
-                           overwrite: bool = True):
+    def _store_captions_of(cls, video: Video):
         """
         store all tracks of the given video in MongoDB.
         :param video:
-        :param overwrite:
         :return:
         """
-        logger = logging.getLogger("_store_captions")
+        logger = logging.getLogger("_store_captions_of")
         docs = list()
         for caption in video.captions:
             doc = {
@@ -169,30 +152,18 @@ class Store:
             }
             docs.append(doc)
             del caption  # memory management
-        # insert all captions
-        try:
-            cls.youtora_mongo.caption_coll.insert_many(documents=docs)
-        except BulkWriteError as bwe:
-            # delete all those tracks
-            if not overwrite:
-                raise bwe
-            else:
-                logger.warning(str(bwe))
-                # delete and overwrite
-                cls.youtora_mongo.caption_coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
-                cls.youtora_mongo.caption_coll.insert_many(documents=docs)
-                logger.info("All captions overwritten: " + str(video))
-        else:
-            logger.info("All captions stored: " + str(video))
+        # store all captions
+        cls._store_many(coll=cls.youtora_mongo.caption_coll,
+                        docs=docs,
+                        model=video,
+                        logger=logger)
 
     @classmethod
-    def _store_tracks_of(cls,
-                         video: Video,
-                         overwrite: bool = True):
+    def _store_tracks_of(cls, video: Video):
         """
         store all tracks of the given video in MongoDB.
         """
-        logger = logging.getLogger("_store_tracks")
+        logger = logging.getLogger("_store_tracks_of")
         docs = list()
         for caption in video.captions:
             for track in caption.tracks:
@@ -205,17 +176,45 @@ class Store:
                 }
                 docs.append(doc)
                 del track  # memory management
+        # store all tracks
+        cls._store_many(coll=cls.youtora_mongo.track_coll,
+                        docs=docs,
+                        model=video,
+                        logger=logger)
+
+    @classmethod
+    def _store_one(cls,
+                   coll: Collection,
+                   doc: dict,
+                   model: YouTubeModel,
+                   logger: Logger):
+        try:
+            coll.insert_one(document=doc)
+        except DuplicateKeyError as dke:
+            logger.warning(str(dke))
+            # delete the channel and then reinsert
+            coll.delete_one(filter={"_id": doc["_id"]})
+            coll.insert_one(document=doc)
+            logger.info("overwritten: " + str(model.id))
+        else:
+            logger.info("stored: " + str(model.id))
+
+        pass
+
+    @classmethod
+    def _store_many(cls,
+                    coll: Collection,
+                    docs: List[dict],
+                    model: YouTubeModel,
+                    logger: Logger):
         try:
             # insert all tracks
-            cls.youtora_mongo.track_coll.insert_many(documents=docs)
+            coll.insert_many(documents=docs)
         except BulkWriteError as bwe:
-            if not overwrite:
-                raise bwe
-            else:
-                logger.warning(str(bwe))
-                # delete and overwrite tracks
-                cls.youtora_mongo.track_coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
-                cls.youtora_mongo.track_coll.insert_many(documents=docs)
-                logger.info("all tracks overwritten: " + str(video))
+            logger.warning(str(bwe))
+            # delete and overwrite tracks
+            coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
+            coll.insert_many(documents=docs)
+            logger.info("all overwritten for: " + model.id)
         else:
-            logger.info("all tracks stored: " + str(video))
+            logger.info("all stored for: " + model.id)
