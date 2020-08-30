@@ -1,32 +1,28 @@
 from typing import List, Generator
 
-from src.youtora.youtube.models import Channel, Video, Track
+from src.youtora.youtube.models import Channel, Video
 
 from elasticsearch import Elasticsearch
 from src.elastic.settings import HOSTS, YOUTORA_TRACKS_IDX_NAME
 
-from elasticsearch.exceptions import NotFoundError
-
-import re
-
 
 class Search:
-
     es_client: Elasticsearch = None
 
     @classmethod
     def search_tracks(cls,
-                      text: str,
+                      content: str,
                       chan_lang_code: str = None,
                       caption_lang_code: str = None,
                       views_boost: int = 10,
                       like_ratio_boost: int = 5,
                       subs_boost: int = 2,
-                      size: int = 10):
+                      from_: int = 0,
+                      size: int = 10) -> List[dict]:
         # init the client
         cls.es_client = Elasticsearch(HOSTS)
         # build the search query
-        search_query = cls._get_search_query(text,
+        search_query = cls._get_search_query(content,
                                              chan_lang_code,
                                              caption_lang_code,
                                              views_boost,
@@ -35,51 +31,51 @@ class Search:
         # get the json response for the current track
         curr_json = cls.es_client.search(body=search_query,
                                          index=YOUTORA_TRACKS_IDX_NAME,
-                                         from_=0,
+                                         from_=from_,
                                          size=size)
         # collect all the results!
         results = list()
         for hit in curr_json['hits']['hits']:
+            # gather this up
+            tracks = list()
             vid_id = hit['_source']['caption']['video']['_id']
             curr_start = int(hit['_source']['start'])
-            # this is the format of the result
-            res = {
-                'curr': {
+            curr_track = {
                     'content': hit['_source']['content'],
                     'url': "https://youtu.be/{}?t={}".format(vid_id, curr_start)
-                }  # match
-            }  # res
+            }  # match
+            tracks.append(curr_track)
             # get the prev_id, next_id
             prev_id = hit['_source'].get('prev_id', None)
             next_id = hit['_source'].get('next_id', None)
             if prev_id:
                 prev_json = cls.es_client.get(index=YOUTORA_TRACKS_IDX_NAME, id=prev_id)
                 prev_start = int(prev_json['_source']['start'])
-                res['prev'] = {
+                prev_track = {
                     'content': prev_json['_source']['content'],
                     'url': "https://youtu.be/{}?t={}".format(vid_id, prev_start)
                 }
-                # print the previous content
-                print("prev: ", res['prev']['content'], "\t", res['prev']['url'])
-            # print the current content
-            print("curr: ", res['curr']['content'], "\t", res['curr']['url'])
+                tracks.insert(0, prev_track)
+
             if next_id:
-                next_json = cls.es_client.get(index=YOUTORA_TRACKS_IDX_NAME, id=prev_id)
+                next_json = cls.es_client.get(index=YOUTORA_TRACKS_IDX_NAME, id=next_id)
                 next_start = int(next_json['_source']['start'])
-                res['next'] = {
+                next_track = {
                     'content': next_json['_source']['content'],
                     'url': "https://youtu.be/{}?t={}".format(vid_id, next_start)
                 }
-                # print the next content
-                print("next", res['next']['content'], "\t", res['next']['url'])
-
-            # print these out, just to see the metrics
-            print("views:", hit['_source']['caption']['video']['views'])
-            print("like ratio:", hit['_source']['caption']['video']['like_ratio'])
-            print("subs:", hit['_source']['caption']['video']['channel']['subs'])
-            print("---")
+                tracks.append(next_track)
+            # include the social features
+            res = {
+                'features': {
+                    'views': hit['_source']['caption']['video']['views'],
+                    'like_ratio':  hit['_source']['caption']['video']['like_ratio'],
+                    'subs':  hit['_source']['caption']['video']['channel']['subs']
+                },
+                'tracks': tracks
+            }
             results.append(res)
-        # return results
+        return results
 
     @classmethod
     def _get_search_query(cls,
