@@ -65,7 +65,8 @@ class Track(YouTubeModel):
         'duration',
         'content',
         'prev_id',
-        'next_id'
+        'next_id',
+        'context'
         # 'text_area_rel_img'
     )
 
@@ -85,6 +86,7 @@ class Track(YouTubeModel):
         self.content = content
         self.prev_id: Optional[str] = None
         self.next_id: Optional[str] = None
+        self.context = None
         # self.text_area_rel_img: Optional[float] = None
 
     def set_prev_id(self, prev_id: str):
@@ -92,6 +94,9 @@ class Track(YouTubeModel):
 
     def set_next_id(self, next_id: str):
         self.next_id = next_id
+
+    def set_context(self, context: str):
+        self.context: str = context
 
     # def set_text_area_rel_img(self, text_area_rel_img: float):
     #     self.text_area_rel_img: float = text_area_rel_img
