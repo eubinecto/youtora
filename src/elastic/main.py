@@ -186,6 +186,7 @@ class Index:
                         "content": track.content,
                         "prev_id": track.prev_id,
                         "next_id": track.next_id,
+                        "context": track.context,
                         # "text_area_rel_img": track.text_area_rel_img,
                         # "non_text_area_rel_img": 1 - track.text_area_rel_img,
                         "caption": {
