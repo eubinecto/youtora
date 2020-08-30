@@ -173,11 +173,9 @@ class Store:
                         "start": track.start,
                         "duration": track.duration,
                         "content": track.content,
+                        "prev_id": track.prev_id,
+                        "next_id": track.next_id
                 }
-                if track.prev_id:
-                    doc['prev_id'] = track.prev_id
-                if track.next_id:
-                    doc['next_id'] = track.next_id
                 docs.append(doc)
                 del track  # memory management
         # store all tracks

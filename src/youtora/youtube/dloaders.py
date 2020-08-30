@@ -75,18 +75,20 @@ class TrackDownloader:
             curr_id = track.id
             if idx == 0:
                 # the first track has no prev_id; it only has next_id
-                next_start = tracks[idx + 1].start
-                track.set_next_id(next_id=re.sub(r'[0-9.]+$', str(next_start), curr_id))
+                prev_id = None
+                next_id = re.sub(r'[0-9.]+$', str(tracks[idx + 1].start), curr_id)
             elif idx == (len(tracks) - 1):
                 # the last track has no next_id; it only has prev_id
-                prev_start = tracks[idx - 1].start
-                track.set_prev_id(prev_id=re.sub(r'[0-9.]+$', str(prev_start), curr_id))
+                prev_id = re.sub(r'[0-9.]+$', str(tracks[idx - 1].start), curr_id)
+                next_id = None
             else:
                 # middle tracks have both prev_id and next_id
-                prev_start = tracks[idx - 1].start
-                next_start = tracks[idx + 1].start
-                track.set_prev_id(prev_id=re.sub(r'[0-9.]+$', str(prev_start), curr_id))
-                track.set_next_id(next_id=re.sub(r'[0-9.]+$', str(next_start), curr_id))
+                prev_id = re.sub(r'[0-9.]+$', str(tracks[idx - 1].start), curr_id)
+                next_id = re.sub(r'[0-9.]+$', str(tracks[idx + 1].start), curr_id)
+
+            # set prev & next
+            track.set_prev_id(prev_id)
+            track.set_next_id(next_id)
 
 
 class VideoDownloader:

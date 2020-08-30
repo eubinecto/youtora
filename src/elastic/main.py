@@ -25,7 +25,6 @@ class Search:
                       size: int = 10):
         # init the client
         cls.es_client = Elasticsearch(HOSTS)
-
         # build the search query
         search_query = cls._get_search_query(text,
                                              chan_lang_code,
@@ -33,19 +32,16 @@ class Search:
                                              views_boost,
                                              like_ratio_boost,
                                              subs_boost)
-
+        # get the json response for the current track
         curr_json = cls.es_client.search(body=search_query,
                                          index=YOUTORA_TRACKS_IDX_NAME,
                                          from_=0,
                                          size=size)
-
         # collect all the results!
         results = list()
-
         for hit in curr_json['hits']['hits']:
             vid_id = hit['_source']['caption']['video']['_id']
             curr_start = int(hit['_source']['start'])
-
             # this is the format of the result
             res = {
                 'curr': {
@@ -53,11 +49,9 @@ class Search:
                     'url': "https://youtu.be/{}?t={}".format(vid_id, curr_start)
                 }  # match
             }  # res
-
             # get the prev_id, next_id
             prev_id = hit['_source'].get('prev_id', None)
             next_id = hit['_source'].get('next_id', None)
-
             if prev_id:
                 prev_json = cls.es_client.get(index=YOUTORA_TRACKS_IDX_NAME, id=prev_id)
                 prev_start = int(prev_json['_source']['start'])
@@ -65,7 +59,10 @@ class Search:
                     'content': prev_json['_source']['content'],
                     'url': "https://youtu.be/{}?t={}".format(vid_id, prev_start)
                 }
-
+                # print the previous content
+                print("prev: ", res['prev']['content'], "\t", res['prev']['url'])
+            # print the current content
+            print("curr: ", res['curr']['content'], "\t", res['curr']['url'])
             if next_id:
                 next_json = cls.es_client.get(index=YOUTORA_TRACKS_IDX_NAME, id=prev_id)
                 next_start = int(next_json['_source']['start'])
@@ -73,12 +70,7 @@ class Search:
                     'content': next_json['_source']['content'],
                     'url': "https://youtu.be/{}?t={}".format(vid_id, next_start)
                 }
-
-            # print them out
-            if 'prev' in res:
-                print("prev: ", res['prev']['content'], "\t", res['prev']['url'])
-            print("curr: ", res['curr']['content'], "\t", res['curr']['url'])
-            if "next: " in res:
+                # print the next content
                 print("next", res['next']['content'], "\t", res['next']['url'])
 
             # print these out, just to see the metrics
@@ -192,6 +184,8 @@ class Index:
                         "start": track.start,
                         "duration": track.duration,
                         "content": track.content,
+                        "prev_id": track.prev_id,
+                        "next_id": track.next_id,
                         # "text_area_rel_img": track.text_area_rel_img,
                         # "non_text_area_rel_img": 1 - track.text_area_rel_img,
                         "caption": {
@@ -212,11 +206,6 @@ class Index:
                         }  # caption
                     }  # doc_body
                     # add prev_id and next_id, only if they exist
-                    if track.prev_id:
-                        doc_body['prev_id'] = track.prev_id
-                    if track.next_id:
-                        doc_body['next_id'] = track.next_id
-
                     # add likes & dislikes only if they are greater than zero.
                     if video.likes > 0 or video.dislikes > 0:
                         if video.likes > 0:

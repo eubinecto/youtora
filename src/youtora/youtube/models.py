@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 
 class YouTubeModel:
@@ -83,9 +83,9 @@ class Track(YouTubeModel):
         self.start = start
         self.duration = duration
         self.content = content
-        self.prev_id = None
-        self.next_id = None
-        # self.text_area_rel_img = None
+        self.prev_id: Optional[str] = None
+        self.next_id: Optional[str] = None
+        # self.text_area_rel_img: Optional[float] = None
 
     def set_prev_id(self, prev_id: str):
         self.prev_id = prev_id
