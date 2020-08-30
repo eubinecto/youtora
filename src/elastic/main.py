@@ -23,7 +23,6 @@ class Search:
                       like_ratio_boost: int = 5,
                       subs_boost: int = 2,
                       size: int = 10):
-
         # init the client
         cls.es_client = Elasticsearch(HOSTS)
 
@@ -35,69 +34,52 @@ class Search:
                                              like_ratio_boost,
                                              subs_boost)
 
-        response = cls.es_client.search(body=search_query,
-                                        index=YOUTORA_TRACKS_IDX_NAME,
-                                        from_=0,
-                                        size=size)
+        curr_json = cls.es_client.search(body=search_query,
+                                         index=YOUTORA_TRACKS_IDX_NAME,
+                                         from_=0,
+                                         size=size)
 
-        # collect a timestamped url!
+        # collect all the results!
         results = list()
 
-        for hit in response['hits']['hits']:
-            track_comp_key = hit['_id']
-            vid_id = track_comp_key.split("|")[0]
-            match_idx = int(track_comp_key.split("|")[-1])
-            match_start = int(hit['_source']['start'])
+        for hit in curr_json['hits']['hits']:
+            vid_id = hit['_source']['caption']['video']['_id']
+            curr_start = int(hit['_source']['start'])
 
             # this is the format of the result
             res = {
-                'match': {
+                'curr': {
                     'content': hit['_source']['content'],
-                    'context': "https://youtu.be/{}?t={}".format(vid_id, match_start)
+                    'url': "https://youtu.be/{}?t={}".format(vid_id, curr_start)
                 }  # match
             }  # res
 
-            # try getting the previous track
-            try:
-                prev_dict = cls.es_client.get(
-                    index=YOUTORA_TRACKS_IDX_NAME,
-                    id=re.sub(r'[0-9]+$', str(match_idx - 1), track_comp_key)
-                )
-            except NotFoundError as nfe:
-                pass
-            else:
-                prev_start = int(prev_dict['_source']['start'])
+            # get the prev_id, next_id
+            prev_id = hit['_source'].get('prev_id', None)
+            next_id = hit['_source'].get('next_id', None)
+
+            if prev_id:
+                prev_json = cls.es_client.get(index=YOUTORA_TRACKS_IDX_NAME, id=prev_id)
+                prev_start = int(prev_json['_source']['start'])
                 res['prev'] = {
-                    'content': prev_dict['_source']['content'],
-                    'context': "https://youtu.be/{}?t={}".format(vid_id, prev_start)
+                    'content': prev_json['_source']['content'],
+                    'url': "https://youtu.be/{}?t={}".format(vid_id, prev_start)
                 }
 
-            # try getting the next track
-            try:
-                next_dict = cls.es_client.get(
-                    index=YOUTORA_TRACKS_IDX_NAME,
-                    id=re.sub(r'[0-9]+$', str(match_idx + 1), track_comp_key)
-                )
-            except NotFoundError as nfe:
-                pass
-            else:
-                next_start = int(next_dict['_source']['start'])
+            if next_id:
+                next_json = cls.es_client.get(index=YOUTORA_TRACKS_IDX_NAME, id=prev_id)
+                next_start = int(next_json['_source']['start'])
                 res['next'] = {
-                    'content': next_dict['_source']['content'],
-                    'context': "https://youtu.be/{}?t={}".format(vid_id, next_start)
+                    'content': next_json['_source']['content'],
+                    'url': "https://youtu.be/{}?t={}".format(vid_id, next_start)
                 }
 
             # print them out
             if 'prev' in res:
-                print("prev : ", end="")
-                print(res['prev']['content'], "\t", res['prev']['context'])
-
-            print("match: ", end="")
-            print(res['match']['content'], "\t", res['match']['context'])
-
-            if 'next' in res:
-                print("next : ", end="")
-                print(res['next']['content'], "\t", res['next']['context'])
+                print("prev: ", res['prev']['content'], "\t", res['prev']['url'])
+            print("curr: ", res['curr']['content'], "\t", res['curr']['url'])
+            if "next: " in res:
+                print("next", res['next']['content'], "\t", res['next']['url'])
 
             # print these out, just to see the metrics
             print("views:", hit['_source']['caption']['video']['views'])
@@ -105,6 +87,7 @@ class Search:
             print("subs:", hit['_source']['caption']['video']['channel']['subs'])
             print("---")
             results.append(res)
+        # return results
 
     @classmethod
     def _get_search_query(cls,
