@@ -174,7 +174,8 @@ class Store:
                         "duration": track.duration,
                         "content": track.content,
                         "prev_id": track.prev_id,
-                        "next_id": track.next_id
+                        "next_id": track.next_id,
+                        "context": track.context
                 }
                 docs.append(doc)
                 del track  # memory management

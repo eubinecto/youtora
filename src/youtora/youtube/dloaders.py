@@ -63,6 +63,8 @@ class TrackDownloader:
                                         content=text))
         # set the prev_id & next_id in this tracks batch
         cls._set_neighbours(tracks=tracks)
+        # set the context
+        cls._set_contexts(tracks=tracks)
         return tracks
 
     @classmethod
@@ -89,6 +91,24 @@ class TrackDownloader:
             # set prev & next
             track.set_prev_id(prev_id)
             track.set_next_id(next_id)
+
+    @classmethod
+    def _set_contexts(cls, tracks: List[Track]):
+        for idx, track in enumerate(tracks):
+            # get the current id
+            curr_content = track.content
+            if idx == 0:
+                prev_content = ""
+                next_content = tracks[idx + 1].content
+            elif idx == (len(tracks) - 1):
+                prev_content = tracks[idx - 1].content
+                next_content = ""
+            else:
+                prev_content = tracks[idx - 1].content
+                next_content = tracks[idx + 1].content
+            # set the context
+            track.set_context(context=" ".join([prev_content, curr_content, next_content]))
+
 
 
 class VideoDownloader:
