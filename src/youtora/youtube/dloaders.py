@@ -1,6 +1,8 @@
 # the models that I'll be using.
 from typing import List, Generator
 
+import re
+
 from .builders import CaptionBuilder
 from .models import Video, Track, Caption
 
@@ -41,7 +43,7 @@ class TrackDownloader:
         # then the value of text is a dict, not a list.
         # e.g. https://www.youtube.com/watch?v=1SMmc9gQmHQ
         if isinstance(tracks_dict['transcript']['text'], list):
-            for idx, trackItem in enumerate(tracks_dict['transcript']['text']):
+            for trackItem in tracks_dict['transcript']['text']:
                 try:
                     start: float = float(trackItem["@start"])
                     duration: float = float(trackItem["@dur"])
@@ -52,16 +54,41 @@ class TrackDownloader:
                     logger.warning("SKIP: track does not have:" + str(ke))
                     continue
                 else:
-                    # adding the index instead of start is crucial
-                    # for quickly referencing prev & next track.
-                    track_comp_key = "|".join([caption.id, str(idx)])
+                    track_comp_key = "|".join([caption.id, str(start)])
                     # append to the tracks
                     tracks.append(Track(track_id=track_comp_key,
                                         caption_id=caption.id,
                                         start=start,
                                         duration=duration,
                                         content=text))
+        # set the prev_id & next_id in this tracks batch
+        cls._set_neighbours(tracks=tracks)
         return tracks
+
+    @classmethod
+    def _set_neighbours(cls, tracks: List[Track]):
+        """
+        sets the prev_id & next_id of all the tracks in the list
+        """
+        for idx, track in enumerate(tracks):
+            # get the current id
+            curr_id = track.id
+            if idx == 0:
+                # the first track has no prev_id; it only has next_id
+                prev_id = None
+                next_id = re.sub(r'[0-9.]+$', str(tracks[idx + 1].start), curr_id)
+            elif idx == (len(tracks) - 1):
+                # the last track has no next_id; it only has prev_id
+                prev_id = re.sub(r'[0-9.]+$', str(tracks[idx - 1].start), curr_id)
+                next_id = None
+            else:
+                # middle tracks have both prev_id and next_id
+                prev_id = re.sub(r'[0-9.]+$', str(tracks[idx - 1].start), curr_id)
+                next_id = re.sub(r'[0-9.]+$', str(tracks[idx + 1].start), curr_id)
+
+            # set prev & next
+            track.set_prev_id(prev_id)
+            track.set_next_id(next_id)
 
 
 class VideoDownloader:

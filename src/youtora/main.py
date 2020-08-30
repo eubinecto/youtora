@@ -58,7 +58,7 @@ class Store:
             channel = ChannelScraper.scrape_channel(channel_url, lang_code, driver=driver)
         finally:
             # always quit the driver regardless of what happens
-            logger.info("closing the selenium driver")
+            logger.info("quitting the selenium driver")
             driver.quit()
 
         # split the video ids into batches
@@ -173,6 +173,8 @@ class Store:
                         "start": track.start,
                         "duration": track.duration,
                         "content": track.content,
+                        "prev_id": track.prev_id,
+                        "next_id": track.next_id
                 }
                 docs.append(doc)
                 del track  # memory management
