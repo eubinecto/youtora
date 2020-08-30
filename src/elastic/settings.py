@@ -16,6 +16,12 @@ YOUTORA_TRACKS_IDX_MAPPINGS = {
       "content": {
         "type": "text"
       },
+      "prev_id": {
+        "type": "keyword"
+      },
+      "next_id": {
+        "type": "keyword"
+      },
       # "text_area_rel_img": {
       #   "type": "rank_feature"
       # },
