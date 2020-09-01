@@ -58,4 +58,3 @@ def api_search_tracks():
 
         results = Search.search_tracks(**search_params)
         return jsonify(results)
-
