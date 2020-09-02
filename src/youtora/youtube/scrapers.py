@@ -19,17 +19,25 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 class Scraper:
-    # for now, put the executable in the same directory
-    CHROME_DRIVER_PATH = "./bin/chromedriver"
-
+    # chrome drivers are stored in bin
+    CHROME_DRIVER_PATH_DICT = {
+        "mac": "./bin/chromedriver_mac64",
+        "linux": "./bin/chromedriver_linux64"
+    }
     # I'm using this for now..
     MOBILE_OPT = {"deviceName": "Nexus 5"}
 
     @classmethod
     def get_driver(cls,
                    time_out: int = 10,
+                   os: str = "mac",
                    is_mobile: bool = False,
                    is_silent: bool = False):
+        # get the path to the chrome driver
+        chrome_driver_path = cls.CHROME_DRIVER_PATH_DICT.get(os, None)
+        if not chrome_driver_path:
+            raise ValueError("invalid os name: " + os)
+
         # using mobile environment
         chrome_options = webdriver.ChromeOptions()
 
@@ -44,7 +52,7 @@ class Scraper:
             chrome_options.add_argument('headless')
 
         # get the driver instance with the options
-        driver = webdriver.Chrome(executable_path=cls.CHROME_DRIVER_PATH,
+        driver = webdriver.Chrome(executable_path=chrome_driver_path,
                                   options=chrome_options)
 
         # implicitly wait. Wait until the timeout given passes.
