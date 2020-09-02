@@ -48,7 +48,7 @@ class Store:
         """
         # check  pre-condition
         assert lang_code in CaptionBuilder.LANG_CODES_TO_COLLECT, "the lang code is invalid"
-        logger = logging.getLogger("exec_idx_channel")
+        logger = logging.getLogger("store_youtora_db")
         # init the clients
         cls.youtora_mongo = YoutoraMongo()
 
@@ -198,11 +198,11 @@ class Store:
         try:
             coll.insert_one(document=doc)
         except DuplicateKeyError as dke:
-            logger.warning(str(dke))
+            # logger.warning(str(dke))
             # delete the channel and then reinsert
             coll.delete_one(filter={"_id": doc["_id"]})
             coll.insert_one(document=doc)
-            logger.info("overwritten: " + str(model.id))
+            logger.warning("overwritten: " + str(model.id))
         else:
             logger.info("stored: " + str(model.id))
 
@@ -218,10 +218,10 @@ class Store:
             # insert all tracks
             coll.insert_many(documents=docs)
         except BulkWriteError as bwe:
-            logger.warning(str(bwe))
+            # logger.warning(str(bwe))
             # delete and overwrite tracks
             coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
             coll.insert_many(documents=docs)
-            logger.info("all overwritten for: " + model.id)
+            logger.warning("all overwritten for: " + model.id)
         else:
             logger.info("all stored for: " + model.id)
