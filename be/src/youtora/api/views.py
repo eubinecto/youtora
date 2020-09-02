@@ -2,8 +2,8 @@ from typing import Optional
 
 from flask import Flask, request, jsonify
 
-from src.elastic.main import Search
-from src.youtora.api.errors import InvalidRequestError
+from be.src.elastic.main import Search
+from be.src.youtora.api.errors import InvalidRequestError
 
 app = Flask(__name__)
 
