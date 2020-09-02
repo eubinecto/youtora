@@ -133,7 +133,7 @@ class VideoDownloader:
         total_vid_cnt = len(vid_id_list)
         vid_done = 0
         # https://stackoverflow.com/questions/11548674/logging-info-doesnt-show-up-on-console-but-warn-and-error-do/11548754
-        vid_logger = logging.getLogger("help_dl_vids")
+        vid_logger = logging.getLogger("dl_videos_lazy")
         # 여기를 multi-processing 으로?
         # 어떻게 할 수 있는가?
         if not len(vid_id_list):
