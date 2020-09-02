@@ -4,7 +4,8 @@ from pymongo.database import Database
 
 # https://api.mongodb.com/python/current/tutorial.html
 # mongodb uri
-MONGO_URI = "mongodb://localhost:27017"
+# using the eubinCloud's internal IP
+MONGO_URI = "mongodb://192.168.219.197:27017"
 
 
 class YoutoraMongo:
