@@ -1,6 +1,7 @@
 
 # list of nodes we should connect to.
-HOSTS = [{"host": "localhost", "port": 9200}]
+# using the eubinCloud's internal IP
+HOSTS = [{"host": "192.168.219.197", "port": 9200}]
 
 # index to store the tracks
 YOUTORA_TRACKS_IDX_NAME = "youtora_tracks"
