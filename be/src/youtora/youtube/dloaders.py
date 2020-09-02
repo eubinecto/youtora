@@ -12,7 +12,7 @@ import requests
 import html
 import xmltodict
 
-from src.youtora.youtube.scrapers import VideoScraper
+from be.src.youtora.youtube.scrapers import VideoScraper
 import logging
 
 # for downloading the frames

@@ -14,15 +14,15 @@ import re
 import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
-from src.youtora.youtube.models import Channel
+from be.src.youtora.youtube.models import Channel
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 class Scraper:
     # chrome drivers are stored in bin
     CHROME_DRIVER_PATH_DICT = {
-        "mac": "./bin/chromedriver_mac64",
-        "linux": "./bin/chromedriver_linux64"
+        "mac": "./be/bin/chromedriver_mac64",
+        "linux": "./be/bin/chromedriver_linux64"
     }
     # I'm using this for now..
     MOBILE_OPT = {"deviceName": "Nexus 5"}
