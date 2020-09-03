@@ -3,6 +3,10 @@
     <nav-bar>
 
     </nav-bar>
+
+    <p>
+      {tmp}
+    </p>
   </div>
 </template>
 
@@ -12,6 +16,11 @@ export default {
   name: 'App',
   components: {
     navBar
+  },
+  data() {
+    return {
+       // tmp = this.$store.state.videoQueryResult
+    }
   }
 }
 </script>

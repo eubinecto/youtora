@@ -52,27 +52,34 @@
 <script>
     export default {
         name: 'NavBar',
+        props: {
 
+        },
         data() {
             return {
                 optPerPage : [
-                    {item: '10', 'name': '10'},
-                    {item: '20', 'name': '20'},
-                    {item: '30', 'name': '30'},
+                    {item: 10, 'name': 10},
+                    {item: 20, 'name': 20},
+                    {item: 30, 'name': 30},
                 ],
                 form: {
                     query: '',
                     lang: null,
-                    perPage: '10',
+                    perPage: 10,
                 },
-                langs: [{ text: 'Select One', value: null }, 'Korean', 'English'],
+                langs: [{ text: 'Select One', value: null }, 'ko', 'en'],
                 show: true
             }
         },
         methods: {
             onSubmit(evt) {
                 evt.preventDefault()
-                alert(JSON.stringify(this.form))
+                console.log(this.form)
+                this.$store.commit('SET_PER_PAGE', this.form.perPage)
+                this.$store.commit('SET_SEARCH_LANGUAGE', this.form.lang)
+                this.$store.commit('SET_SEARCH_QUERY', this.form.query)
+
+                this.$store.dispatch('SEARCH_VIDEOS')
             },
             onReset(evt) {
                 evt.preventDefault()
