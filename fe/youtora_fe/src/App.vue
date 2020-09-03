@@ -1,21 +1,22 @@
 <template>
   <div id="app">
-    <nav-bar>
-
-    </nav-bar>
-
-    <p>
-      {tmp}
-    </p>
+    <nav-bar/>
+    <video-list/>
+    <Foot/>
   </div>
 </template>
 
 <script>
 import navBar from "./components/navBar";
+import videoList from "./components/videoList";
+import Foot from "./components/footer";
+
 export default {
   name: 'App',
   components: {
-    navBar
+    navBar,
+    videoList,
+    Foot
   },
   data() {
     return {
