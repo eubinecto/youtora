@@ -1,11 +1,12 @@
 from typing import Optional
 
 from flask import Flask, request, jsonify
-
+from flask_cors import CORS, cross_origin
 from be.src.elastic.main import Search
 from be.src.youtora.api.errors import InvalidRequestError
 
 app = Flask(__name__)
+cors = CORS(app)
 
 
 # handler for invalid request
@@ -17,6 +18,7 @@ def handle_invalid_request(error):
 
 
 @app.route('/youtora_tracks/search')
+@cross_origin()
 def api_search_tracks():
     """
     api for searching tracks
