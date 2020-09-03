@@ -18,7 +18,7 @@ class Search:
                       like_ratio_boost: int = 5,
                       subs_boost: int = 2,
                       from_: int = 0,
-                      size: int = 10) -> List[dict]:
+                      size: int = 10) -> dict:
         # init the client
         cls.es_client = Elasticsearch(HOSTS)
         # build the search query
@@ -66,20 +66,21 @@ class Search:
                 }
                 tracks.append(next_track)
             # include the social features
-            res = dict()
-            res['meta'] = {
-                'total_cnt': srch_res_json['hits']['total']['value'],
+            res = {
+                'tracks': tracks,
                 'features': {
                     'views': hit['_source']['caption']['video']['views'],
                     'like_ratio': hit['_source']['caption']['video']['like_ratio'],
                     'subs': hit['_source']['caption']['video']['channel']['subs']
-                },
-            }   # meta data of the search result
-            res['data'] = {
-                'tracks': tracks
+                }
             }  # the search data
             results.append(res)
-        return results
+
+        return_dict = {
+            "meta": srch_res_json['hits']['total']['value'],
+            "data": results
+        }
+        return return_dict
 
     @classmethod
     def _get_search_query(cls,
