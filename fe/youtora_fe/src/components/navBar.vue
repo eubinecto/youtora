@@ -54,11 +54,11 @@
         },
         data() {
             return {
-                perPage: 10,
+                perPage: 5,
                 optPerPage : [
+                    {item: 3, 'name': 3},
+                    {item: 5, 'name': 5},
                     {item: 10, 'name': 10},
-                    {item: 20, 'name': 20},
-                    {item: 30, 'name': 30},
                 ],
                 form: {
                     query: '',
@@ -81,7 +81,7 @@
             onSubmit(evt) {
                 evt.preventDefault()
                 console.log(this.form)
-                this.$store.commit('SET_PER_PAGE', this.perpage)
+                this.$store.commit('SET_PER_PAGE', this.perPage)
                 this.$store.commit('SET_SEARCH_LANGUAGE', this.form.lang)
                 this.$store.commit('SET_SEARCH_QUERY', this.form.query)
 

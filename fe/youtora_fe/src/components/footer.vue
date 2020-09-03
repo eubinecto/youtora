@@ -2,7 +2,7 @@
     <div id="Foot" class="overflow-auto">
         <b-pagination
                 v-model="currentPage"
-                :total-rows="rows"
+                :total-rows="this.$store.state.videoTotalCount"
                 :per-page="this.$store.state.search.perPage"
                 align="center"
         />
@@ -14,7 +14,6 @@
         name: 'Foot',
         data() {
             return {
-                rows: 60,
                 currentPage: 1,
             }
         },
@@ -22,13 +21,13 @@
 
         },
         watch: {
-            // currentPage: function(val) {
-            //     //do something when the data changes.
-            //     if (val) {
-            //         this.$store.commit('SET_CURRENT_PAGE', val)
-            //         console.log(this.$store.state.currentPage)
-            //     }
-            // }
+            currentPage: function(val) {
+                //do something when the data changes.
+                if (val) {
+                    this.$store.commit('SET_CURRENT_PAGE', val)
+                    console.log(this.$store.state.currentPage)
+                }
+            }
         }
     }
 </script>
