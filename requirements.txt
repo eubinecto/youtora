@@ -3,6 +3,7 @@ chardet==3.0.4
 click==7.1.2
 elasticsearch==7.9.1
 Flask==1.1.2
+Flask-Cors==3.0.9
 idna==2.10
 itsdangerous==1.1.0
 Jinja2==2.11.2
@@ -11,6 +12,7 @@ numpy==1.19.1
 pymongo==3.11.0
 requests==2.24.0
 selenium==3.141.0
+six==1.15.0
 urllib3==1.25.10
 Werkzeug==1.0.1
 xmltodict==0.12.0
