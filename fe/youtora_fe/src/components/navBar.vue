@@ -30,7 +30,7 @@
             <b-form-group label="perPageRadio">
                 <b-form-radio-group
                         id="perPage"
-                        v-model="form.perPage"
+                        v-model="perPage"
                         :options="optPerPage"
                         class="mb-3"
                         value-field="item"
@@ -42,9 +42,6 @@
             <b-button type="submit" variant="primary">Submit</b-button>
             <b-button type="reset" variant="danger">Reset</b-button>
         </b-form>
-        <b-card class="mt-3" header="Form Data Result">
-            <pre class="m-0">{{ form }}</pre>
-        </b-card>
 
     </div>
 </template>
@@ -57,6 +54,7 @@
         },
         data() {
             return {
+                perPage: 10,
                 optPerPage : [
                     {item: 10, 'name': 10},
                     {item: 20, 'name': 20},
@@ -65,17 +63,25 @@
                 form: {
                     query: '',
                     lang: null,
-                    perPage: 10,
                 },
                 langs: [{ text: 'Select One', value: null }, 'ko', 'en'],
                 show: true
             }
         },
+        watch: {
+            perPage: function(val) {
+                    //do something when the data changes.
+                    if (val) {
+                        this.$store.commit('SET_PER_PAGE', val)
+
+                    }
+                }
+        },
         methods: {
             onSubmit(evt) {
                 evt.preventDefault()
                 console.log(this.form)
-                this.$store.commit('SET_PER_PAGE', this.form.perPage)
+                this.$store.commit('SET_PER_PAGE', this.perpage)
                 this.$store.commit('SET_SEARCH_LANGUAGE', this.form.lang)
                 this.$store.commit('SET_SEARCH_QUERY', this.form.query)
 
