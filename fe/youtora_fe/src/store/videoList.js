@@ -21,6 +21,8 @@ export default new Vuex.Store({
         GET_SEARCH_LANGUAGE: (state) => {return state.search.language},
         GET_PER_PAGE: (state) => {return state.search.perPage},
 
+        GET_CURRENT_PAGE: (state) => {return state.currentPage},
+
         GET_VIDEO_LIST: (state) => {return state.videoQueryResult},
 
     },
@@ -33,6 +35,8 @@ export default new Vuex.Store({
         SET_SEARCH_QUERY: (state, query) => {state.search.query = query},
         SET_SEARCH_LANGUAGE: (state, language) => {state.search.language = language},
         SET_PER_PAGE: (state, perPage) => {state.search.perPage = perPage},
+
+        SET_CURRENT_PAGE: (state, curPage) => {state.currentPage = curPage},
 
         SET_VIDEO_LIST: (state, videoList) => {state.videoQueryResult = videoList}
 
