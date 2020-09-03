@@ -257,3 +257,7 @@ class VideoScraper(Scraper):
                 logging.info("dislike_cnt:{}:video:{}".format(dislike_cnt, vid_url))
 
         return like_cnt, dislike_cnt
+
+
+class MLGlossRawScraper(Scraper):
+    pass

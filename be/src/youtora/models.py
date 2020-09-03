@@ -269,3 +269,25 @@ class Chapter(YouTubeModel):
 #         self.id = frame_id
 #         self.parent_id = vid_id
 #         self.timestamp = timestamp
+
+
+class MLGlossRaw:
+    __slots__ = (
+        "word",
+        "word_link",
+        "desc",
+        "category"
+    )
+
+    def __init__(self,
+                 word: str,
+                 word_link: str,
+                 desc: str,
+                 category: str):
+        self.word = word
+        self.word_link = word_link
+        self.desc = desc
+        self.category = category
+
+    def __str__(self) -> str:
+        return self.word
