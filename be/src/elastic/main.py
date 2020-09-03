@@ -66,14 +66,18 @@ class Search:
                 }
                 tracks.append(next_track)
             # include the social features
-            res = {
+            res = dict()
+            res['meta'] = {
+                'total_cnt': curr_json['hits']['total']['value']
+            }   # meta data of the search result
+            res['data'] = {
                 'features': {
                     'views': hit['_source']['caption']['video']['views'],
                     'like_ratio':  hit['_source']['caption']['video']['like_ratio'],
                     'subs':  hit['_source']['caption']['video']['channel']['subs']
                 },
                 'tracks': tracks
-            }
+            }  # the search data
             results.append(res)
         return results
 
