@@ -4,13 +4,13 @@ from typing import List
 
 from pymongo.collection import Collection
 
-from be.src.youtora.youtube.builders import CaptionBuilder
-from be.src.youtora.youtube.dloaders import VideoDownloader
-from be.src.youtora.youtube.models import Channel, Video, YouTubeModel
-from be.src.youtora.youtube.scrapers import Scraper, ChannelScraper
+from .builders import CaptionBuilder
+from .dloaders import VideoDownloader
+from .models import Channel, Video, YouTubeModel
+from .scrapers import Scraper, ChannelScraper
 
-from be.src.elastic.main import Index
-from be.src.mongo.settings import YoutoraMongo
+from ..elastic.main import Index
+from ..mongo.settings import YoutoraMongo
 
 # for splitting the videos into batches.
 import numpy as np

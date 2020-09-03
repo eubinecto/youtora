@@ -14,7 +14,7 @@ import re
 import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
-from be.src.youtora.youtube.models import Channel
+from be.src.youtora.models import Channel
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 

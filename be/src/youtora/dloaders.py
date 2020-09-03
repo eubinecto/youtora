@@ -12,7 +12,7 @@ import requests
 import html
 import xmltodict
 
-from be.src.youtora.youtube.scrapers import VideoScraper
+from .scrapers import VideoScraper
 import logging
 
 # for downloading the frames
@@ -108,7 +108,6 @@ class TrackDownloader:
                 next_content = tracks[idx + 1].content
             # set the context
             track.set_context(context=" ".join([prev_content, curr_content, next_content]))
-
 
 
 class VideoDownloader:

@@ -1,4 +1,4 @@
-from be.src.mongo.settings import YoutoraMongo
+from .settings import YoutoraMongo
 
 
 class Stash:
