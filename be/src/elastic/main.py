@@ -29,13 +29,13 @@ class Search:
                                              like_ratio_boost,
                                              subs_boost)
         # get the json response for the current track
-        curr_json = cls.es_client.search(body=search_query,
-                                         index=YOUTORA_TRACKS_IDX_NAME,
-                                         from_=from_,
-                                         size=size)
+        srch_res_json = cls.es_client.search(body=search_query,
+                                             index=YOUTORA_TRACKS_IDX_NAME,
+                                             from_=from_,
+                                             size=size)
         # collect all the results!
         results = list()
-        for hit in curr_json['hits']['hits']:
+        for hit in srch_res_json['hits']['hits']:
             # gather this up
             tracks = list()
             vid_id = hit['_source']['caption']['video']['_id']
@@ -66,14 +66,18 @@ class Search:
                 }
                 tracks.append(next_track)
             # include the social features
-            res = {
+            res = dict()
+            res['meta'] = {
+                'total_cnt': srch_res_json['hits']['total']['value'],
                 'features': {
                     'views': hit['_source']['caption']['video']['views'],
-                    'like_ratio':  hit['_source']['caption']['video']['like_ratio'],
-                    'subs':  hit['_source']['caption']['video']['channel']['subs']
+                    'like_ratio': hit['_source']['caption']['video']['like_ratio'],
+                    'subs': hit['_source']['caption']['video']['channel']['subs']
                 },
+            }   # meta data of the search result
+            res['data'] = {
                 'tracks': tracks
-            }
+            }  # the search data
             results.append(res)
         return results
 
