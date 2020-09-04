@@ -7,7 +7,7 @@ from pymongo.collection import Collection
 from .builders import CaptionBuilder
 from .dloaders import VideoDownloader
 from .models import Channel, Video, YouTubeModel
-from .scrapers import Scraper, ChannelScraper
+from .parsers import HTMLParser, ChannelHTMLParser
 
 from ..elastic.main import Index
 from ..mongo.settings import YoutoraMongo
@@ -53,13 +53,13 @@ class Store:
         cls.youtora_mongo = YoutoraMongo()
 
         # get the driver
-        driver = Scraper.get_driver(is_silent=True,
-                                    is_mobile=True,
-                                    os=os)
+        driver = HTMLParser.get_driver(is_silent=True,
+                                       is_mobile=True,
+                                       os=os)
         try:
             # try scraping the channel
             # this will get the video ids of all uploaded videos
-            channel = ChannelScraper.scrape_channel(channel_url, lang_code, driver=driver)
+            channel = ChannelHTMLParser.parse_channel(channel_url, lang_code, driver=driver)
         finally:
             # always quit the driver regardless of what happens
             logger.info("quitting the selenium driver")

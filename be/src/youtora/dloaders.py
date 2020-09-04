@@ -12,7 +12,7 @@ import requests
 import html
 import xmltodict
 
-from .scrapers import VideoScraper
+from .parsers import VideoHTMLParser
 import logging
 
 # for downloading the frames
@@ -185,7 +185,7 @@ class VideoDownloader:
         category = info['categories'][0]
 
         # better collect these info separately
-        likes, dislikes = VideoScraper.likes_dislikes(vid_url)
+        likes, dislikes = VideoHTMLParser.likes_dislikes(vid_url)
 
         # creates a video object
         video = Video(vid_id=vid_id,

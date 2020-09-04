@@ -21,7 +21,7 @@ from be.src.youtora.models import Channel, MLGlossRaw
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
-class Scraper:
+class HTMLParser:
     # chrome drivers are stored in bin
     CHROME_DRIVER_PATH_DICT = {
         "mac": "./be/bin/chromedriver_mac64",
@@ -65,7 +65,7 @@ class Scraper:
         return driver
 
 
-class ChannelScraper(Scraper):
+class ChannelHTMLParser(HTMLParser):
     # the url to the playlist for getting all uploaded videos
     # fill in the channel Id
     CHAN_ALL_UPLOADS_URL = "https://m.youtube.com/channel/{chan_id}/videos?view=0&flow=list"
@@ -80,10 +80,10 @@ class ChannelScraper(Scraper):
     SHOW_MORE_CLASS_NAME = "nextcontinuation-button"
 
     @classmethod
-    def scrape_channel(cls,
-                       chan_url: str,
-                       lang_code: str,
-                       driver: webdriver.Chrome = None) -> Channel:
+    def parse_channel(cls,
+                      chan_url: str,
+                      lang_code: str,
+                      driver: webdriver.Chrome = None) -> Channel:
         """
         now you might be able to do this.
         :param chan_url: the id of the channel
@@ -208,7 +208,7 @@ class ChannelScraper(Scraper):
         return vid_id_list
 
 
-class VideoScraper(Scraper):
+class VideoHTMLParser(HTMLParser):
     """
     just focus on this for now
     likes, dislikes.
@@ -262,12 +262,12 @@ class VideoScraper(Scraper):
         return like_cnt, dislike_cnt
 
 
-class MLGlossRawScraper(Scraper):
+class MLGlossRawHTMLParser(HTMLParser):
     # get all the definitions from here
     ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary"
 
     @classmethod
-    def scrape_ml_gloss_raw(cls) -> List[MLGlossRaw]:
+    def parse_ml_gloss_raw(cls) -> List[MLGlossRaw]:
         logger = logging.getLogger("scrape_ml_gloss_raw")
         driver = super().get_driver(is_silent=True,
                                     is_mobile=True)
@@ -304,3 +304,14 @@ class MLGlossRawScraper(Scraper):
             return gloss_list
         finally:
             driver.quit()
+
+
+class RawParser:
+    pass
+
+
+class MLGlossRawParser(RawParser):
+    """
+    houses logic for parsing the Raw file.
+    """
+    pass
