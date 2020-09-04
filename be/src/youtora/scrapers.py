@@ -8,6 +8,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as e_c
 from selenium.webdriver.common.by import By
 
+from bs4 import BeautifulSoup
+from functional import seq
 
 import requests
 import re
@@ -262,8 +264,43 @@ class VideoScraper(Scraper):
 
 class MLGlossRawScraper(Scraper):
     # get all the definitions from here
-    ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary#centroid_based_clustering"
+    ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary"
 
     @classmethod
-    def scrape_ml_gloss_raw(cls) -> MLGlossRaw:
-        pass
+    def scrape_ml_gloss_raw(cls) -> List[MLGlossRaw]:
+        logger = logging.getLogger("scrape_ml_gloss_raw")
+        driver = super().get_driver(is_silent=True,
+                                    is_mobile=True)
+        try:
+            # get the html
+            logger.info("loading ml glossary page...")
+            driver.get(cls.ML_GLOSS_URL)
+            html = driver.page_source
+        except Exception as e:
+            raise e
+        else:
+            # parse and find the div
+            soup = BeautifulSoup(html, 'html.parser')
+            gloss_div = soup.find("div", attrs={'class': "devsite-article-body clearfix"})
+            # split them by this delimiter
+            delimiter = re.compile(r"<p><a class=\"glossary-anchor\" name=\".*\"></a>\n</p>")
+            results = re.split(delimiter, str(gloss_div))
+            # use pyfunctional module to parse them to build the model I want
+            gloss_list: List[MLGlossRaw] = seq(results)\
+                         .filter(lambda x: x.startswith("<h2 class=\"hide-from-toc"))\
+                         .map(lambda x: BeautifulSoup(x, 'html.parser'))\
+                         .map(lambda x: (x.find("h2"), x.find_all("p"), x.find("div", {'class': "glossary-icon"})))\
+                         .map(lambda x: (str(x[0]) if x[0] else None,
+                                         str(x[1][1]) if len(x[1]) > 1 else None,
+                                         str(x[2]) if x[2] else None))\
+                         .map(lambda x: {'word': x[0].strip() if x[0] else None,
+                                         'desc': x[1].strip() if x[1] else None,
+                                         'category': x[2].strip() if x[2] else None})\
+                         .map(lambda x: MLGlossRaw(word=x['word'],
+                                                   desc=x['desc'],
+                                                   category=x['category']))\
+                         .sequence  # collect
+
+            return gloss_list
+        finally:
+            driver.quit()

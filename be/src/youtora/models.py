@@ -274,18 +274,15 @@ class Chapter(YouTubeModel):
 class MLGlossRaw:
     __slots__ = (
         "word",
-        "word_link",
         "desc",
         "category"
     )
 
     def __init__(self,
                  word: str,
-                 word_link: str,
                  desc: str,
                  category: str):
         self.word = word
-        self.word_link = word_link
         self.desc = desc
         self.category = category
 
