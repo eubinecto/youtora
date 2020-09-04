@@ -25,7 +25,7 @@
                 //do something when the data changes.
                 if (val) {
                     this.$store.commit('SET_CURRENT_PAGE', val)
-                    console.log(this.$store.state.currentPage)
+                    this.$store.dispatch('SEARCH_VIDEOS')
                 }
             }
         }

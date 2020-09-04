@@ -1,52 +1,39 @@
 <template>
     <div id="videoList">
-        <b-card>
-            <ul class="list-unstyled">
-                <b-media tag="li">
-                    <template v-slot:aside>
-                        <b-img blank blank-color="#abc" width="64" alt="placeholder"></b-img>
-                    </template>
-                    <h5 class="mt-0 mb-1">List-based media object</h5>
+        <b-card v-for="item in videoList"
+                :key="videoList.indexOf(item)">
+            <b-card-group>
+                <b-card v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
+                    {{ videoIndicator(item.tracks.indexOf(track)) }}
+                    <b-embed
+                            type="iframe"
+                            aspect="16by9"
+                            :src="urlConverter(track.url)"
+                            allowfullscreen
+                    />
+                    {{ getTime(track.url) }}
+                </b-card>
+            </b-card-group>
+            <b-card-group>
+                <b-card>
+                    <h5 class="mt-0 mb-1">Like Ratio</h5>
                     <p class="mb-0">
-                        Cras sit amet nibh libero, in gravida nulla. Nulla vel metus scelerisque ante sollicitudin.
-                        Cras purus odio, vestibulum in vulputate at, tempus viverra turpis. Fusce condimentum nunc
-                        ac nisi vulputate fringilla. Donec lacinia congue felis in faucibus.
+                        {{ item.features.like_ratio }}
                     </p>
-                </b-media>
-
-                <b-media tag="li" class="my-4">
-                    <template v-slot:aside>
-                        <b-img blank blank-color="#cba" width="64" alt="placeholder"></b-img>
-                    </template>
-
-                    <h5 class="mt-0 mb-1">List-based media object</h5>
+                </b-card>
+                <b-card>
+                    <h5 class="mt-0 mb-1">Subscribers</h5>
                     <p class="mb-0">
-                        Cras sit amet nibh libero, in gravida nulla. Nulla vel metus scelerisque ante sollicitudin.
-                        Cras purus odio, vestibulum in vulputate at, tempus viverra turpis. Fusce condimentum nunc
-                        ac nisi vulputate fringilla. Donec lacinia congue felis in faucibus.
+                        {{ item.features.subs }}
                     </p>
-                </b-media>
-
-                <b-media tag="li">
-                    <template v-slot:aside>
-                        <b-img blank blank-color="#bac" width="64" alt="placeholder"></b-img>
-                    </template>
-
-                    <h5 class="mt-0 mb-1">List-based media object</h5>
+                </b-card>
+                <b-card>
+                    <h5 class="mt-0 mb-1">View Counts</h5>
                     <p class="mb-0">
-                        Cras sit amet nibh libero, in gravida nulla. Nulla vel metus scelerisque ante sollicitudin.
-                        Cras purus odio, vestibulum in vulputate at, tempus viverra turpis. Fusce condimentum nunc
-                        ac nisi vulputate fringilla. Donec lacinia congue felis in faucibus.
+                        {{ item.features.views }}
                     </p>
-                </b-media>
-            </ul>
-
-            <b-embed
-                    type="iframe"
-                    aspect="16by9"
-                    src="https://www.youtube.com/embed/zpOULjyy-n8?rel=0"
-                    allowfullscreen
-            ></b-embed>
+                </b-card>
+            </b-card-group>
         </b-card>
     </div>
 </template>
@@ -56,9 +43,40 @@
         name: "VideoList",
         data() {
             return{
-
+                // videoList: this.$store.getters.GET_VIDEO_LIST
             }
         },
+        methods: {
+            getTime: function (original_link) {
+                const timeSecond = original_link.split("=")[1]
+                const minute = Math.floor(timeSecond/60)
+                const second = timeSecond % 60
+                return `Starting from ${minute}:${second}`
+            },
+            videoIndicator: function (idx) {
+                if (idx === 0) {
+                    return 'Previous subtitle'
+                } else if (idx === 1) {
+                    return 'Target subtitle'
+                } else if (idx === 2) {
+                    return 'Next subtitle'
+                }
+            },
+            urlConverter: function (original_link) {
+                const startTime = original_link.split("=")[1]
+                const videoKey = original_link.split("/")[3].split("=")[0].split("?")[0]
+                const newLink = `https://www.youtube.com/embed/${videoKey}?start=${startTime}&cc_load_policy=1`
+
+                return newLink
+            }
+        },
+        computed: {
+            videoList () {
+                return this.$store.state.videoQueryResult
+            }
+        },
+        watch: {
+        }
 
     }
 </script>

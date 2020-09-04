@@ -80,7 +80,7 @@
         methods: {
             onSubmit(evt) {
                 evt.preventDefault()
-                console.log(this.form)
+
                 this.$store.commit('SET_PER_PAGE', this.perPage)
                 this.$store.commit('SET_SEARCH_LANGUAGE', this.form.lang)
                 this.$store.commit('SET_SEARCH_QUERY', this.form.query)
