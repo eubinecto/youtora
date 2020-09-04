@@ -69,69 +69,57 @@ class ChannelHTMLParser(HTMLParser):
     # the url to the playlist for getting all uploaded videos
     # fill in the channel Id
     CHAN_ALL_UPLOADS_URL = "https://m.youtube.com/channel/{chan_id}/videos?view=0&flow=list"
-
     # XPaths for the elements that we want to access
     # inspect these from chrome browser
     CHAN_LINK_XPATH = "/html/head/link[4]"
     CHAN_TITLE_XPATH = "//*[@id=\"app\"]/div[1]/ytm-browse/ytm-c4-tabbed-header-renderer/div[2]/div/h1"
     CHAN_SUBS_XPATH = "//*[@id=\"app\"]/div[1]/ytm-browse/ytm-c4-tabbed-header-renderer/div[2]/div/div/span"
-
     # the show more button changes its position. find it by its class name
     SHOW_MORE_CLASS_NAME = "nextcontinuation-button"
 
     @classmethod
     def parse_channel(cls,
                       chan_url: str,
-                      lang_code: str,
-                      driver: webdriver.Chrome = None) -> Channel:
+                      lang_code: str) -> Channel:
         """
         now you might be able to do this.
         :param chan_url: the id of the channel
         :param lang_code
-        :param driver:
         :return: a channel object
         """
         logger = logging.getLogger("scrape_channel")
-
-        if not driver:
-            driver_given = False
-            # if the driver is not given.. then get the driver yourself.
-            driver = super().get_driver(is_silent=True,
-                                        is_mobile=True)
-        else:
-            driver_given = True
+        # get the driver
+        driver = super().get_driver(is_silent=True,
+                                    is_mobile=True)
 
         # get the channel page to get the channel id, subs, uploader
-        logger.info("loading channel page...")
-        driver.get(chan_url)
-        channel_id = cls._channel_id(driver)
-        uploader = cls._uploader(driver)
-        subs = cls._subs(driver)
-
-        # get the uploads page
-        logger.info("loading uploads page...")
-        driver.get(cls.CHAN_ALL_UPLOADS_URL.format(chan_id=channel_id))
-
-        vid_id_list = cls._vid_id_list(driver)
-
-        if not driver_given:
-            # if driver has been made within this method,
-            # then close the driver
-            driver.close()
-
-        # the channel is given a lang code
-        return Channel(channel_id=channel_id,
-                       title=uploader,
-                       subs=subs,
-                       lang_code=lang_code,
-                       vid_id_list=vid_id_list)
+        try:
+            logger.info("loading channel page...")
+            driver.get(chan_url)
+            channel_id = cls._channel_id(driver)
+            uploader = cls._uploader(driver)
+            subs = cls._subs(driver)
+            # get the uploads page
+            logger.info("loading uploads page...")
+            driver.get(cls.CHAN_ALL_UPLOADS_URL.format(chan_id=channel_id))
+            vid_id_list = cls._vid_id_list(driver)
+        except Exception as e:
+            raise e
+        else:
+            # the channel is given a lang code
+            return Channel(channel_id=channel_id,
+                           title=uploader,
+                           subs=subs,
+                           lang_code=lang_code,
+                           vid_id_list=vid_id_list)
+        finally:
+            logger.info("quitting the driver")
+            driver.quit()
 
     @classmethod
     def _channel_id(cls, driver: webdriver.Chrome) -> str:
         chan_link_elem = driver.find_element_by_xpath(cls.CHAN_LINK_XPATH)
-
         chan_url = chan_link_elem.get_attribute("href").strip()
-
         # return the last one
         return chan_url.split("/")[-1]
 
@@ -151,10 +139,8 @@ class ChannelHTMLParser(HTMLParser):
         subs_span = driver.find_element_by_xpath(
             cls.CHAN_SUBS_XPATH
         )  # the span element that contains the sub data
-
         # get the data
         subs_data = subs_span.text.split(" ")[0].strip()
-
         # Now I have to parse this
         if re.match(r'[\d.]*[KMB]$', subs_data):
             if subs_data[-1] == 'K':
@@ -167,7 +153,6 @@ class ChannelHTMLParser(HTMLParser):
         else:
             # less than 1K
             subs_cnt = int(subs_data)
-
         # check the value for debugging
         return subs_cnt
 
@@ -194,7 +179,6 @@ class ChannelHTMLParser(HTMLParser):
                 # while load more button is clickable..
                 load_cnt += 1
                 logger.info("loading uploads #" + str(load_cnt))
-
         # get all the elements that are of this class
         videos = driver.find_elements_by_class_name("compact-media-item-image")
         for video in videos:
@@ -229,10 +213,8 @@ class VideoHTMLParser(HTMLParser):
         # the first will be like info, the latter will be dislike info
         results = re.findall(r'"toggleButtonRenderer":{.*?"accessibilityData":{"label":"(.*?)"}}', html)
         # search for like counts
-
         like_info = results[0].strip()
         dislike_info = results[1].strip()
-
         if like_info == "I like this" and dislike_info == "I dislike this":
             # like count and dislike count does not exist
             # which means their values are zero.
@@ -242,7 +224,6 @@ class VideoHTMLParser(HTMLParser):
         else:
             like_cnt_info = like_info.split(" ")[0].strip()
             dislike_cnt_info = dislike_info.split(" ")[0].strip()
-
             # get the like cnt
             if like_cnt_info == "No":
                 like_cnt = 0
@@ -250,7 +231,6 @@ class VideoHTMLParser(HTMLParser):
             else:
                 like_cnt = int(like_cnt_info.replace(",", ""))
                 logging.info("like_cnt:{}:video:{}".format(like_cnt, vid_url))
-
             # get the dislike cnt
             if dislike_cnt_info == "No":
                 dislike_cnt = 0
@@ -258,7 +238,6 @@ class VideoHTMLParser(HTMLParser):
             else:
                 dislike_cnt = int(dislike_cnt_info.replace(",", ""))
                 logging.info("dislike_cnt:{}:video:{}".format(dislike_cnt, vid_url))
-
         return like_cnt, dislike_cnt
 
 
@@ -300,7 +279,6 @@ class MLGlossRawHTMLParser(HTMLParser):
             # add id fields to each
             for idx, gloss_dict in enumerate(gloss_dict_list):
                 gloss_dict['ml_gloss_raw_id'] = "ml_gloss_raw|" + str(idx)
-
             # build gloss list
             gloss_list = [
                 MLGlossRaw(ml_gloss_raw_id=gloss_dict['ml_gloss_raw_id'],
@@ -312,6 +290,7 @@ class MLGlossRawHTMLParser(HTMLParser):
             # return the list
             return gloss_list
         finally:
+            logger.info("quitting the driver")
             driver.quit()
 
 

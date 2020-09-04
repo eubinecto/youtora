@@ -79,18 +79,8 @@ class Store:
         # init the clients
         cls.youtora_db = YoutoraDB()
 
-        # get the driver
-        driver = HTMLParser.get_driver(is_silent=True,
-                                       is_mobile=True,
-                                       os=os)
-        try:
-            # try scraping the channel
-            # this will get the video ids of all uploaded videos
-            channel = ChannelHTMLParser.parse_channel(channel_url, lang_code, driver=driver)
-        finally:
-            # always quit the driver regardless of what happens
-            logger.info("quitting the selenium driver")
-            driver.quit()
+        # this will get the video ids of all uploaded videos
+        channel = ChannelHTMLParser.parse_channel(channel_url, lang_code)
 
         # split the video ids into batches
         batches = np.array_split(channel.vid_id_list, cls.BATCH_SIZE)
