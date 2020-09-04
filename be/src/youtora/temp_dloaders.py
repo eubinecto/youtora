@@ -1,6 +1,10 @@
 # temporary module to avoid conflicts with feature 80
 import subprocess
+from typing import List
+
 import numpy as np
+# for encoding the image into data uri
+import base64
 
 
 class FrameDownloader:
@@ -15,8 +19,10 @@ class FrameDownloader:
     # on mac & linux
     FFMPEG_BIN = "ffmpeg"
 
+    DATA_URL_FORM = 'data:image/png;base64,{}'
+
     @classmethod
-    def dl_frame_binary(cls, vid_url, timestamp) -> np.array:
+    def dl_frame_bytes(cls, vid_url, timestamp) -> bytes:
         """
         :param vid_url: the video from which to download the frames
         :param timestamp: the timestamp at which to capture the frame
@@ -40,12 +46,26 @@ class FrameDownloader:
             stdout=subprocess.PIPE,
             bufsize=10**8  # should be bigger than the size of the frame
         )
-        frame_res: tuple = cls.SETTINGS_DICT['frame_res']
         # get the raw byte image and terminate the process
-        raw_image = proc.communicate()[0]
+        img_bytes = proc.communicate()[0]
         proc.terminate()
+        return img_bytes
+
+    @classmethod
+    def _img_bytes_to_np(cls,
+                         img_bytes: List[bytes],
+                         height: int,
+                         width: int) -> np.array:
         # decode the bytes to integers
-        image = np.frombuffer(raw_image, 'uint8')  # decode the bytes
+        image = np.frombuffer(img_bytes, 'uint8')  # decode the bytes
         # reshape with the given resolution.
-        image = image.reshape((frame_res[0], frame_res[1], 3))
+        image = image.reshape((height, width, 3))
         return image
+
+    @classmethod
+    def _img_bytes_to_data_url(cls,
+                               img_bytes: List[bytes]):
+        encoded = base64.b64encode(img_bytes).decode()
+        return cls.DATA_URL_FORM.format(encoded)
+
+
