@@ -8,17 +8,20 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as e_c
 from selenium.webdriver.common.by import By
 
+from bs4 import BeautifulSoup
+from functional import seq
 
 import requests
 import re
 import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
-from be.src.youtora.youtube.models import Channel
+from be.src.youtora.models import Channel, MLGlossRaw
+
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
-class Scraper:
+class HTMLParser:
     # chrome drivers are stored in bin
     CHROME_DRIVER_PATH_DICT = {
         "mac": "./be/bin/chromedriver_mac64",
@@ -62,7 +65,7 @@ class Scraper:
         return driver
 
 
-class ChannelScraper(Scraper):
+class ChannelHTMLParser(HTMLParser):
     # the url to the playlist for getting all uploaded videos
     # fill in the channel Id
     CHAN_ALL_UPLOADS_URL = "https://m.youtube.com/channel/{chan_id}/videos?view=0&flow=list"
@@ -77,10 +80,10 @@ class ChannelScraper(Scraper):
     SHOW_MORE_CLASS_NAME = "nextcontinuation-button"
 
     @classmethod
-    def scrape_channel(cls,
-                       chan_url: str,
-                       lang_code: str,
-                       driver: webdriver.Chrome = None) -> Channel:
+    def parse_channel(cls,
+                      chan_url: str,
+                      lang_code: str,
+                      driver: webdriver.Chrome = None) -> Channel:
         """
         now you might be able to do this.
         :param chan_url: the id of the channel
@@ -205,7 +208,7 @@ class ChannelScraper(Scraper):
         return vid_id_list
 
 
-class VideoScraper(Scraper):
+class VideoHTMLParser(HTMLParser):
     """
     just focus on this for now
     likes, dislikes.
@@ -257,3 +260,67 @@ class VideoScraper(Scraper):
                 logging.info("dislike_cnt:{}:video:{}".format(dislike_cnt, vid_url))
 
         return like_cnt, dislike_cnt
+
+
+class MLGlossRawHTMLParser(HTMLParser):
+    # get all the definitions from here
+    ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary"
+
+    @classmethod
+    def parse_ml_gloss_raw(cls) -> List[MLGlossRaw]:
+        logger = logging.getLogger("scrape_ml_gloss_raw")
+        driver = super().get_driver(is_silent=True,
+                                    is_mobile=True)
+        try:
+            # get the html
+            logger.info("loading ml glossary page...")
+            driver.get(cls.ML_GLOSS_URL)
+            html = driver.page_source
+        except Exception as e:
+            raise e
+        else:
+            # parse and find the div
+            soup = BeautifulSoup(html, 'html.parser')
+            gloss_div = soup.find("div", attrs={'class': "devsite-article-body clearfix"})
+            # split them by this delimiter
+            delimiter = re.compile(r"<p><a class=\"glossary-anchor\" name=\".*\"></a>\n</p>")
+            results = re.split(delimiter, str(gloss_div))
+            # use pyfunctional module to parse them to build the rep_id I want
+            gloss_dict_list: List[dict] = seq(results)\
+                         .filter(lambda x: x.startswith("<h2 class=\"hide-from-toc"))\
+                         .map(lambda x: BeautifulSoup(x, 'html.parser'))\
+                         .map(lambda x: (x.find("h2"), x.find_all("p"), x.find("div", {'class': "glossary-icon"})))\
+                         .map(lambda x: (str(x[0]) if x[0] else None,
+                                         str(x[1][1]) if len(x[1]) > 1 else None,
+                                         str(x[2]) if x[2] else None))\
+                         .map(lambda x: {'word': x[0].strip() if x[0] else None,
+                                         'desc': x[1].strip() if x[1] else None,
+                                         'category': x[2].strip() if x[2] else None})\
+                         .sequence  # collect
+            # add id fields to each
+            for idx, gloss_dict in enumerate(gloss_dict_list):
+                gloss_dict['ml_gloss_raw_id'] = "ml_gloss_raw|" + str(idx)
+
+            # build gloss list
+            gloss_list = [
+                MLGlossRaw(ml_gloss_raw_id=gloss_dict['ml_gloss_raw_id'],
+                           word=gloss_dict['word'],
+                           desc=gloss_dict['desc'],
+                           category=gloss_dict['category'])
+                for gloss_dict in gloss_dict_list
+            ]
+            # return the list
+            return gloss_list
+        finally:
+            driver.quit()
+
+
+class RawParser:
+    pass
+
+
+class MLGlossRawParser(RawParser):
+    """
+    houses logic for parsing a raw rep_id
+    """
+    pass

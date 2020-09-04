@@ -1,8 +1,8 @@
 import logging
 from typing import List
 
-from be.src.youtora.youtube.errors import CaptionNotFoundError
-from be.src.youtora.youtube.models import Video, Caption, Chapter
+from .errors import CaptionNotFoundError
+from .models import Video, Caption, Chapter
 
 
 class ChapterBuilder:

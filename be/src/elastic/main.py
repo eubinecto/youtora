@@ -1,9 +1,9 @@
 from typing import List, Generator
 
-from be.src.youtora.youtube.models import Channel, Video
+from ..youtora.models import Channel, Video
 
 from elasticsearch import Elasticsearch
-from be.src.elastic.settings import HOSTS, YOUTORA_TRACKS_IDX_NAME
+from .settings import HOSTS, YOUTORA_TRACKS_IDX_NAME
 
 
 class Search:

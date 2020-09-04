@@ -12,7 +12,7 @@ import requests
 import html
 import xmltodict
 
-from be.src.youtora.youtube.scrapers import VideoScraper
+from .parsers import VideoHTMLParser
 import logging
 
 # for downloading the frames
@@ -110,7 +110,6 @@ class TrackDownloader:
             track.set_context(context=" ".join([prev_content, curr_content, next_content]))
 
 
-
 class VideoDownloader:
     VIDEO_DL_OPTS = {
         'writesubtitles': True,
@@ -186,7 +185,7 @@ class VideoDownloader:
         category = info['categories'][0]
 
         # better collect these info separately
-        likes, dislikes = VideoScraper.likes_dislikes(vid_url)
+        likes, dislikes = VideoHTMLParser.likes_dislikes(vid_url)
 
         # creates a video object
         video = Video(vid_id=vid_id,
