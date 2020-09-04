@@ -64,7 +64,7 @@
                     query: '',
                     lang: null,
                 },
-                langs: [{ text: 'Select One', value: null }, 'ko', 'en'],
+                langs: [{ text: 'Select One', value: null }, 'ko', 'en', 'fr', 'jp'],
                 show: true
             }
         },

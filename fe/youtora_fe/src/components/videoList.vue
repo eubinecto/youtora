@@ -3,36 +3,50 @@
         <b-card v-for="item in videoList"
                 :key="videoList.indexOf(item)">
             <b-card-group>
-                <b-card v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
-                    {{ videoIndicator(item.tracks.indexOf(track)) }}
+                <b-card>
                     <b-embed
                             type="iframe"
                             aspect="16by9"
-                            :src="urlConverter(track.url)"
+                            :src="urlConverter(item.tracks[0].url)"
                             allowfullscreen
                     />
-                    {{ getTime(track.url) }}
                 </b-card>
-            </b-card-group>
-            <b-card-group>
-                <b-card>
-                    <h5 class="mt-0 mb-1">Like Ratio</h5>
-                    <p class="mb-0">
-                        {{ item.features.like_ratio }}
-                    </p>
+                <b-card align="left">
+                    <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
+                        <h5 class="mt-0 mb-1">
+                            * {{ videoIndicator(item.tracks.indexOf(track)) }}
+                        </h5>
+
+                        <p class="mb-0 ml-4">
+                            → {{ track.content }}
+                        </p>
+                        <br/>
+                    </div>
+
+                    <b-card-group id="metaInfo">
+                        <b-card>
+                            <h5 class="mt-0 mb-1">Like Ratio</h5>
+                            <p class="mb-0">
+                                {{ Math.round(item.features.like_ratio * 10000) /100 }} %
+                            </p>
+                        </b-card>
+                        <b-card>
+                            <h5 class="mt-0 mb-1">Subscribers</h5>
+                            <p class="mb-0">
+                                {{ item.features.subs }}
+                            </p>
+                        </b-card>
+                        <b-card>
+                            <h5 class="mt-0 mb-1">View Counts</h5>
+                            <p class="mb-0">
+                                {{ item.features.views }}
+                            </p>
+                        </b-card>
+                    </b-card-group>
+
                 </b-card>
-                <b-card>
-                    <h5 class="mt-0 mb-1">Subscribers</h5>
-                    <p class="mb-0">
-                        {{ item.features.subs }}
-                    </p>
-                </b-card>
-                <b-card>
-                    <h5 class="mt-0 mb-1">View Counts</h5>
-                    <p class="mb-0">
-                        {{ item.features.views }}
-                    </p>
-                </b-card>
+
+
             </b-card-group>
         </b-card>
     </div>
