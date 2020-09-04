@@ -14,7 +14,8 @@ import re
 import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
-from be.src.youtora.models import Channel
+from be.src.youtora.models import Channel, MLGlossRaw
+
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
@@ -260,4 +261,9 @@ class VideoScraper(Scraper):
 
 
 class MLGlossRawScraper(Scraper):
-    pass
+    # get all the definitions from here
+    ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary#centroid_based_clustering"
+
+    @classmethod
+    def scrape_ml_gloss_raw(cls) -> MLGlossRaw:
+        pass
