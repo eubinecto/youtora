@@ -12,7 +12,9 @@ export default new Vuex.Store({
             perPage: 10
         },
         currentPage: 1,
-        videoQueryResult: []
+
+        videoQueryResult: [],
+        videoTotalCount: 0
 
 
     },
@@ -21,8 +23,10 @@ export default new Vuex.Store({
         GET_SEARCH_LANGUAGE: (state) => {return state.search.language},
         GET_PER_PAGE: (state) => {return state.search.perPage},
 
-        GET_VIDEO_LIST: (state) => {return state.videoQueryResult},
+        GET_CURRENT_PAGE: (state) => {return state.currentPage},
 
+        GET_VIDEO_LIST: (state) => {return state.videoQueryResult},
+        GET_VIDEO_TOTAL_COUNT: (state) => {return state.videoTotalCount}
     },
     mutations: {
         CLEAR_SEARCH: (state) => {
@@ -34,8 +38,10 @@ export default new Vuex.Store({
         SET_SEARCH_LANGUAGE: (state, language) => {state.search.language = language},
         SET_PER_PAGE: (state, perPage) => {state.search.perPage = perPage},
 
-        SET_VIDEO_LIST: (state, videoList) => {state.videoQueryResult = videoList}
+        SET_CURRENT_PAGE: (state, curPage) => {state.currentPage = curPage},
 
+        SET_VIDEO_LIST: (state, videoList) => {state.videoQueryResult = videoList},
+        SET_VIDEO_TOTAL_COUNT: (state, videoCount) => {state.videoTotalCount = videoCount}
     },
     actions: {
 
@@ -53,11 +59,13 @@ export default new Vuex.Store({
                         alert('QUERY' + state.search.query + 'not in DB')
                         commit('CLEAR_SEARCH')
                     } else {
-                        const searchResult = response.data
-                        commit('SET_VIDEO_LIST',searchResult)
+                        const searchResult = response.data.data
+                        const totalCnt = response.data.meta
+                        commit('SET_VIDEO_LIST', searchResult)
+                        commit('SET_VIDEO_TOTAL_COUNT', totalCnt)
+
                     }
                 })
-            console.log(state.videoQueryResult)
 
         }
     },
