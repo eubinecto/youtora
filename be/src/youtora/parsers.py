@@ -285,8 +285,8 @@ class MLGlossRawHTMLParser(HTMLParser):
             # split them by this delimiter
             delimiter = re.compile(r"<p><a class=\"glossary-anchor\" name=\".*\"></a>\n</p>")
             results = re.split(delimiter, str(gloss_div))
-            # use pyfunctional module to parse them to build the model I want
-            gloss_list: List[MLGlossRaw] = seq(results)\
+            # use pyfunctional module to parse them to build the rep_id I want
+            gloss_dict_list: List[dict] = seq(results)\
                          .filter(lambda x: x.startswith("<h2 class=\"hide-from-toc"))\
                          .map(lambda x: BeautifulSoup(x, 'html.parser'))\
                          .map(lambda x: (x.find("h2"), x.find_all("p"), x.find("div", {'class': "glossary-icon"})))\
@@ -296,11 +296,20 @@ class MLGlossRawHTMLParser(HTMLParser):
                          .map(lambda x: {'word': x[0].strip() if x[0] else None,
                                          'desc': x[1].strip() if x[1] else None,
                                          'category': x[2].strip() if x[2] else None})\
-                         .map(lambda x: MLGlossRaw(word=x['word'],
-                                                   desc=x['desc'],
-                                                   category=x['category']))\
                          .sequence  # collect
+            # add id fields to each
+            for idx, gloss_dict in enumerate(gloss_dict_list):
+                gloss_dict['ml_gloss_raw_id'] = "ml_gloss_raw|" + str(idx)
 
+            # build gloss list
+            gloss_list = [
+                MLGlossRaw(ml_gloss_raw_id=gloss_dict['ml_gloss_raw_id'],
+                           word=gloss_dict['word'],
+                           desc=gloss_dict['desc'],
+                           category=gloss_dict['category'])
+                for gloss_dict in gloss_dict_list
+            ]
+            # return the list
             return gloss_list
         finally:
             driver.quit()
@@ -312,6 +321,6 @@ class RawParser:
 
 class MLGlossRawParser(RawParser):
     """
-    houses logic for parsing the Raw file.
+    houses logic for parsing a raw rep_id
     """
     pass

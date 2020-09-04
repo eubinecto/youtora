@@ -6,11 +6,11 @@ from pymongo.collection import Collection
 
 from .builders import CaptionBuilder
 from .dloaders import VideoDownloader
-from .models import Channel, Video, YouTubeModel
-from .parsers import HTMLParser, ChannelHTMLParser
+from .models import Channel, Video
+from .parsers import HTMLParser, ChannelHTMLParser, MLGlossRawHTMLParser
 
 from ..elastic.main import Index
-from ..mongo.settings import YoutoraMongo
+from ..mongo.settings import YoutoraDB, CorporaDB
 
 # for splitting the videos into batches.
 import numpy as np
@@ -31,7 +31,34 @@ class Store:
     # process batch size
     BATCH_SIZE = 10
 
-    youtora_mongo: YoutoraMongo = None
+    youtora_db: YoutoraDB = None
+    corpora_db: CorporaDB = None
+
+    @classmethod
+    def store_corpora_db(cls):
+        """
+        1. ml gloss raw
+        2. ml gloss
+        3. (later) idiom dict.
+        """
+        # init the client
+        logger = logging.getLogger("store_corpora_db")
+        cls.corpora_db = CorporaDB()
+        # get the from parser
+        ml_gloss_raw_list = MLGlossRawHTMLParser.parse_ml_gloss_raw()
+        docs = [
+            {
+                '_id': ml_gloss_raw.id,
+                'word': ml_gloss_raw.word,
+                "desc": ml_gloss_raw.desc,
+                "category": ml_gloss_raw.category
+            }
+            for ml_gloss_raw in ml_gloss_raw_list
+        ]
+        cls._store_many(cls.corpora_db.ml_gloss_raw_coll,
+                        docs=docs,
+                        rep_id="ml_gloss_raw",
+                        logger=logger)
 
     @classmethod
     def store_youtora_db(cls,
@@ -50,7 +77,7 @@ class Store:
         assert lang_code in CaptionBuilder.LANG_CODES_TO_COLLECT, "the lang code is invalid"
         logger = logging.getLogger("store_youtora_db")
         # init the clients
-        cls.youtora_mongo = YoutoraMongo()
+        cls.youtora_db = YoutoraDB()
 
         # get the driver
         driver = HTMLParser.get_driver(is_silent=True,
@@ -103,9 +130,9 @@ class Store:
             "lang_code": channel.lang_code
         }
         # store the channel
-        cls._store_one(coll=cls.youtora_mongo.channel_coll,
+        cls._store_one(coll=cls.youtora_db.channel_coll,
                        doc=doc,
-                       model=channel,
+                       rep_id=channel.id,
                        logger=logger)
 
     @classmethod
@@ -131,9 +158,9 @@ class Store:
         }  # doc
 
         # store the video
-        cls._store_one(coll=cls.youtora_mongo.video_coll,
+        cls._store_one(coll=cls.youtora_db.video_coll,
                        doc=doc,
-                       model=video,
+                       rep_id=video.id,
                        logger=logger)
 
     @classmethod
@@ -157,9 +184,9 @@ class Store:
             docs.append(doc)
             del caption  # memory management
         # store all captions
-        cls._store_many(coll=cls.youtora_mongo.caption_coll,
+        cls._store_many(coll=cls.youtora_db.caption_coll,
                         docs=docs,
-                        model=video,
+                        rep_id=video.id,
                         logger=logger)
 
     @classmethod
@@ -184,44 +211,42 @@ class Store:
                 docs.append(doc)
                 del track  # memory management
         # store all tracks
-        cls._store_many(coll=cls.youtora_mongo.track_coll,
+        cls._store_many(coll=cls.youtora_db.track_coll,
                         docs=docs,
-                        model=video,
+                        rep_id=video.id,
                         logger=logger)
 
     @classmethod
     def _store_one(cls,
                    coll: Collection,
                    doc: dict,
-                   model: YouTubeModel,
+                   rep_id: str,
                    logger: Logger):
         try:
             coll.insert_one(document=doc)
-        except DuplicateKeyError as dke:
+        except DuplicateKeyError:
             # logger.warning(str(dke))
             # delete the channel and then reinsert
             coll.delete_one(filter={"_id": doc["_id"]})
             coll.insert_one(document=doc)
-            logger.warning("overwritten: " + str(model.id))
+            logger.warning("overwritten: " + rep_id)
         else:
-            logger.info("stored: " + str(model.id))
-
-        pass
+            logger.info("stored: " + rep_id)
 
     @classmethod
     def _store_many(cls,
                     coll: Collection,
                     docs: List[dict],
-                    model: YouTubeModel,
+                    rep_id: str,
                     logger: Logger):
         try:
             # insert all tracks
             coll.insert_many(documents=docs)
-        except BulkWriteError as bwe:
+        except BulkWriteError:
             # logger.warning(str(bwe))
             # delete and overwrite tracks
             coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
             coll.insert_many(documents=docs)
-            logger.warning("all overwritten for: " + model.id)
+            logger.warning("all overwritten for: " + rep_id)
         else:
-            logger.info("all stored for: " + model.id)
+            logger.info("all stored for: " + rep_id)

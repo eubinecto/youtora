@@ -1,12 +1,15 @@
 from typing import List, Optional
 
 
-class YouTubeModel:
+class Model:
     def __init__(self):
         self.id = None
-        self.parent_id = None
 
-    pass
+
+class YouTubeModel(Model):
+    def __init__(self):
+        super().__init__()
+        self.parent_id = None
 
 
 class Channel(YouTubeModel):
@@ -247,7 +250,7 @@ class Chapter(YouTubeModel):
         return self.title
 
 
-# class Frame(YouTubeModel):
+# class Frame(Model):
 #
 #     __slots__ = (
 #         "id",
@@ -271,17 +274,20 @@ class Chapter(YouTubeModel):
 #         self.timestamp = timestamp
 
 
-class MLGlossRaw:
+class MLGlossRaw(Model):
     __slots__ = (
+        "id",
         "word",
         "desc",
         "category"
     )
 
-    def __init__(self,
+    def __init__(self, ml_gloss_raw_id: str,
                  word: str,
                  desc: str,
                  category: str):
+        super().__init__()
+        self.id = ml_gloss_raw_id
         self.word = word
         self.desc = desc
         self.category = category
