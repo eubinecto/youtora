@@ -13,14 +13,7 @@
                 </b-card>
                 <b-card align="left">
                     <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
-                        <h5 class="mt-0 mb-1">
-                            * {{ videoIndicator(item.tracks.indexOf(track)) }}
-                        </h5>
-
-                        <p class="mb-0 ml-4">
-                            → {{ track.content }}
-                        </p>
-                        <br/>
+                         [ {{ getTime(track.url) }} ] : {{ track.content }}
                     </div>
 
                     <b-card-group id="metaInfo">
@@ -79,7 +72,7 @@
                 const timeSecond = original_link.split("=")[1]
                 const minute = Math.floor(timeSecond/60)
                 const second = timeSecond % 60
-                return `Starting from ${minute}:${second}`
+                return `${minute}:${second}`
             },
             videoIndicator: function (idx) {
                 if (idx === 0) {
@@ -93,9 +86,10 @@
             urlConverter: function (original_link) {
                 const startTime = original_link.split("=")[1]
                 const videoKey = original_link.split("/")[3].split("=")[0].split("?")[0]
-                const newLink = `https://www.youtube.com/embed/${videoKey}?start=${startTime}&cc_load_policy=1`
+                const langId = this.$store.state.search.language
+                console.log(langId)
 
-                return newLink
+                return `https://www.youtube.com/embed/${videoKey}?start=${startTime}&cc_load_policy=1&cc_lang_pref=${langId}`
             }
         },
         computed: {
