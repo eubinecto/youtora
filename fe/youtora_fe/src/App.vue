@@ -1,22 +1,21 @@
 <template>
   <div id="app">
     <nav-bar/>
-    <video-list/>
-    <Foot/>
+    <router-view>
+
+    </router-view>
+
+
   </div>
 </template>
 
 <script>
 import navBar from "./components/navBar";
-import videoList from "./components/videoList";
-import Foot from "./components/footer";
 
 export default {
   name: 'App',
   components: {
     navBar,
-    videoList,
-    Foot
   },
   data() {
     return {

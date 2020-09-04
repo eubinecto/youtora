@@ -1,5 +1,5 @@
 <template>
-    <div id="Foot" class="overflow-auto">
+    <div id="generalSearchPagination" class="overflow-auto">
         <b-pagination
                 v-model="currentPage"
                 :total-rows="this.$store.state.videoTotalCount"
@@ -11,7 +11,7 @@
 
 <script>
     export default {
-        name: 'Foot',
+        name: 'generalSearchPagination',
         data() {
             return {
                 currentPage: 1,

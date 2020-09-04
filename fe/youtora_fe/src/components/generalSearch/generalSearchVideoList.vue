@@ -1,5 +1,5 @@
 <template>
-    <div id="videoList">
+    <div id="generalSearchVideoList">
         <b-card v-for="item in videoList"
                 :key="videoList.indexOf(item)">
             <b-card-group>
@@ -52,8 +52,6 @@
                     </b-card-group>
 
                 </b-card>
-
-
             </b-card-group>
         </b-card>
     </div>
@@ -61,7 +59,8 @@
 
 <script>
     export default {
-        name: "VideoList",
+        name: "generalSearchVideoList",
+
         data() {
             return{
                 // videoList: this.$store.getters.GET_VIDEO_LIST
@@ -87,7 +86,6 @@
                 const startTime = original_link.split("=")[1]
                 const videoKey = original_link.split("/")[3].split("=")[0].split("?")[0]
                 const langId = this.$store.state.search.language
-                console.log(langId)
 
                 return `https://www.youtube.com/embed/${videoKey}?start=${startTime}&cc_load_policy=1&cc_lang_pref=${langId}`
             }
