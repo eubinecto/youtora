@@ -25,38 +25,53 @@ def api_search_tracks():
     """
     params_dict = request.args
     # this is required
-    try:
-        content = params_dict['content']
-    except KeyError:
+    content = params_dict.get('content', None)
+    if not content:
         raise InvalidRequestError("parameter content is required, but not provided", 410)
-    else:
-        # these are optional
-        chan_lang_code: Optional[str] = params_dict.get('chan_lang_code', None)
-        caption_lang_code: Optional[str] = params_dict.get('caption_lang_code', None)
-        views_boost: Optional[int] = params_dict.get('views_boost', None)
-        like_ratio_boost: Optional[int] = params_dict.get('like_ratio_boost', None)
-        subs_boost: Optional[int] = params_dict.get('subs_boost', None)
-        from_: Optional[int] = params_dict.get('from', None)
-        size: Optional[int] = params_dict.get('size', None)
 
-        # build the parameters to pass
-        search_params = {
-            'content': content
-        }
-        if chan_lang_code:
-            search_params['chan_lang_code'] = chan_lang_code
-        if caption_lang_code:
-            search_params['caption_lang_code'] = caption_lang_code
-        if views_boost:
-            search_params['views_boost'] = int(views_boost)
-        if like_ratio_boost:
-            search_params['like_ratio_boost'] = int(like_ratio_boost)
-        if subs_boost:
-            search_params['subs_boost'] = int(subs_boost)
-        if from_:
-            search_params['from_'] = int(from_)
-        if size:
-            search_params['size'] = int(size)
+    # these are optional
+    chan_lang_code: Optional[str] = params_dict.get('chan_lang_code', None)
+    caption_lang_code: Optional[str] = params_dict.get('caption_lang_code', None)
+    views_boost: Optional[int] = params_dict.get('views_boost', None)
+    like_ratio_boost: Optional[int] = params_dict.get('like_ratio_boost', None)
+    subs_boost: Optional[int] = params_dict.get('subs_boost', None)
+    from_: Optional[int] = params_dict.get('from', None)
+    size: Optional[int] = params_dict.get('size', None)
 
-        results = Search.search_tracks(**search_params)
-        return jsonify(results)
+    # build the parameters to pass
+    search_params = {
+        'content': content
+    }
+    if chan_lang_code:
+        search_params['chan_lang_code'] = chan_lang_code
+    if caption_lang_code:
+        search_params['caption_lang_code'] = caption_lang_code
+    if views_boost:
+        search_params['views_boost'] = int(views_boost)
+    if like_ratio_boost:
+        search_params['like_ratio_boost'] = int(like_ratio_boost)
+    if subs_boost:
+        search_params['subs_boost'] = int(subs_boost)
+    if from_:
+        search_params['from_'] = int(from_)
+    if size:
+        search_params['size'] = int(size)
+
+    results = Search.search_tracks(**search_params)
+    return jsonify(results)
+
+
+@app.route('youtora/dloaders/dl_frame')
+@cross_origin()
+def api_dl_frame():
+    # get the arguments
+    param_dict = request.args
+    # required parameters
+    vid_url = param_dict.get('vid_id', None)
+    timestamp = param_dict.get('timestamp', None)
+    # required check
+    if None in (vid_url, timestamp):
+        raise InvalidRequestError("Either vid_url or timestamp is not given. They are both required")
+
+    # use the function to download the frame binary
+    pass
