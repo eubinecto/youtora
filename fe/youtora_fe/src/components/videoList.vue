@@ -25,19 +25,33 @@
 
                     <b-card-group id="metaInfo">
                         <b-card>
-                            <h5 class="mt-0 mb-1">Like Ratio</h5>
+                            <h5 class="mt-0 mb-1">
+                                <b-icon icon="hand-thumbs-up" aria-hidden="true"></b-icon>
+                                /
+                                <b-icon icon="hand-thumbs-down" aria-hidden="true"></b-icon>
+                                <br/>
+                                Like Ratio
+                            </h5>
                             <p class="mb-0">
                                 {{ Math.round(item.features.like_ratio * 10000) /100 }} %
                             </p>
                         </b-card>
                         <b-card>
-                            <h5 class="mt-0 mb-1">Subscribers</h5>
+                            <h5 class="mt-0 mb-1">
+                                <b-icon icon="bookmark-check" aria-hidden="true"></b-icon>
+                                <br/>
+                                Subscribers
+                            </h5>
                             <p class="mb-0">
                                 {{ item.features.subs }}
                             </p>
                         </b-card>
                         <b-card>
-                            <h5 class="mt-0 mb-1">View Counts</h5>
+                            <h5 class="mt-0 mb-1">
+                                <b-icon icon="eye" aria-hidden="true"></b-icon>
+                                <br/>
+                                View Counts
+                            </h5>
                             <p class="mb-0">
                                 {{ item.features.views }}
                             </p>
