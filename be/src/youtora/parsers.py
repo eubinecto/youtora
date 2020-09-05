@@ -8,17 +8,20 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as e_c
 from selenium.webdriver.common.by import By
 
+from bs4 import BeautifulSoup
+from functional import seq
 
 import requests
 import re
 import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
-from be.src.youtora.youtube.models import Channel
+from be.src.youtora.models import Channel, MLGlossRaw
+
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
-class Scraper:
+class HTMLParser:
     # chrome drivers are stored in bin
     CHROME_DRIVER_PATH_DICT = {
         "mac": "./be/bin/chromedriver_mac64",
@@ -62,73 +65,61 @@ class Scraper:
         return driver
 
 
-class ChannelScraper(Scraper):
+class ChannelHTMLParser(HTMLParser):
     # the url to the playlist for getting all uploaded videos
     # fill in the channel Id
     CHAN_ALL_UPLOADS_URL = "https://m.youtube.com/channel/{chan_id}/videos?view=0&flow=list"
-
     # XPaths for the elements that we want to access
     # inspect these from chrome browser
     CHAN_LINK_XPATH = "/html/head/link[4]"
     CHAN_TITLE_XPATH = "//*[@id=\"app\"]/div[1]/ytm-browse/ytm-c4-tabbed-header-renderer/div[2]/div/h1"
     CHAN_SUBS_XPATH = "//*[@id=\"app\"]/div[1]/ytm-browse/ytm-c4-tabbed-header-renderer/div[2]/div/div/span"
-
     # the show more button changes its position. find it by its class name
     SHOW_MORE_CLASS_NAME = "nextcontinuation-button"
 
     @classmethod
-    def scrape_channel(cls,
-                       chan_url: str,
-                       lang_code: str,
-                       driver: webdriver.Chrome = None) -> Channel:
+    def parse_channel(cls,
+                      chan_url: str,
+                      lang_code: str) -> Channel:
         """
         now you might be able to do this.
         :param chan_url: the id of the channel
         :param lang_code
-        :param driver:
         :return: a channel object
         """
         logger = logging.getLogger("scrape_channel")
-
-        if not driver:
-            driver_given = False
-            # if the driver is not given.. then get the driver yourself.
-            driver = super().get_driver(is_silent=True,
-                                        is_mobile=True)
-        else:
-            driver_given = True
+        # get the driver
+        driver = super().get_driver(is_silent=True,
+                                    is_mobile=True)
 
         # get the channel page to get the channel id, subs, uploader
-        logger.info("loading channel page...")
-        driver.get(chan_url)
-        channel_id = cls._channel_id(driver)
-        uploader = cls._uploader(driver)
-        subs = cls._subs(driver)
-
-        # get the uploads page
-        logger.info("loading uploads page...")
-        driver.get(cls.CHAN_ALL_UPLOADS_URL.format(chan_id=channel_id))
-
-        vid_id_list = cls._vid_id_list(driver)
-
-        if not driver_given:
-            # if driver has been made within this method,
-            # then close the driver
-            driver.close()
-
-        # the channel is given a lang code
-        return Channel(channel_id=channel_id,
-                       title=uploader,
-                       subs=subs,
-                       lang_code=lang_code,
-                       vid_id_list=vid_id_list)
+        try:
+            logger.info("loading channel page...")
+            driver.get(chan_url)
+            channel_id = cls._channel_id(driver)
+            uploader = cls._uploader(driver)
+            subs = cls._subs(driver)
+            # get the uploads page
+            logger.info("loading uploads page...")
+            driver.get(cls.CHAN_ALL_UPLOADS_URL.format(chan_id=channel_id))
+            vid_id_list = cls._vid_id_list(driver)
+        except Exception as e:
+            raise e
+        else:
+            # the channel is given a lang code
+            return Channel(channel_id=channel_id,
+                           title=uploader,
+                           subs=subs,
+                           lang_code=lang_code,
+                           vid_id_list=vid_id_list)
+        finally:
+            logger.info("quitting the driver")
+            driver.quit()
 
     @classmethod
     def _channel_id(cls, driver: webdriver.Chrome) -> str:
         chan_link_elem = driver.find_element_by_xpath(cls.CHAN_LINK_XPATH)
-
         chan_url = chan_link_elem.get_attribute("href").strip()
-
         # return the last one
         return chan_url.split("/")[-1]
 
@@ -148,10 +139,8 @@ class ChannelScraper(Scraper):
         subs_span = driver.find_element_by_xpath(
             cls.CHAN_SUBS_XPATH
         )  # the span element that contains the sub data
-
         # get the data
         subs_data = subs_span.text.split(" ")[0].strip()
-
         # Now I have to parse this
         if re.match(r'[\d.]*[KMB]$', subs_data):
             if subs_data[-1] == 'K':
@@ -164,7 +153,6 @@ class ChannelScraper(Scraper):
         else:
             # less than 1K
             subs_cnt = int(subs_data)
-
         # check the value for debugging
         return subs_cnt
 
@@ -191,7 +179,6 @@ class ChannelScraper(Scraper):
                 # while load more button is clickable..
                 load_cnt += 1
                 logger.info("loading uploads #" + str(load_cnt))
-
         # get all the elements that are of this class
         videos = driver.find_elements_by_class_name("compact-media-item-image")
         for video in videos:
@@ -205,7 +192,7 @@ class ChannelScraper(Scraper):
         return vid_id_list
 
 
-class VideoScraper(Scraper):
+class VideoHTMLParser(HTMLParser):
     """
     just focus on this for now
     likes, dislikes.
@@ -226,10 +213,8 @@ class VideoScraper(Scraper):
         # the first will be like info, the latter will be dislike info
         results = re.findall(r'"toggleButtonRenderer":{.*?"accessibilityData":{"label":"(.*?)"}}', html)
         # search for like counts
-
         like_info = results[0].strip()
         dislike_info = results[1].strip()
-
         if like_info == "I like this" and dislike_info == "I dislike this":
             # like count and dislike count does not exist
             # which means their values are zero.
@@ -239,7 +224,6 @@ class VideoScraper(Scraper):
         else:
             like_cnt_info = like_info.split(" ")[0].strip()
             dislike_cnt_info = dislike_info.split(" ")[0].strip()
-
             # get the like cnt
             if like_cnt_info == "No":
                 like_cnt = 0
@@ -247,7 +231,6 @@ class VideoScraper(Scraper):
             else:
                 like_cnt = int(like_cnt_info.replace(",", ""))
                 logging.info("like_cnt:{}:video:{}".format(like_cnt, vid_url))
-
             # get the dislike cnt
             if dislike_cnt_info == "No":
                 dislike_cnt = 0
@@ -255,5 +238,69 @@ class VideoScraper(Scraper):
             else:
                 dislike_cnt = int(dislike_cnt_info.replace(",", ""))
                 logging.info("dislike_cnt:{}:video:{}".format(dislike_cnt, vid_url))
-
         return like_cnt, dislike_cnt
+
+
+class MLGlossRawHTMLParser(HTMLParser):
+    # get all the definitions from here
+    ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary"
+
+    CONTENTS_DELIM_REGEXP = re.compile("<p><a class=\"glossary-anchor\" name=\".*\"></a>\n</p><h2 class=\"hide-from-toc\""
+                                       + " data-text=\".*\" id=\".*\" tabindex=\"[0-9]\">.*</h2>")
+    META_REGEXP = re.compile("<p><a class=\"glossary-anchor\" name=\"(.*)\"></a>\n</p><h2 class=\"hide-from-toc\""
+                                       + " data-text=\"(.*)\" id=\".*\" tabindex=\"[0-9]\">.*</h2>")
+
+    @classmethod
+    def parse_ml_gloss_raw(cls) -> List[MLGlossRaw]:
+        logger = logging.getLogger("scrape_ml_gloss_raw")
+        driver = super().get_driver(is_silent=True,
+                                    is_mobile=True)
+        try:
+            # get the html
+            logger.info("loading ml glossary page...")
+            driver.get(cls.ML_GLOSS_URL)
+            html = driver.page_source
+        except Exception as e:
+            raise e
+        else:
+            # parse and find the div
+            soup = BeautifulSoup(html, 'html.parser')
+            gloss_div = soup.find("div", attrs={'class': "devsite-article-body clearfix"})
+            # split them by this delimiter
+            contents = re.split(cls.CONTENTS_DELIM_REGEXP, str(gloss_div))
+            # use pyfunctional module to parse them to build the rep_id I want
+            parsed_contents = seq(contents).map(lambda x: BeautifulSoup(x, 'html.parser'))\
+                                 .map(lambda x: (x.find_all('p'), x.find('div', attrs={'class': 'glossary-icon'})))\
+                                 .map(lambda x: ([str(p_tag) for p_tag in x[0]],
+                                                 str(x[1] if x[1] else None)))\
+                                 .map(lambda x: ("".join(x[0]), x[1]))\
+                                 .map(lambda x: {'desc_raw': x[0], 'category_raw': x[1]})\
+                                 .sequence[1:]  # ignore the first one
+
+            # get the id & word
+            metas = seq(re.findall(cls.META_REGEXP, str(gloss_div)))\
+                        .map(lambda x: {'id': x[0], 'word': x[1]})\
+                        .sequence
+
+            ml_gloss_raws = [
+                MLGlossRaw(ml_gloss_raw_id="ml_gloss_raw|" + meta['id'],
+                           word=meta['word'],
+                           desc_raw=parsed_content['desc_raw'],
+                           category_raw=parsed_content['category_raw'])
+                for parsed_content, meta in zip(parsed_contents, metas)
+            ]
+            return ml_gloss_raws
+        finally:
+            logger.info("quitting the driver")
+            driver.quit()
+
+
+class RawParser:
+    pass
+
+
+class MLGlossRawParser(RawParser):
+    """
+    houses logic for parsing a raw rep_id
+    """
+    pass

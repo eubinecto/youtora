@@ -1,12 +1,15 @@
 from typing import List, Optional
 
 
-class YouTubeModel:
+class Model:
     def __init__(self):
         self.id = None
-        self.parent_id = None
 
-    pass
+
+class YouTubeModel(Model):
+    def __init__(self):
+        super().__init__()
+        self.parent_id = None
 
 
 class Channel(YouTubeModel):
@@ -247,7 +250,7 @@ class Chapter(YouTubeModel):
         return self.title
 
 
-# class Frame(YouTubeModel):
+# class Frame(Model):
 #
 #     __slots__ = (
 #         "id",
@@ -269,3 +272,58 @@ class Chapter(YouTubeModel):
 #         self.id = frame_id
 #         self.parent_id = vid_id
 #         self.timestamp = timestamp
+
+
+class MLGlossRaw(Model):
+    __slots__ = (
+        "id",
+        "word",
+        "desc_raw",
+        "category_raw"
+    )
+
+    def __init__(self,
+                 ml_gloss_raw_id: str,
+                 word: str,
+                 desc_raw: str,
+                 category_raw: str):
+        super().__init__()
+        self.id = ml_gloss_raw_id
+        # have to find this as well
+        self.word = word
+        self.desc_raw = desc_raw
+        self.category_raw = category_raw
+
+    def __str__(self) -> str:
+        return self.word
+
+
+class MLGlossDesc(Model):
+    __slots__ = (
+        "topic_sent",
+        "pure_text",
+        "int_links",
+        "ext_links"
+    )
+
+
+class MLGloss(Model):
+    __slots__ = (
+        "id",
+        "word",
+        "desc",
+        "category"
+    )
+
+    def __init__(self,
+                 ml_gloss_id: str,
+                 word: str,
+                 desc: MLGlossDesc,
+                 category: str):
+        super().__init__()
+        self.id = ml_gloss_id
+        self.word = word
+        self.desc = desc
+        self.category = category
+
+
