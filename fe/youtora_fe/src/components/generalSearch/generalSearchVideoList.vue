@@ -11,12 +11,18 @@
                             allowfullscreen
                     />
                 </b-card>
-                <b-card align="left">
-                    <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
-                         [ {{ getTime(track.url) }} ] : {{ track.content }}
+                <b-card>
+                    <div id="videoMetaBase" align="left">
+                        <b-card>
+                            <h4>* Title: </h4>
+                        </b-card>
+                        <b-card>
+                            <h4>* Owner: </h4>
+                        </b-card>
+
                     </div>
 
-                    <b-card-group id="metaInfo">
+                    <b-card-group id="metaInfo" style="margin-bottom: 20px">
                         <b-card>
                             <h5 class="mt-0 mb-1">
                                 <b-icon icon="hand-thumbs-up" aria-hidden="true"></b-icon>
@@ -51,6 +57,14 @@
                         </b-card>
                     </b-card-group>
 
+                    <h3>Subtitle</h3><br/>
+                    <b-card-group id="subtitles" style="margin-top: auto" align="left">
+                        <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
+                            <h4>
+                                [ {{ getTime(track.url) }} ] : {{ track.content }}
+                            </h4>
+                        </div>
+                    </b-card-group>
                 </b-card>
             </b-card-group>
         </b-card>
