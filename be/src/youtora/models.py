@@ -278,19 +278,52 @@ class MLGlossRaw(Model):
     __slots__ = (
         "id",
         "word",
+        "desc_raw",
+        "category_raw"
+    )
+
+    def __init__(self,
+                 ml_gloss_raw_id: str,
+                 word: str,
+                 desc_raw: str,
+                 category_raw: str):
+        super().__init__()
+        self.id = ml_gloss_raw_id
+        # have to find this as well
+        self.word = word
+        self.desc_raw = desc_raw
+        self.category_raw = category_raw
+
+    def __str__(self) -> str:
+        return self.word
+
+
+class MLGlossDesc(Model):
+    __slots__ = (
+        "topic_sent",
+        "pure_text",
+        "int_links",
+        "ext_links"
+    )
+
+
+class MLGloss(Model):
+    __slots__ = (
+        "id",
+        "word",
         "desc",
         "category"
     )
 
-    def __init__(self, ml_gloss_raw_id: str,
+    def __init__(self,
+                 ml_gloss_id: str,
                  word: str,
-                 desc: str,
+                 desc: MLGlossDesc,
                  category: str):
         super().__init__()
-        self.id = ml_gloss_raw_id
+        self.id = ml_gloss_id
         self.word = word
         self.desc = desc
         self.category = category
 
-    def __str__(self) -> str:
-        return self.word
+

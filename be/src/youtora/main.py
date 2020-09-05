@@ -50,8 +50,8 @@ class Store:
             {
                 '_id': ml_gloss_raw.id,
                 'word': ml_gloss_raw.word,
-                "desc": ml_gloss_raw.desc,
-                "category": ml_gloss_raw.category
+                "desc_raw": ml_gloss_raw.desc_raw,
+                "category_raw": ml_gloss_raw.category_raw
             }
             for ml_gloss_raw in ml_gloss_raw_list
         ]
@@ -144,7 +144,7 @@ class Store:
             "views": video.views,
             "likes": video.likes,
             "dislikes": video.dislikes,
-            "category": video.category
+            "category_raw": video.category
         }  # doc
 
         # store the video

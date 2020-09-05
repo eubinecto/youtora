@@ -245,6 +245,11 @@ class MLGlossRawHTMLParser(HTMLParser):
     # get all the definitions from here
     ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary"
 
+    CONTENTS_DELIM_REGEXP = re.compile("<p><a class=\"glossary-anchor\" name=\".*\"></a>\n</p><h2 class=\"hide-from-toc\""
+                                       + " data-text=\".*\" id=\".*\" tabindex=\"[0-9]\">.*</h2>")
+    META_REGEXP = re.compile("<p><a class=\"glossary-anchor\" name=\"(.*)\"></a>\n</p><h2 class=\"hide-from-toc\""
+                                       + " data-text=\"(.*)\" id=\".*\" tabindex=\"[0-9]\">.*</h2>")
+
     @classmethod
     def parse_ml_gloss_raw(cls) -> List[MLGlossRaw]:
         logger = logging.getLogger("scrape_ml_gloss_raw")
@@ -262,33 +267,29 @@ class MLGlossRawHTMLParser(HTMLParser):
             soup = BeautifulSoup(html, 'html.parser')
             gloss_div = soup.find("div", attrs={'class': "devsite-article-body clearfix"})
             # split them by this delimiter
-            delimiter = re.compile(r"<p><a class=\"glossary-anchor\" name=\".*\"></a>\n</p>")
-            results = re.split(delimiter, str(gloss_div))
+            contents = re.split(cls.CONTENTS_DELIM_REGEXP, str(gloss_div))
             # use pyfunctional module to parse them to build the rep_id I want
-            gloss_dict_list: List[dict] = seq(results)\
-                         .filter(lambda x: x.startswith("<h2 class=\"hide-from-toc"))\
-                         .map(lambda x: BeautifulSoup(x, 'html.parser'))\
-                         .map(lambda x: (x.find("h2"), x.find_all("p"), x.find("div", {'class': "glossary-icon"})))\
-                         .map(lambda x: (str(x[0]) if x[0] else None,
-                                         str(x[1][1]) if len(x[1]) > 1 else None,
-                                         str(x[2]) if x[2] else None))\
-                         .map(lambda x: {'word': x[0].strip() if x[0] else None,
-                                         'desc': x[1].strip() if x[1] else None,
-                                         'category': x[2].strip() if x[2] else None})\
-                         .sequence  # collect
-            # add id fields to each
-            for idx, gloss_dict in enumerate(gloss_dict_list):
-                gloss_dict['ml_gloss_raw_id'] = "ml_gloss_raw|" + str(idx)
-            # build gloss list
-            gloss_list = [
-                MLGlossRaw(ml_gloss_raw_id=gloss_dict['ml_gloss_raw_id'],
-                           word=gloss_dict['word'],
-                           desc=gloss_dict['desc'],
-                           category=gloss_dict['category'])
-                for gloss_dict in gloss_dict_list
+            parsed_contents = seq(contents).map(lambda x: BeautifulSoup(x, 'html.parser'))\
+                                 .map(lambda x: (x.find_all('p'), x.find('div', attrs={'class': 'glossary-icon'})))\
+                                 .map(lambda x: ([str(p_tag) for p_tag in x[0]],
+                                                 str(x[1] if x[1] else None)))\
+                                 .map(lambda x: ("".join(x[0]), x[1]))\
+                                 .map(lambda x: {'desc_raw': x[0], 'category_raw': x[1]})\
+                                 .sequence[1:]  # ignore the first one
+
+            # get the id & word
+            metas = seq(re.findall(cls.META_REGEXP, str(gloss_div)))\
+                        .map(lambda x: {'id': x[0], 'word': x[1]})\
+                        .sequence
+
+            ml_gloss_raws = [
+                MLGlossRaw(ml_gloss_raw_id="ml_gloss_raw|" + meta['id'],
+                           word=meta['word'],
+                           desc_raw=parsed_content['desc_raw'],
+                           category_raw=parsed_content['category_raw'])
+                for parsed_content, meta in zip(parsed_contents, metas)
             ]
-            # return the list
-            return gloss_list
+            return ml_gloss_raws
         finally:
             logger.info("quitting the driver")
             driver.quit()
