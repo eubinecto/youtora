@@ -2,9 +2,9 @@ from typing import Optional
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
-from be.src.elastic.main import Search
-from be.src.mongo.settings import CorporaDB
-from be.src.youtora.api.errors import InvalidRequestError
+from ...elastic.main import Search
+from ...mongo.settings import CorporaDB
+from ...youtora.api.errors import InvalidRequestError
 
 app = Flask(__name__)
 cors = CORS(app)
