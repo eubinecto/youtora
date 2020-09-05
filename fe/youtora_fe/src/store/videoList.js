@@ -30,8 +30,10 @@ export default new Vuex.Store({
     },
     mutations: {
         CLEAR_SEARCH: (state) => {
-            state.videoQueryResult = []
             state.search.query = ''
+            state.videoQueryResult = []
+            state.videoTotalCount = 0
+            state.currentPage = 1
         },
 
         SET_SEARCH_QUERY: (state, query) => {state.search.query = query},
