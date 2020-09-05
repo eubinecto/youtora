@@ -3,6 +3,7 @@ from typing import Optional
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 from be.src.elastic.main import Search
+from be.src.mongo.settings import CorporaDB
 from be.src.youtora.api.errors import InvalidRequestError
 
 app = Flask(__name__)
@@ -61,7 +62,7 @@ def api_search_tracks():
     return jsonify(results)
 
 
-@app.route('youtora/dloaders/dl_frame')
+@app.route('youtora/dloaders/FrameDownloader/dl_frame')
 @cross_origin()
 def api_dl_frame():
     # get the arguments
@@ -75,3 +76,11 @@ def api_dl_frame():
 
     # use the function to download the frame binary
     pass
+
+
+@app.route("mongo/corpora_db/ml_gloss_raw_coll")
+@cross_origin()
+def api_ml_gloss_raw_coll():
+    corpora_db = CorporaDB()
+    results = list(corpora_db.ml_gloss_raw_coll.find())
+    return jsonify(results)
