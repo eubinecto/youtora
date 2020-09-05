@@ -62,7 +62,7 @@ def api_search_tracks():
     return jsonify(results)
 
 
-@app.route('youtora/dloaders/FrameDownloader/dl_frame')
+@app.route('/youtora/dloaders/FrameDownloader/dl_frame')
 @cross_origin()
 def api_dl_frame():
     # get the arguments
@@ -78,7 +78,7 @@ def api_dl_frame():
     pass
 
 
-@app.route("mongo/corpora_db/ml_gloss_raw_coll")
+@app.route("/mongo/corpora_db/ml_gloss_raw_coll")
 @cross_origin()
 def api_ml_gloss_raw_coll():
     corpora_db = CorporaDB()
