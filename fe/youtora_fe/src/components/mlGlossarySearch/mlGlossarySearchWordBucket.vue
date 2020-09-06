@@ -14,8 +14,9 @@
             </b-card>
         </b-card-group>
         <b-modal v-model="modalShow" :title="this.modalWord">
-            description: <br/>
-            {{ this.modalDesc }}
+            <b>description: </b><br/>
+            <p>{{ this.modalDesc }}</p>
+
         </b-modal>
     </div>
 </template>
