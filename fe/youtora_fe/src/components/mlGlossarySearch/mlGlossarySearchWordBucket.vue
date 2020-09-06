@@ -13,17 +13,26 @@
                 </b-card-group>
             </b-card>
         </b-card-group>
-        <b-modal v-model="modalShow" :title="this.modalWord">
+        <b-modal size="lg" v-model="modalShow" :title="this.modalWord">
             <b>description: </b><br/>
             <p>{{ this.modalDesc }}</p>
 
+            <ml-glossary-search-result/>
+            <ml-glossary-search-pagination/>
         </b-modal>
     </div>
 </template>
 
 <script>
+    import mlGlossarySearchPagination from "./mlGlossarySearchPagination";
+    import mlGlossarySearchResult from "./mlGlossarySearchResult";
+
     export default {
         name: 'mlWordBucket',
+        components:{
+            mlGlossarySearchResult,
+            mlGlossarySearchPagination
+        },
         data() {
             return {
                 modalShow: false,
@@ -78,6 +87,9 @@
                 this.modalShow = !this.modalShow
                 this.modalWord = item.word
                 this.modalDesc = item.desc_raw
+
+                this.$store.commit('mlGlossary/SET_SEARCH_QUERY', this.modalWord)
+                this.$store.dispatch('mlGlossary/SEARCH_WORD')
             }
         },
         beforeMount: function () {
