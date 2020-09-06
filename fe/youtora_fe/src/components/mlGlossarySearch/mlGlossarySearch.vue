@@ -3,19 +3,21 @@
         <p>
             ML GLOSSARY SEARCH
         </p>
-        <HelloWorld/>
+        <mlGlossarySearchWordBucket
+
+        />
         <ml-glossary-search-pagination/>
     </div>
 </template>
 
 <script>
-import HelloWorld from "../HelloWorld";
+import mlGlossarySearchWordBucket from "./mlGlossarySearchWordBucket";
 import mlGlossarySearchPagination from "./mlGlossarySearchPagination";
 
     export default {
         name: 'mlGlossarySearch',
         components: {
-            HelloWorld,
+            mlGlossarySearchWordBucket,
             mlGlossarySearchPagination
         },
         data() {
