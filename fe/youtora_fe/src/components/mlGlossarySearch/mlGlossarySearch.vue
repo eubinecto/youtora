@@ -3,9 +3,7 @@
         <p>
             ML GLOSSARY SEARCH
         </p>
-        <mlGlossarySearchWordBucket
-
-        />
+        <mlGlossarySearchWordBucket/>
         <ml-glossary-search-pagination/>
     </div>
 </template>
@@ -19,9 +17,6 @@ import mlGlossarySearchPagination from "./mlGlossarySearchPagination";
         components: {
             mlGlossarySearchWordBucket,
             mlGlossarySearchPagination
-        },
-        data() {
-
         },
     }
 </script>

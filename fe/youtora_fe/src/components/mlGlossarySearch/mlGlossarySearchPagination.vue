@@ -14,20 +14,20 @@
         name: 'generalSearchPagination',
         data() {
             return {
-                currentPage: 1,
+                // currentPage: 1
             }
         },
         methods: {
 
         },
         watch: {
-            currentPage: function(val) {
-                //do something when the data changes.
-                if (val) {
-                    this.$store.commit('SET_CURRENT_PAGE', val)
-                    this.$store.dispatch('SEARCH_VIDEOS')
-                }
-            }
+            // currentPage: function(val) {
+            //     //do something when the data changes.
+            //     if (val) {
+            //         this.$store.commit('SET_CURRENT_PAGE', val)
+            //         this.$store.dispatch('SEARCH_VIDEOS')
+            //     }
+            // }
         }
     }
 </script>
