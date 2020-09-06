@@ -76,8 +76,14 @@ export default {
 
                     } else {
                         const glossaryResult = response.data.data
+                        const resultLength = response.data.meta
                         commit('SET_SEARCH_RESULT', glossaryResult)
-                        commit('SET_TOTAL_COUNT', 30)
+                        if (resultLength < 30) {
+                            commit('SET_TOTAL_COUNT', resultLength)
+                        } else {
+                            commit('SET_TOTAL_COUNT', 30)
+                        }
+
 
                     }
                 })

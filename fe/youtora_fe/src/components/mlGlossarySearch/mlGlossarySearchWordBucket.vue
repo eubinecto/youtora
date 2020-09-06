@@ -13,10 +13,10 @@
                 </b-card-group>
             </b-card>
         </b-card-group>
-        <b-modal size="lg" v-model="modalShow" :title="this.modalWord">
-            <b>description: </b><br/>
-            <p>{{ this.modalDesc }}</p>
 
+        <b-modal size="xl" v-model="modalShow" :title-html="this.modalWord.charAt(0).toUpperCase() + this.modalWord.slice(1)">
+            <span>{{ this.modalDesc }}</span>
+            <br/>
             <ml-glossary-search-result/>
             <ml-glossary-search-pagination/>
         </b-modal>
@@ -85,7 +85,7 @@
             },
             setModal: function(item) {
                 this.modalShow = !this.modalShow
-                this.modalWord = item.word
+                this.modalWord = item.word.replace(/ /g, "")
                 this.modalDesc = item.desc_raw
 
                 this.$store.commit('mlGlossary/SET_SEARCH_QUERY', this.modalWord)
