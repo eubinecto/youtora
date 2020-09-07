@@ -7,7 +7,7 @@
                     <b-embed
                             type="iframe"
                             aspect="16by9"
-                            :src="urlConverter(item.tracks[0].url)"
+                            :src="urlConverter(item.tracks[1].url)"
                             allowfullscreen
                     />
                 </b-card>
