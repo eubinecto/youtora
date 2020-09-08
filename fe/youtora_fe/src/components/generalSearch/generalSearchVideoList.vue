@@ -13,28 +13,9 @@
                     />
                 </b-card>
                 <b-card style="min-width: 450px">
-                    <b-card-group id="metaInfo" style="margin-bottom: 20px">
-                        <b-card style="font-size: 100%">
-                            <span class="mr-4">
-                                <b-icon icon="hand-thumbs-up" aria-hidden="true"></b-icon>
-                                /
-                                <b-icon icon="hand-thumbs-down" aria-hidden="true"></b-icon>
-                                : {{ Math.round(item.features.like_ratio * 10000) /100 }} %
-                            </span>
-                            <span class="mr-4">
-                                <b-icon icon="bookmark-check" aria-hidden="true"></b-icon>
-                                : {{ item.features.subs }}
-                            </span>
-                            <span class="">
-                                <b-icon icon="eye" aria-hidden="true"></b-icon>
-                                : {{ item.features.views }}
-                            </span>
-                        </b-card>
 
-                    </b-card-group>
-
-                    <b-card-group id="subtitles" style="margin-top: auto">
-                        <b-card class="subtitleSection" style="font-size: 130%">
+                    <b-card-group id="subtitles">
+                        <b-card class="subtitleSection border-white" style="font-size: 150%; vertical-align: center">
                             <span>... </span>
                             <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
                                 <span>{{ track.content }}</span>
@@ -43,6 +24,26 @@
                         </b-card>
                     </b-card-group>
                 </b-card>
+            </b-card-group>
+
+            <b-card-group id="metaInfo" style="margin-bottom: 20px">
+                <b-card style="font-size: 85%">
+                            <span class="mr-4">
+                                <b-icon icon="hand-thumbs-up" aria-hidden="true"></b-icon>
+                                /
+                                <b-icon icon="hand-thumbs-down" aria-hidden="true"></b-icon>
+                                : {{ Math.round(item.features.like_ratio * 10000) /100 }} %
+                            </span>
+                    <span class="mr-4">
+                                <b-icon icon="bookmark-check" aria-hidden="true"></b-icon>
+                                : {{ item.features.subs }}
+                            </span>
+                    <span class="">
+                                <b-icon icon="eye" aria-hidden="true"></b-icon>
+                                : {{ item.features.views }}
+                            </span>
+                </b-card>
+
             </b-card-group>
         </b-card>
     </div>

@@ -11,6 +11,16 @@
                             allowfullscreen
                     />
 
+                    <b-card-group id="subtitles" class="mb-2 mt-2">
+                        <b-card class="subtitleSection border-white" style="font-size: 150%; vertical-align: center" align="center">
+                            <h5>... </h5>
+                            <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
+                                <h5>{{ track.content }}</h5>
+                            </div >
+                            <h5> ...</h5>
+                        </b-card>
+                    </b-card-group>
+
                     <b-card-group id="metaInfo" class="mb-2 mt-2">
                         <b-card align="center">
                             <span class="mr-4">
@@ -27,16 +37,6 @@
                                 <b-icon icon="eye" aria-hidden="true"></b-icon>
                                 : {{ item.features.views }}
                             </span>
-                        </b-card>
-                    </b-card-group>
-
-                    <b-card-group id="subtitles" style="margin-top: auto">
-                        <b-card align="center">
-                            <h5>... </h5>
-                            <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
-                                <h5>{{ track.content }}</h5>
-                            </div >
-                            <h5> ...</h5>
                         </b-card>
                     </b-card-group>
                 </b-card>
