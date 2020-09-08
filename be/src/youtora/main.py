@@ -45,7 +45,7 @@ class Store:
         logger = logging.getLogger("store_corpora_db")
         cls.corpora_db = CorporaDB()
         # get the from parser
-        ml_gloss_raw_list = MLGlossRawHTMLParser.parse_ml_gloss_raw()
+        ml_gloss_raw_list = MLGlossRawHTMLParser.parse()
         docs = [
             {
                 '_id': ml_gloss_raw.id,
@@ -78,7 +78,7 @@ class Store:
         cls.youtora_db = YoutoraDB()
 
         # this will get the video ids of all uploaded videos
-        channel = ChannelHTMLParser.parse_channel(channel_url, lang_code)
+        channel = ChannelHTMLParser.parse(channel_url, lang_code)
 
         # split the video ids into batches
         batches = np.array_split(channel.vid_id_list, cls.BATCH_SIZE)

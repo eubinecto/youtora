@@ -16,7 +16,8 @@ import re
 import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
-from be.src.youtora.dataclasses import Channel, MLGlossRaw
+from be.src.mongo.settings import CorporaDB
+from be.src.youtora.dataclasses import Channel, MLGlossRaw, MLGloss, MLGlossDesc
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -80,9 +81,9 @@ class ChannelHTMLParser(HTMLParser):
     CHAN_URL_FORMAT = "http://www.youtube.com/channel/{}"
 
     @classmethod
-    def parse_channel(cls,
-                      chan_url: str,
-                      lang_code: str) -> Channel:
+    def parse(cls,
+              chan_url: str,
+              lang_code: str) -> Channel:
         """
         now you might be able to do this.
         :param chan_url: the id of the channel
@@ -255,7 +256,7 @@ class MLGlossRawHTMLParser(HTMLParser):
                                        + " data-text=\"(.*)\" id=\".*\" tabindex=\"[0-9]\">.*</h2>")
 
     @classmethod
-    def parse_ml_gloss_raw(cls) -> List[MLGlossRaw]:
+    def parse(cls) -> List[MLGlossRaw]:
         logger = logging.getLogger("scrape_ml_gloss_raw")
         driver = super().get_driver(is_silent=True,
                                     is_mobile=True)
@@ -299,17 +300,66 @@ class MLGlossRawHTMLParser(HTMLParser):
                            .sequence[1:]  # ignore the first one
         # get the meta
         parsed_metas = seq(re.findall(cls.META_REGEXP, str(gloss_div))) \
-            .map(lambda x: {'id': x[0], 'word': x[1]}) \
+            .map(lambda x: {'id': x[0].strip(), 'word': x[1].strip()}) \
             .sequence
         return parsed_words, parsed_metas
 
 
-class RawParser:
+class DataParser:
+    """
+    the class for parsing a Data model.
+    """
     pass
 
 
-class MLGlossRawParser(RawParser):
+class MLGlossRawParser(DataParser):
     """
     houses logic for parsing raw MLGloss
     """
+    @classmethod
+    def parse(cls) -> List[MLGloss]:
+        corpora_db = CorporaDB()
+        # get MlGlossRaw data
+        ml_gloss_raws: List[MLGlossRaw] = [
+            MLGlossRaw(id=res['_id'],
+                       word=res['word'],
+                       desc_raw=res['desc_raw'],
+                       category_raw=res['category_raw'])
+            for res in list(corpora_db.ml_gloss_raw_coll.find())
+        ]
+        # parse it into ml glosses
+        ml_glosses: List[MLGloss] = [
+            MLGloss(id=ml_gloss_raw.id,
+                    word=ml_gloss_raw.word,
+                    desc=cls._parse_desc_raw(ml_gloss_raw.desc_raw),
+                    category=cls._parse_category_raw(ml_gloss_raw.category_raw))
+            for ml_gloss_raw in ml_gloss_raws
+        ]
+        # return it
+        return ml_glosses
+
+    @classmethod
+    def _parse_desc_raw(cls, desc_raw: str) -> MLGlossDesc:
+        desc_raw_bs = BeautifulSoup(desc_raw, 'html.parser')
+        # the first sentence
+        topic_sent = ...
+        # just get the text alone
+        pure_text = desc_raw_bs.get_text()
+        int_links = ...
+        ext_links = ...
+
+        return MLGlossDesc(topic_sent=topic_sent,
+                           pure_text=pure_text,
+                           int_links=int_links,
+                           ext_links=ext_links)
+
+    @classmethod
+    def _parse_category_raw(cls, category_raw: str) -> str:
+        """
+        e.g. <div class="glossary-icon" title="Sequence Models">#seq</div>
+        """
+        category_raw_bs = BeautifulSoup(category_raw, 'html.parser')
+        return category_raw_bs['title']
+
+
 
