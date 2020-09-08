@@ -16,6 +16,7 @@
 
         <b-modal size="xl" v-model="modalShow" :title-html="this.modalWord.charAt(0).toUpperCase() + this.modalWord.slice(1)">
             <span v-html="this.modalDesc"></span>
+<!--            https://developers.google.com/machine-learning/glossary# -->
             <br/>
             <ml-glossary-search-result/>
             <ml-glossary-search-pagination/>
@@ -73,8 +74,10 @@
 
                 }
                 for (let i = 0; i < glossaries.length; i++) {
-                    var curWord = glossaries[i].word.replace(/ /g, "")
+                    var curWord = glossaries[i].word.slice(1)
+                    curWord = curWord.charAt(0).toUpperCase() + curWord.slice(1)
                     var firstChar = curWord.charAt(0).toLowerCase()
+
                     glossaryDict[firstChar].push(glossaries[i])
                 }
 
@@ -85,11 +88,14 @@
             },
             setModal: function(item) {
                 this.modalShow = !this.modalShow
-                this.modalWord = item.word.replace(/ /g, "")
-                this.modalDesc = item.desc_raw
+                this.modalWord = item.word.slice(1)
+                this.modalDesc = this.setHyperLink(item.desc_raw)
 
                 this.$store.commit('mlGlossary/SET_SEARCH_QUERY', this.modalWord)
                 this.$store.dispatch('mlGlossary/SEARCH_WORD')
+            },
+            setHyperLink: function(tagsString) {
+                return tagsString.split('href="').join('href="https://developers.google.com/machine-learning/glossary')
             }
         },
         beforeMount: function () {
