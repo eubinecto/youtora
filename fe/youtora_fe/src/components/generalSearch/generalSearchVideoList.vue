@@ -4,7 +4,7 @@
                 v-for="item in videoList"
                 :key="videoList.indexOf(item)">
             <b-card-group>
-                <b-card style="min-width: 360px">
+                <b-card style="min-width: 450px">
                     <b-embed
                             type="iframe"
                             aspect="16by9"
@@ -12,7 +12,7 @@
                             allowfullscreen
                     />
                 </b-card>
-                <b-card style="min-width: 360px">
+                <b-card style="min-width: 450px">
                     <b-card-group id="metaInfo" style="margin-bottom: 20px">
                         <b-card style="font-size: 100%">
                             <span class="mr-4">
