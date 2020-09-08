@@ -11,7 +11,7 @@
                 ></b-form-input>
             </b-form-group>
 
-            <b-form-group id="input-group-3" label="Target Language:" label-for="input-3">
+            <b-form-group id="input-group-3" label="Target SUBTITLE Language:" label-for="input-3">
                 <b-form-radio-group
                         id="langId"
                         v-model="lang"
@@ -20,6 +20,18 @@
                         value-field="item"
                         text-field="name"
                         name="langId"
+                ></b-form-radio-group>
+            </b-form-group>
+
+            <b-form-group id="input-group-4" label="Target CHANNEL Language:" label-for="input-3">
+                <b-form-radio-group
+                        id="chan_lang"
+                        v-model="chan_lang"
+                        :options="optLang"
+                        class="mb-3"
+                        value-field="item"
+                        text-field="name"
+                        name="chan_lang"
                 ></b-form-radio-group>
             </b-form-group>
 
@@ -57,6 +69,7 @@
                 query: '',
 
                 lang:'en',
+                chan_lang: 'en',
                 optLang:[
                     {item: 'ko', 'name': 'Korean'},
                     {item: 'en', 'name': 'English'},
@@ -85,6 +98,9 @@
                     this.$store.commit('generalSearch/SET_SEARCH_LANGUAGE', val)
                 }
             },
+            chan_lang: function (val) {
+                this.$store.commit('generalSearch/SET_CHAN_LANG', val)
+            }
         },
         methods: {
             onSubmit(evt) {
@@ -93,7 +109,7 @@
                 this.$store.commit('generalSearch/SET_PER_PAGE', this.perPage)
                 this.$store.commit('generalSearch/SET_SEARCH_LANGUAGE', this.lang)
                 this.$store.commit('generalSearch/SET_SEARCH_QUERY', this.query)
-
+                this.$store.commit('generalSearch/SET_CHAN_LANG', this.chan_lang)
                 this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
             },
             onReset() {
@@ -101,6 +117,7 @@
                 this.perPage = 5
                 this.query = ''
                 this.lang = 'en'
+                this.chan_lang = 'en'
                 this.$store.commit('generalSearch/CLEAR_SEARCH')
                 // Trick to reset/clear native browser form validation state
                 this.show = false
