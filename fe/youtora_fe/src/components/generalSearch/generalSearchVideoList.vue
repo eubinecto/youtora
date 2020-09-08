@@ -1,9 +1,10 @@
 <template>
     <div id="generalSearchVideoList">
-        <b-card v-for="item in videoList"
+        <b-card class="searchResult"
+                v-for="item in videoList"
                 :key="videoList.indexOf(item)">
             <b-card-group>
-                <b-card>
+                <b-card style="min-width: 360px">
                     <b-embed
                             type="iframe"
                             aspect="16by9"
@@ -11,9 +12,9 @@
                             allowfullscreen
                     />
                 </b-card>
-                <b-card>
+                <b-card style="min-width: 360px">
                     <b-card-group id="metaInfo" style="margin-bottom: 20px">
-                        <b-card>
+                        <b-card style="font-size: 100%">
                             <span class="mr-4">
                                 <b-icon icon="hand-thumbs-up" aria-hidden="true"></b-icon>
                                 /
@@ -33,12 +34,12 @@
                     </b-card-group>
 
                     <b-card-group id="subtitles" style="margin-top: auto">
-                        <b-card>
-                            <h4>... </h4>
+                        <b-card class="subtitleSection" style="font-size: 130%">
+                            <span>... </span>
                             <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
-                                <h4>{{ track.content }}</h4>
+                                <span>{{ track.content }}</span>
                             </div >
-                            <h4> ...</h4>
+                            <span> ...</span>
                         </b-card>
                     </b-card-group>
                 </b-card>
