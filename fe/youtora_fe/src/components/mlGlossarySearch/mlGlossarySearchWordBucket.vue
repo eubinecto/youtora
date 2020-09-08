@@ -6,7 +6,7 @@
                 <h3>{{ alphabet.toUpperCase() }}</h3>
                 <b-card-group>
                     <div v-for="item in alphabetGlossaries[alphabet]" :key="item._id">
-                        <b-card>
+                        <b-card class="border-white">
                             <b-button @click="setModal(item)">{{ item.word }}</b-button>
                         </b-card>
                     </div>
@@ -15,7 +15,7 @@
         </b-card-group>
 
         <b-modal size="xl" v-model="modalShow" :title-html="this.modalWord.charAt(0).toUpperCase() + this.modalWord.slice(1)">
-            <span>{{ this.modalDesc }}</span>
+            <span v-html="this.modalDesc"></span>
             <br/>
             <ml-glossary-search-result/>
             <ml-glossary-search-pagination/>
