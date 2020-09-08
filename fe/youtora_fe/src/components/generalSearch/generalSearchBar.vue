@@ -32,7 +32,7 @@
                         <b-form-radio-group
                                 id="chan_lang"
                                 v-model="chan_lang"
-                                :options="optLang"
+                                :options="chan_opt_lang"
                                 class="mb-3"
                                 value-field="item"
                                 text-field="name"
@@ -83,8 +83,15 @@
                 query: '',
 
                 lang:'en',
-                chan_lang: 'en',
                 optLang:[
+                    {item: 'ko', 'name': 'Korean'},
+                    {item: 'en', 'name': 'English'},
+                    {item: 'fr', 'name': 'French'},
+                    {item: 'jp', 'name': 'Japanese'},
+                ],
+                chan_lang: 'en',
+                chan_opt_lang:[
+                    {item: '', 'name': 'All'},
                     {item: 'ko', 'name': 'Korean'},
                     {item: 'en', 'name': 'English'},
                     {item: 'fr', 'name': 'French'},
