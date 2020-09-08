@@ -267,36 +267,41 @@ class MLGlossRawHTMLParser(HTMLParser):
         except Exception as e:
             raise e
         else:
-            # parse and find the div
-            soup = BeautifulSoup(html, 'html.parser')
-            gloss_div = soup.find("div", attrs={'class': "devsite-article-body clearfix"})
-            # split them by this delimiter
-            contents = re.split(cls.CONTENTS_DELIM_REGEXP, str(gloss_div))
-            # use pyfunctional module to parse them to build the rep_id I want
-            parsed_contents = seq(contents).map(lambda x: BeautifulSoup(x, 'html.parser'))\
-                                 .map(lambda x: (x.find_all('p'), x.find('div', attrs={'class': 'glossary-icon'})))\
-                                 .map(lambda x: ([str(p_tag) for p_tag in x[0]],
-                                                 str(x[1] if x[1] else None)))\
-                                 .map(lambda x: ("".join(x[0]), x[1]))\
-                                 .map(lambda x: {'desc_raw': x[0], 'category_raw': x[1]})\
-                                 .sequence[1:]  # ignore the first one
-
-            # get the id & word
-            metas = seq(re.findall(cls.META_REGEXP, str(gloss_div)))\
-                        .map(lambda x: {'id': x[0], 'word': x[1]})\
-                        .sequence
-
+            # parse html to get the result you want
+            parsed_words, parsed_metas = cls._parse_html(html)
             ml_gloss_raws = [
-                MLGlossRaw(id="ml_gloss_raw|" + meta['id'],
-                           word=meta['word'],
-                           desc_raw=parsed_content['desc_raw'],
-                           category_raw=parsed_content['category_raw'])
-                for parsed_content, meta in zip(parsed_contents, metas)
+                MLGlossRaw(id="ml_gloss_raw|" + parsed_meta['id'],
+                           word=parsed_meta['word'],
+                           desc_raw=parsed_word['desc_raw'],
+                           category_raw=parsed_word['category_raw'])
+                for parsed_word, parsed_meta in zip(parsed_words, parsed_metas)
             ]
             return ml_gloss_raws
         finally:
             logger.info("quitting the driver")
             driver.quit()
+
+    @classmethod
+    def _parse_html(cls, html: str) -> Tuple[List[dict], List[dict]]:
+        # parse and find the div
+        soup = BeautifulSoup(html, 'html.parser')
+        gloss_div = soup.find("div", attrs={'class': "devsite-article-body clearfix"})
+        # split them by this delimiter
+        words = re.split(cls.CONTENTS_DELIM_REGEXP, str(gloss_div))
+        # use pyfunctional module to parse them to build the rep_id I want
+        parsed_words = seq(words) \
+                           .map(lambda x: BeautifulSoup(x, 'html.parser')) \
+                           .map(lambda x: (x.find_all('p'), x.find('div', attrs={'class': 'glossary-icon'}))) \
+                           .map(lambda x: ([str(p_tag) for p_tag in x[0]],
+                                            str(x[1] if x[1] else None))) \
+                           .map(lambda x: ("".join(x[0]), x[1])) \
+                           .map(lambda x: {'desc_raw': x[0], 'category_raw': x[1]}) \
+                           .sequence[1:]  # ignore the first one
+        # get the meta
+        parsed_metas = seq(re.findall(cls.META_REGEXP, str(gloss_div))) \
+            .map(lambda x: {'id': x[0], 'word': x[1]}) \
+            .sequence
+        return parsed_words, parsed_metas
 
 
 class RawParser:
@@ -305,6 +310,6 @@ class RawParser:
 
 class MLGlossRawParser(RawParser):
     """
-    houses logic for parsing a raw rep_id
+    houses logic for parsing raw MLGloss
     """
-    pass
+
