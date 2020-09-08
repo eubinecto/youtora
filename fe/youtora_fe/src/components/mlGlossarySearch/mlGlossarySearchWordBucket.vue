@@ -7,7 +7,7 @@
                 <b-card-group>
                     <div v-for="item in alphabetGlossaries[alphabet]" :key="item._id">
                         <b-card class="border-white">
-                            <b-button @click="setModal(item)">{{ item.word }}</b-button>
+                            <b-button @click="setModal(item)">{{ item.word.charAt(0).toUpperCase() + item.word.slice(1) }}</b-button>
                         </b-card>
                     </div>
                 </b-card-group>
@@ -74,7 +74,7 @@
 
                 }
                 for (let i = 0; i < glossaries.length; i++) {
-                    var curWord = glossaries[i].word.slice(1)
+                    var curWord = glossaries[i].word
                     curWord = curWord.charAt(0).toUpperCase() + curWord.slice(1)
                     var firstChar = curWord.charAt(0).toLowerCase()
 
@@ -88,15 +88,12 @@
             },
             setModal: function(item) {
                 this.modalShow = !this.modalShow
-                this.modalWord = item.word.slice(1)
-                this.modalDesc = this.setHyperLink(item.desc_raw)
+                this.modalWord = item.word
+                this.modalDesc = item.desc_raw
 
                 this.$store.commit('mlGlossary/SET_SEARCH_QUERY', this.modalWord)
                 this.$store.dispatch('mlGlossary/SEARCH_WORD')
             },
-            setHyperLink: function(tagsString) {
-                return tagsString.split('href="#').join('href="https://developers.google.com/machine-learning/glossary#')
-            }
         },
         beforeMount: function () {
             this.getGlossaryList()
