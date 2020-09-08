@@ -2,7 +2,7 @@
     <div id="generalSearchBar">
         <b-form @submit="onSubmit" @reset="onReset" v-if="show">
 
-            <b-form-group id="input-group-2" label="Search Bar" label-for="input-2">
+            <b-form-group id="input-group-2" label-for="input-2" class="ml-4 mr-4 mt-4">
                 <b-form-input
                         id="input-2"
                         v-model="query"
@@ -11,45 +11,59 @@
                 ></b-form-input>
             </b-form-group>
 
-            <b-form-group id="input-group-3" label="Target SUBTITLE Language:" label-for="input-3">
-                <b-form-radio-group
-                        id="langId"
-                        v-model="lang"
-                        :options="optLang"
-                        class="mb-3"
-                        value-field="item"
-                        text-field="name"
-                        name="langId"
-                ></b-form-radio-group>
-            </b-form-group>
+            <b-card-group style="font-size: 100%; font-weight: bold" class="mt-0">
+                <b-card class="border-white">
+                    <b-form-group id="input-group-3" label="Subtitle Language:" label-for="input-3">
+                        <b-form-radio-group
+                                id="langId"
+                                v-model="lang"
+                                :options="optLang"
+                                class="mb-3"
+                                value-field="item"
+                                text-field="name"
+                                buttons
+                                name="langId"
+                        ></b-form-radio-group>
+                    </b-form-group>
+                </b-card>
 
-            <b-form-group id="input-group-4" label="Target CHANNEL Language:" label-for="input-3">
-                <b-form-radio-group
-                        id="chan_lang"
-                        v-model="chan_lang"
-                        :options="optLang"
-                        class="mb-3"
-                        value-field="item"
-                        text-field="name"
-                        name="chan_lang"
-                ></b-form-radio-group>
-            </b-form-group>
+                <b-card class="border-white">
+                    <b-form-group id="input-group-4" label="Channel Language:" label-for="input-3">
+                        <b-form-radio-group
+                                id="chan_lang"
+                                v-model="chan_lang"
+                                :options="optLang"
+                                class="mb-3"
+                                value-field="item"
+                                text-field="name"
+                                buttons
+                                name="chan_lang"
+                        ></b-form-radio-group>
+                    </b-form-group>
+                </b-card>
+            </b-card-group>
 
-            <b-form-group label="perPageRadio">
-                <b-form-radio-group
-                        id="perPage"
-                        v-model="perPage"
-                        :options="optPerPage"
-                        class="mb-3"
-                        value-field="item"
-                        text-field="name"
-                        name="perPage"
-                ></b-form-radio-group>
-            </b-form-group>
+            <b-card class="border-white">
+                <b-button type="submit" variant="primary">Submit</b-button>
+                <b-button type="reset" variant="danger">Reset</b-button>
+            </b-card>
 
-            <b-button type="submit" variant="primary">Submit</b-button>
-            <b-button type="reset" variant="danger">Reset</b-button>
         </b-form>
+
+        <b-card-group v-if="this.$store.state.generalSearch.videoQueryResult.length > 0">
+            <b-card style="font-size: 100%; font-weight: bold" class="border-white">
+                <b-form-group label="per_page" class="ml-4 mr-4">
+                    <b-form-select
+                            id="perPage"
+                            v-model="perPage"
+                            :options="optPerPage"
+                            value-field="item"
+                            text-field="name"
+                            name="perPage"
+                    ></b-form-select>
+                </b-form-group>
+            </b-card>
+        </b-card-group>
     </div>
 </template>
 
@@ -90,16 +104,19 @@
                 //do something when the data changes.
                 if (val) {
                     this.$store.commit('generalSearch/SET_PER_PAGE', val)
+                    this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
                 }
             },
             lang: function(val) {
                 //do something when the data changes.
                 if (val) {
                     this.$store.commit('generalSearch/SET_SEARCH_LANGUAGE', val)
+                    this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
                 }
             },
             chan_lang: function (val) {
                 this.$store.commit('generalSearch/SET_CHAN_LANG', val)
+                this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
             }
         },
         methods: {
