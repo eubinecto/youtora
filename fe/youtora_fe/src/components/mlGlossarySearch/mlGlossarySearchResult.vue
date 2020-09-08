@@ -14,43 +14,43 @@
                 <b-card>
                     <div id="videoMetaBase" align="left">
                         <b-card>
-                            <h4>* Title: </h4>
+                            <h6>* Title: </h6>
                         </b-card>
                         <b-card>
-                            <h4>* Owner: </h4>
+                            <h6>* Owner: </h6>
                         </b-card>
 
                     </div>
 
                     <b-card-group id="metaInfo" style="margin-bottom: 20px">
                         <b-card>
-                            <h5 class="mt-0 mb-1">
+                            <h6 class="mt-0 mb-1">
                                 <b-icon icon="hand-thumbs-up" aria-hidden="true"></b-icon>
                                 /
                                 <b-icon icon="hand-thumbs-down" aria-hidden="true"></b-icon>
                                 <br/>
                                 Like Ratio
-                            </h5>
+                            </h6>
                             <p class="mb-0">
                                 {{ Math.round(item.features.like_ratio * 10000) /100 }} %
                             </p>
                         </b-card>
                         <b-card>
-                            <h5 class="mt-0 mb-1">
+                            <h6 class="mt-0 mb-1">
                                 <b-icon icon="bookmark-check" aria-hidden="true"></b-icon>
                                 <br/>
                                 Subscribers
-                            </h5>
+                            </h6>
                             <p class="mb-0">
                                 {{ item.features.subs }}
                             </p>
                         </b-card>
                         <b-card>
-                            <h5 class="mt-0 mb-1">
+                            <h6 class="mt-0 mb-1">
                                 <b-icon icon="eye" aria-hidden="true"></b-icon>
                                 <br/>
                                 View Counts
-                            </h5>
+                            </h6>
                             <p class="mb-0">
                                 {{ item.features.views }}
                             </p>
@@ -60,9 +60,9 @@
                     <h3>Subtitle</h3><br/>
                     <b-card-group id="subtitles" style="margin-top: auto" align="left">
                         <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
-                            <h4>
+                            <h5>
                                 [ {{ getTime(track.url) }} ] : {{ track.content }}
-                            </h4>
+                            </h5>
                         </div>
                     </b-card-group>
                 </b-card>
@@ -99,14 +99,14 @@
             urlConverter: function (original_link) {
                 const startTime = original_link.split("=")[1]
                 const videoKey = original_link.split("/")[3].split("=")[0].split("?")[0]
-                const langId = this.$store.state.generalSearch.search.language
+                const langId = this.$store.state.mlGlossary.searchLanguage
 
                 return `https://www.youtube.com/embed/${videoKey}?start=${startTime}&cc_load_policy=1&cc_lang_pref=${langId}`
             }
         },
         computed: {
             videoList () {
-                return this.$store.state.generalSearch.videoQueryResult
+                return this.$store.state.mlGlossary.searchResult
             }
         },
         watch: {

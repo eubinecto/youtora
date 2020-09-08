@@ -1,25 +1,16 @@
 <template>
     <div id="mlGlossarySearch">
-        <p>
-            ML GLOSSARY SEARCH
-        </p>
-        <HelloWorld/>
-        <ml-glossary-search-pagination/>
+        <mlGlossarySearchWordBucket/>
     </div>
 </template>
 
 <script>
-import HelloWorld from "../HelloWorld";
-import mlGlossarySearchPagination from "./mlGlossarySearchPagination";
+import mlGlossarySearchWordBucket from "./mlGlossarySearchWordBucket";
 
     export default {
         name: 'mlGlossarySearch',
         components: {
-            HelloWorld,
-            mlGlossarySearchPagination
-        },
-        data() {
-
+            mlGlossarySearchWordBucket,
         },
     }
 </script>

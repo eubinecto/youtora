@@ -1,11 +1,11 @@
 <template>
     <div id="generalSearchPagination" class="overflow-auto">
-<!--        <b-pagination-->
-<!--                v-model="currentPage"-->
-<!--                :total-rows="this.$store.state.videoTotalCount"-->
-<!--                :per-page="this.$store.state.search.perPage"-->
-<!--                align="center"-->
-<!--        />-->
+        <b-pagination
+                v-model="currentPage"
+                :total-rows="this.$store.state.mlGlossary.searchTotalCount"
+                :per-page="this.$store.state.mlGlossary.perPage"
+                align="center"
+        />
     </div>
 </template>
 
@@ -14,7 +14,7 @@
         name: 'generalSearchPagination',
         data() {
             return {
-                currentPage: 1,
+                currentPage: 1
             }
         },
         methods: {
@@ -24,8 +24,8 @@
             currentPage: function(val) {
                 //do something when the data changes.
                 if (val) {
-                    this.$store.commit('SET_CURRENT_PAGE', val)
-                    this.$store.dispatch('SEARCH_VIDEOS')
+                    this.$store.commit('mlGlossary/SET_CURRENT_PAGE', val)
+                    this.$store.dispatch('mlGlossary/SEARCH_WORD')
                 }
             }
         }

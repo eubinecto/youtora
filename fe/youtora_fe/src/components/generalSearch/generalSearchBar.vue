@@ -70,19 +70,19 @@
             query: function(val) {
                 //do something when the data changes.
                 if (val) {
-                    this.$store.commit('SET_SEARCH_QUERY', val)
+                    this.$store.commit('generalSearch/SET_SEARCH_QUERY', val)
                 }
             },
             perPage: function(val) {
                 //do something when the data changes.
                 if (val) {
-                    this.$store.commit('SET_PER_PAGE', val)
+                    this.$store.commit('generalSearch/SET_PER_PAGE', val)
                 }
             },
             lang: function(val) {
                 //do something when the data changes.
                 if (val) {
-                    this.$store.commit('SET_SEARCH_LANGUAGE', val)
+                    this.$store.commit('generalSearch/SET_SEARCH_LANGUAGE', val)
                 }
             },
         },
@@ -90,18 +90,18 @@
             onSubmit(evt) {
                 evt.preventDefault()
 
-                this.$store.commit('SET_PER_PAGE', this.perPage)
-                this.$store.commit('SET_SEARCH_LANGUAGE', this.lang)
-                this.$store.commit('SET_SEARCH_QUERY', this.query)
+                this.$store.commit('generalSearch/SET_PER_PAGE', this.perPage)
+                this.$store.commit('generalSearch/SET_SEARCH_LANGUAGE', this.lang)
+                this.$store.commit('generalSearch/SET_SEARCH_QUERY', this.query)
 
-                this.$store.dispatch('SEARCH_VIDEOS')
+                this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
             },
             onReset() {
                 // Reset our form values
                 this.perPage = 5
                 this.query = ''
                 this.lang = 'en'
-                this.$store.commit('CLEAR_SEARCH')
+                this.$store.commit('generalSearch/CLEAR_SEARCH')
                 // Trick to reset/clear native browser form validation state
                 this.show = false
                 this.$nextTick(() => {
