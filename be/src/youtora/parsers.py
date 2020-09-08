@@ -248,8 +248,9 @@ class MLGlossRawHTMLParser(HTMLParser):
     # get all the definitions from here
     ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary"
 
-    CONTENTS_DELIM_REGEXP = re.compile("<p><a class=\"glossary-anchor\" name=\".*\"></a>\n</p><h2 class=\"hide-from-toc\""
-                                       + " data-text=\".*\" id=\".*\" tabindex=\"[0-9]\">.*</h2>")
+    CONTENTS_DELIM_REGEXP = re.compile("<p><a class=\"glossary-anchor\" name=\".*\"></a>\n</p>" +
+                                       "<h2 class=\"hide-from-toc\" data-text=\".*\" id=\".*\" " +
+                                       "tabindex=\"[0-9]\">.*</h2>")
     META_REGEXP = re.compile("<p><a class=\"glossary-anchor\" name=\"(.*)\"></a>\n</p><h2 class=\"hide-from-toc\""
                                        + " data-text=\"(.*)\" id=\".*\" tabindex=\"[0-9]\">.*</h2>")
 
@@ -286,7 +287,7 @@ class MLGlossRawHTMLParser(HTMLParser):
                         .sequence
 
             ml_gloss_raws = [
-                MLGlossRaw(ml_gloss_raw_id="ml_gloss_raw|" + meta['id'],
+                MLGlossRaw(id="ml_gloss_raw|" + meta['id'],
                            word=meta['word'],
                            desc_raw=parsed_content['desc_raw'],
                            category_raw=parsed_content['category_raw'])

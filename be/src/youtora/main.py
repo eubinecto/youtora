@@ -7,7 +7,7 @@ from pymongo.collection import Collection
 from .builders import CaptionBuilder
 from .dloaders import VideoDownloader
 from .dataclasses import Channel, Video
-from .parsers import HTMLParser, ChannelHTMLParser, MLGlossRawHTMLParser
+from .parsers import ChannelHTMLParser, MLGlossRawHTMLParser
 
 from ..elastic.main import Index
 from ..mongo.settings import YoutoraDB, CorporaDB
@@ -63,15 +63,13 @@ class Store:
     @classmethod
     def store_youtora_db(cls,
                          channel_url: str,
-                         lang_code: str,
-                         os: str = "mac"):
+                         lang_code: str):
         """
         scrapes the desired information from the given channel url
         this is the main function to be used
         and stores it in the local mongoDB.
         :param channel_url:
         :param lang_code: the language of the channel. need this info on query time.
-        :param os:
         """
         # check  pre-condition
         assert lang_code in CaptionBuilder.LANG_CODES_TO_COLLECT, "the lang code is invalid"
