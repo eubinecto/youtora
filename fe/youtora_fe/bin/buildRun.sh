@@ -1,4 +1,6 @@
 #!/bin/bash
+docker stop youtora_fe
+
 echo final port will be 11000
 echo enter host name:
 
