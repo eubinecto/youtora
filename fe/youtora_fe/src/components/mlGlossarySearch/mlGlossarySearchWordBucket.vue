@@ -6,7 +6,7 @@
                 <h3>{{ alphabet.toUpperCase() }}</h3>
                 <b-card-group>
                     <div v-for="item in alphabetGlossaries[alphabet]" :key="item._id">
-                        <b-card>
+                        <b-card class="border-white">
                             <b-button @click="setModal(item)">{{ item.word }}</b-button>
                         </b-card>
                     </div>
