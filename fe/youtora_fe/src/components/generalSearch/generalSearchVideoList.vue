@@ -12,58 +12,34 @@
                     />
                 </b-card>
                 <b-card>
-                    <div id="videoMetaBase" align="left">
-                        <b-card>
-                            <h4>* Title: </h4>
-                        </b-card>
-                        <b-card>
-                            <h4>* Owner: </h4>
-                        </b-card>
-
-                    </div>
-
                     <b-card-group id="metaInfo" style="margin-bottom: 20px">
                         <b-card>
-                            <h5 class="mt-0 mb-1">
+                            <span class="mr-4">
                                 <b-icon icon="hand-thumbs-up" aria-hidden="true"></b-icon>
                                 /
                                 <b-icon icon="hand-thumbs-down" aria-hidden="true"></b-icon>
-                                <br/>
-                                Like Ratio
-                            </h5>
-                            <p class="mb-0">
-                                {{ Math.round(item.features.like_ratio * 10000) /100 }} %
-                            </p>
-                        </b-card>
-                        <b-card>
-                            <h5 class="mt-0 mb-1">
+                                : {{ Math.round(item.features.like_ratio * 10000) /100 }} %
+                            </span>
+                            <span class="mr-4">
                                 <b-icon icon="bookmark-check" aria-hidden="true"></b-icon>
-                                <br/>
-                                Subscribers
-                            </h5>
-                            <p class="mb-0">
-                                {{ item.features.subs }}
-                            </p>
-                        </b-card>
-                        <b-card>
-                            <h5 class="mt-0 mb-1">
+                                : {{ item.features.subs }}
+                            </span>
+                            <span class="">
                                 <b-icon icon="eye" aria-hidden="true"></b-icon>
-                                <br/>
-                                View Counts
-                            </h5>
-                            <p class="mb-0">
-                                {{ item.features.views }}
-                            </p>
+                                : {{ item.features.views }}
+                            </span>
                         </b-card>
+
                     </b-card-group>
 
-                    <h3>Subtitle</h3><br/>
-                    <b-card-group id="subtitles" style="margin-top: auto" align="left">
-                        <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
-                            <h4>
-                                [ {{ getTime(track.url) }} ] : {{ track.content }}
-                            </h4>
-                        </div>
+                    <b-card-group id="subtitles" style="margin-top: auto">
+                        <b-card>
+                            <h4>... </h4>
+                            <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
+                                <h4>{{ track.content }}</h4>
+                            </div >
+                            <h4> ...</h4>
+                        </b-card>
                     </b-card-group>
                 </b-card>
             </b-card-group>

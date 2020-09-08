@@ -15,7 +15,7 @@
         </b-card-group>
 
         <b-modal size="xl" v-model="modalShow" :title-html="this.modalWord.charAt(0).toUpperCase() + this.modalWord.slice(1)">
-            <span>{{ this.modalDesc }}</span>
+            <span v-html="this.modalDesc"></span>
             <br/>
             <ml-glossary-search-result/>
             <ml-glossary-search-pagination/>
