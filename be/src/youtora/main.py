@@ -6,7 +6,7 @@ from pymongo.collection import Collection
 
 from .builders import CaptionBuilder
 from .dloaders import VideoDownloader
-from .models import Channel, Video
+from .dataclasses import Channel, Video
 from .parsers import HTMLParser, ChannelHTMLParser, MLGlossRawHTMLParser
 
 from ..elastic.main import Index

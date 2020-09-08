@@ -16,7 +16,7 @@ import re
 import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
-from be.src.youtora.models import Channel, MLGlossRaw
+from be.src.youtora.dataclasses import Channel, MLGlossRaw
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -77,6 +77,8 @@ class ChannelHTMLParser(HTMLParser):
     # the show more button changes its position. find it by its class name
     SHOW_MORE_CLASS_NAME = "nextcontinuation-button"
 
+    CHAN_URL_FORMAT = "http://www.youtube.com/channel/{}"
+
     @classmethod
     def parse_channel(cls,
                       chan_url: str,
@@ -107,7 +109,8 @@ class ChannelHTMLParser(HTMLParser):
             raise e
         else:
             # the channel is given a lang code
-            return Channel(channel_id=channel_id,
+            return Channel(id=channel_id,
+                           url=cls.CHAN_URL_FORMAT.format(channel_id),
                            title=uploader,
                            subs=subs,
                            lang_code=lang_code,
