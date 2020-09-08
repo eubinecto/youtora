@@ -2,7 +2,7 @@
     <div id="generalSearch">
         <general-search-bar/>
         <general-search-video-list/>
-        <general-search-pagination/>
+        <general-search-pagination v-if="$store.state.generalSearch.videoQueryResult.length > 0"/>
     </div>
 </template>
 
