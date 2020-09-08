@@ -118,12 +118,18 @@
                 //do something when the data changes.
                 if (val) {
                     this.$store.commit('generalSearch/SET_SEARCH_LANGUAGE', val)
-                    this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+
+                    if (this.$store.state.generalSearch.videoQueryResult.length > 0 || this.query.length > 0) {
+                        this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+                    }
                 }
             },
             chan_lang: function (val) {
                 this.$store.commit('generalSearch/SET_CHAN_LANG', val)
-                this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+
+                if (this.$store.state.generalSearch.videoQueryResult.length > 0 || this.query.length > 0) {
+                    this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+                }
             }
         },
         methods: {
