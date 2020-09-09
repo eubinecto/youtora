@@ -188,7 +188,7 @@ class Store:
                     docs: List[dict],
                     rep_id: str,
                     logger: Logger):
-        if len(docs):
+        if docs:
             try:
                 # insert all tracks
                 coll.insert_many(documents=docs)
