@@ -5,8 +5,8 @@ export default {
     state: {
         search: {
             query: '',
-            language: 'en',
-            chan_lang: 'en',
+            language: '',
+            chan_lang: '',
             perPage: 5
         },
         currentPage: 1,

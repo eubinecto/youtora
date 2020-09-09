@@ -40,9 +40,9 @@
                 evt.preventDefault()
 
                 this.$store.commit('generalSearch/SET_PER_PAGE', 5)
-                this.$store.commit('generalSearch/SET_SEARCH_LANGUAGE', 'en')
+                this.$store.commit('generalSearch/SET_SEARCH_LANGUAGE', '')
                 this.$store.commit('generalSearch/SET_SEARCH_QUERY', this.query)
-                this.$store.commit('generalSearch/SET_CHAN_LANG', 'en')
+                this.$store.commit('generalSearch/SET_CHAN_LANG', '')
                 this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
                 this.$router.push({path: '/generalSearch'})
             },

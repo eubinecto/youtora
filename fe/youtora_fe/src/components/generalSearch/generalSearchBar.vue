@@ -88,14 +88,15 @@
 
                 query: this.$store.state.generalSearch.search.query,
 
-                lang:'en',
+                lang:'',
                 optLang:[
+                    {item: '', 'name': 'All'},
                     {item: 'ko', 'name': 'Korean'},
                     {item: 'en', 'name': 'English'},
                     {item: 'fr', 'name': 'French'},
                     {item: 'jp', 'name': 'Japanese'},
                 ],
-                chan_lang: 'en',
+                chan_lang: '',
                 chan_opt_lang:[
                     {item: '', 'name': 'All'},
                     {item: 'ko', 'name': 'Korean'},
