@@ -7,6 +7,7 @@ export default {
             query: '',
             language: '',
             chan_lang: '',
+            cc_type: '',
             perPage: 5
         },
         currentPage: 1,
@@ -20,6 +21,7 @@ export default {
         GET_SEARCH_QUERY: (state) => {return state.search.query},
         GET_SEARCH_LANGUAGE: (state) => {return state.search.language},
         GET_CHAN_LANG: (state) => {return state.search.chan_lang},
+        GET_CC_TYPE: (state) => {return state.search.cc_type},
         GET_PER_PAGE: (state) => {return state.search.perPage},
 
         GET_CURRENT_PAGE: (state) => {return state.currentPage},
@@ -38,6 +40,7 @@ export default {
         SET_SEARCH_QUERY: (state, query) => {state.search.query = query},
         SET_SEARCH_LANGUAGE: (state, language) => {state.search.language = language},
         SET_CHAN_LANG: (state, lang) => {state.search.chan_lang = lang},
+        SET_CC_TYPE: (state, cc) => {state.search.cc_type = cc},
         SET_PER_PAGE: (state, perPage) => {state.search.perPage = perPage},
 
         SET_CURRENT_PAGE: (state, curPage) => {state.currentPage = curPage},
