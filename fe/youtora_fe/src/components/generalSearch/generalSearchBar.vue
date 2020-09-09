@@ -16,7 +16,7 @@
             </b-form-group>
 
             <b-card-group style="font-size: 100%; font-weight: bold" class="mt-0">
-                <b-card class="border-white">
+                <b-card class="border-white" style="min-width: 400px">
                     <b-form-group id="input-group-3" label="Subtitle Language:" label-for="input-3">
                         <b-form-radio-group
                                 id="langId"
@@ -32,7 +32,7 @@
                     </b-form-group>
                 </b-card>
 
-                <b-card class="border-white">
+                <b-card class="border-white" style="min-width: 400px">
                     <b-form-group id="input-group-4" label="Channel Language:" label-for="input-3">
                         <b-form-radio-group
                                 id="chan_lang"
@@ -48,7 +48,7 @@
                     </b-form-group>
                 </b-card>
 
-                <b-card class="border-white">
+                <b-card class="border-white" style="min-width: 200px">
                     <b-form-group id="input-group-5" label="Subtitle Type:" label-for="input-3">
                         <b-form-radio-group
                                 id="ccType"
