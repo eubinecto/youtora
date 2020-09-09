@@ -99,11 +99,14 @@
             setModal: function(item) {
                 this.modalShow = !this.modalShow
                 this.modalWord = item.word
-                this.modalDesc = this.replaceHypertoButton(item.desc.desc_raw)
+                this.modalDesc = this.addHyperEndpoint(item.desc.desc_raw)
                 this.credit = item.credit
 
                 this.$store.commit('mlGlossary/SET_SEARCH_QUERY', this.modalWord)
                 this.$store.dispatch('mlGlossary/SEARCH_WORD')
+            },
+            addHyperEndpoint: function(htmlString) {
+                return htmlString.split('<a href="#').join('<a href="https://developers.google.com/machine-learning/glossary/#')
             },
             replaceHypertoButton: function(htmlString) {
                 const linkTag = new RegExp("<a href=\"#(.+?)\">", "gi")
