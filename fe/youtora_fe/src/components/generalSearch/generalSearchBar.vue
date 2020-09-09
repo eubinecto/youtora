@@ -10,7 +10,7 @@
                             placeholder="Search Here"
                     ></b-form-input>
                     <b-input-group-append>
-                        <b-button type="submit"><b-icon icon="search"></b-icon></b-button>
+                        <b-button type="submit" variant="info"><b-icon icon="search"></b-icon></b-button>
                     </b-input-group-append>
                 </b-input-group>
             </b-form-group>
@@ -25,6 +25,7 @@
                                 class="mb-3"
                                 value-field="item"
                                 text-field="name"
+                                button-variant="outline-info"
                                 buttons
                                 name="langId"
                         ></b-form-radio-group>
@@ -40,6 +41,7 @@
                                 class="mb-3"
                                 value-field="item"
                                 text-field="name"
+                                button-variant="outline-info"
                                 buttons
                                 name="chan_lang"
                         ></b-form-radio-group>
@@ -84,7 +86,7 @@
                     {item: 10, 'name': 10},
                 ],
 
-                query: '',
+                query: this.$store.state.generalSearch.search.query,
 
                 lang:'en',
                 optLang:[

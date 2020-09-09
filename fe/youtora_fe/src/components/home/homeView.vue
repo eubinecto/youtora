@@ -1,10 +1,8 @@
 <template>
     <div id="homeView" class="homeView">
-        <main>
-            <div class="homeBody" style="vertical-align: center; horiz-align: center">
-                <home-body/>
-            </div>
-        </main>
+        <div class="homeSearchBar">
+            <home-body/>
+        </div>
 
 
         <div class="footMain">
@@ -52,6 +50,13 @@
     /* Custom page CSS
     -------------------------------------------------- */
     /* Not required for template or sticky footer method. */
+    .homeSearchBar{
+        position: fixed;
+        width: 600px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
 
     body > .container {
         padding: 60px 15px 0;
