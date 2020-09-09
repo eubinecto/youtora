@@ -33,6 +33,7 @@ def api_search_tracks():
     # these are optional
     chan_lang_code: Optional[str] = params_dict.get('chan_lang_code', None)
     caption_lang_code: Optional[str] = params_dict.get('caption_lang_code', None)
+    caption_type: Optional[str] = params_dict.get('caption_type', None)
     views_boost: Optional[int] = params_dict.get('views_boost', None)
     like_ratio_boost: Optional[int] = params_dict.get('like_ratio_boost', None)
     subs_boost: Optional[int] = params_dict.get('subs_boost', None)
@@ -57,6 +58,13 @@ def api_search_tracks():
         search_params['from_'] = int(from_)
     if size:
         search_params['size'] = int(size)
+    if caption_type:
+        if caption_type == "manual":
+            search_params['is_auto'] = False
+        elif caption_type == "auto":
+            search_params['is_auto'] = True
+        else:
+            raise InvalidRequestError("invalid caption type. must be either manual or auto", 410)
 
     results = Search.search_tracks(**search_params)
     return jsonify(results)
