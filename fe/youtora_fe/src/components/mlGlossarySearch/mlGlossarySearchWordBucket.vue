@@ -105,14 +105,17 @@
                 this.$store.commit('mlGlossary/SET_SEARCH_QUERY', this.modalWord)
                 this.$store.dispatch('mlGlossary/SEARCH_WORD')
             },
+            imageResize: function(htmlString) {
+                return htmlString.split('<img src="').join('<img style="width: 500px%; height: auto; padding: 10px" src="')
+            },
             addHyperEndpoint: function(htmlString) {
-                return htmlString.split('<a href="#').join('<a href="https://developers.google.com/machine-learning/glossary/#')
+                return this.imageResize(htmlString).split('<a href="#').join('<a href="https://developers.google.com/machine-learning/glossary/#')
             },
             replaceHypertoButton: function(htmlString) {
                 const linkTag = new RegExp("<a href=\"#(.+?)\">", "gi")
                 const linkCloseTag = new RegExp("</a>", "gi")
 
-                const buttonOpen = htmlString.toString().replace(linkTag, '<b-button @click="onNewModal(\''+'$1'+'\')">')
+                const buttonOpen = this.imageResize(htmlString).toString().replace(linkTag, '<b-button @click="onNewModal(\''+'$1'+'\')">')
                 const buttonClose = buttonOpen.toString().replace(linkCloseTag, '</b-button>')
                 return buttonClose
             },
