@@ -14,6 +14,7 @@ class Search:
                       content: str,
                       chan_lang_code: str = None,
                       caption_lang_code: str = None,
+                      is_auto: bool = None,
                       views_boost: int = 10,
                       like_ratio_boost: int = 5,
                       subs_boost: int = 2,
@@ -25,6 +26,7 @@ class Search:
         search_query = cls._get_search_query(content,
                                              chan_lang_code,
                                              caption_lang_code,
+                                             is_auto,
                                              views_boost,
                                              like_ratio_boost,
                                              subs_boost)
@@ -85,9 +87,42 @@ class Search:
                           text: str,
                           chan_lang_code: str,
                           caption_lang_code: str,
+                          is_auto: bool,
                           views_boost: int,
                           like_ratio_boost: int,
                           subs_boost: int) -> dict:
+
+        filter_list = list()
+        # if is_auto is given
+        if is_auto is not None:
+            filter_list.append(
+                {
+                    "term": {
+                        "caption.is_auto": is_auto
+                    }
+                }
+            )
+
+        # if a caption language is given
+        if caption_lang_code:
+            filter_list.append(
+                {
+                    "term": {
+                        "caption.lang_code": caption_lang_code
+                    }
+                }
+            )
+
+        # if the channel language is given
+        if chan_lang_code:
+            filter_list.append(
+                {
+                    "term": {
+                        "caption.video.channel.lang_code": chan_lang_code
+                    }
+                }
+            )
+
         search_query = {
             "bool": {
                 "must": [
@@ -117,29 +152,10 @@ class Search:
                         }
                     }
                 ],
-                "filter": [
-                ]
+                "filter": filter_list
             }
         }
 
-        if caption_lang_code:
-            search_query['bool']['filter'].append(
-                {
-                    "term": {
-                        "caption.lang_code": caption_lang_code
-                    }
-                }
-            )
-
-        # if the channel language is given
-        if chan_lang_code:
-            search_query['bool']['filter'].append(
-                {
-                    "term": {
-                        "caption.video.channel.lang_code": chan_lang_code
-                    }
-                }
-            )
         return {
             "query": search_query
         }
