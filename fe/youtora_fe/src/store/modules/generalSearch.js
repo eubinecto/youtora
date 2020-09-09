@@ -55,6 +55,7 @@ export default {
                 "content": state.search.query,
                 "caption_lang_code": state.search.language,
                 "chan_lang_code": state.search.chan_lang,
+                "caption_type": state.search.cc_type,
                 "from": (state.currentPage - 1) * state.search.perPage + 1,
                 "size": state.search.perPage
             }
