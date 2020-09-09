@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 from .errors import CaptionNotFoundError
-from .models import Video, Caption, Chapter
+from .dataclasses import Video, Caption, Chapter
 
 
 class ChapterBuilder:
@@ -102,8 +102,10 @@ class CaptionBuilder:
         # this will be the id of each caption
         caption_comp_key = "|".join([self.vid_id, caption_type, lang_code])
         # return the caption object with tracks
-        caption = Caption(caption_id=caption_comp_key,
-                          vid_id=self.vid_id,
+        caption = Caption(id=caption_comp_key,
+                          parent_id=self.vid_id,
+                          is_auto=True if caption_type == "auto" else False,
+                          lang_code=lang_code,
                           url=caption_url)
         # return the caption
         return caption

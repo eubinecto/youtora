@@ -6,8 +6,8 @@ from pymongo.collection import Collection
 
 from .builders import CaptionBuilder
 from .dloaders import VideoDownloader
-from .models import Channel, Video
-from .parsers import HTMLParser, ChannelHTMLParser, MLGlossRawHTMLParser
+from .dataclasses import Channel, Video
+from .parsers import ChannelHTMLParser, MLGlossRawHTMLParser, MLGlossRawParser
 
 from ..elastic.main import Index
 from ..mongo.settings import YoutoraDB, CorporaDB
@@ -39,39 +39,36 @@ class Store:
         """
         1. ml gloss raw
         2. ml gloss
-        3. (later) idiom dict.
+        3. (later) idiom dictionary.
         """
         # init the client
         logger = logging.getLogger("store_corpora_db")
         cls.corpora_db = CorporaDB()
-        # get the from parser
-        ml_gloss_raw_list = MLGlossRawHTMLParser.parse_ml_gloss_raw()
-        docs = [
-            {
-                '_id': ml_gloss_raw.id,
-                'word': ml_gloss_raw.word,
-                "desc_raw": ml_gloss_raw.desc_raw,
-                "category_raw": ml_gloss_raw.category_raw
-            }
-            for ml_gloss_raw in ml_gloss_raw_list
-        ]
+        # get raw data from HTML parser
+        ml_gloss_raws = MLGlossRawHTMLParser.parse()
+        ml_gloss_raw_docs = [ml_gloss_raw.to_json() for ml_gloss_raw in ml_gloss_raws]
         cls._store_many(cls.corpora_db.ml_gloss_raw_coll,
-                        docs=docs,
+                        docs=ml_gloss_raw_docs,
                         rep_id="ml_gloss_raw",
+                        logger=logger)
+        # get processed data from parser
+        ml_glosses = MLGlossRawParser.parse()
+        ml_gloss_docs = [ml_gloss.to_json() for ml_gloss in ml_glosses]
+        cls._store_many(cls.corpora_db.ml_gloss_coll,
+                        docs=ml_gloss_docs,
+                        rep_id="ml_gloss",
                         logger=logger)
 
     @classmethod
     def store_youtora_db(cls,
                          channel_url: str,
-                         lang_code: str,
-                         os: str = "mac"):
+                         lang_code: str):
         """
         scrapes the desired information from the given channel url
         this is the main function to be used
         and stores it in the local mongoDB.
         :param channel_url:
         :param lang_code: the language of the channel. need this info on query time.
-        :param os:
         """
         # check  pre-condition
         assert lang_code in CaptionBuilder.LANG_CODES_TO_COLLECT, "the lang code is invalid"
@@ -80,7 +77,7 @@ class Store:
         cls.youtora_db = YoutoraDB()
 
         # this will get the video ids of all uploaded videos
-        channel = ChannelHTMLParser.parse_channel(channel_url, lang_code)
+        channel = ChannelHTMLParser.parse(channel_url, lang_code)
 
         # split the video ids into batches
         batches = np.array_split(channel.vid_id_list, cls.BATCH_SIZE)

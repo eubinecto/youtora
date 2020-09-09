@@ -84,3 +84,11 @@ def api_ml_gloss_raw_coll():
     corpora_db = CorporaDB()
     results = list(corpora_db.ml_gloss_raw_coll.find())
     return jsonify(results)
+
+
+@app.route("mongo/corpora_db/ml_gloss_coll")
+@cross_origin()
+def api_ml_gloss_coll():
+    corpora_db = CorporaDB()
+    results = list(corpora_db.ml_gloss_coll.find())
+    return jsonify(results)

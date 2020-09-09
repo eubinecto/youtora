@@ -1,6 +1,6 @@
 from typing import List, Generator
 
-from ..youtora.models import Channel, Video
+from ..youtora.dataclasses import Channel, Video
 
 from elasticsearch import Elasticsearch
 from .settings import HOSTS, YOUTORA_TRACKS_IDX_NAME
