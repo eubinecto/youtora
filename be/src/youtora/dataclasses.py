@@ -194,6 +194,7 @@ class MLGloss(Data):
     def to_json(self) -> dict:
         doc = {
             "_id": self.id,
+            "credit": self.credit,
             "word": self.word,
             "desc": self.desc.to_json(),
             "category": self.category
