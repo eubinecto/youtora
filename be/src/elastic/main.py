@@ -15,22 +15,22 @@ class Search:
                       chan_lang_code: str = None,
                       caption_lang_code: str = None,
                       is_auto: bool = None,
-                      views_boost: int = 10,
-                      like_ratio_boost: int = 5,
+                      views_boost: int = 2,
+                      like_ratio_boost: int = 2,
                       subs_boost: int = 2,
                       from_: int = 0,
                       size: int = 10) -> dict:
         # init the client
         cls.es_client = Elasticsearch(HOSTS)
         # build the search query
-        search_query = cls._get_search_query(content,
-                                             chan_lang_code,
-                                             caption_lang_code,
-                                             is_auto,
-                                             views_boost,
-                                             like_ratio_boost,
-                                             subs_boost)
-        # get the json response for the current track
+        search_query = cls._build_search_query(content,
+                                               chan_lang_code,
+                                               caption_lang_code,
+                                               is_auto,
+                                               views_boost,
+                                               like_ratio_boost,
+                                               subs_boost)
+        # get the search result
         srch_res_json = cls.es_client.search(body=search_query,
                                              index=YOUTORA_TRACKS_IDX_NAME,
                                              from_=from_,
@@ -67,9 +67,9 @@ class Search:
                     'url': "https://youtu.be/{}?t={}".format(vid_id, next_start)
                 }
                 tracks.append(next_track)
-            # include the social features
             res = {
                 'tracks': tracks,
+                'highlight': hit['highlight'],  # add highlight
                 'features': {
                     'caption': hit['_source']['caption'],
                 }
@@ -83,15 +83,15 @@ class Search:
         return return_dict
 
     @classmethod
-    def _get_search_query(cls,
-                          text: str,
-                          chan_lang_code: str,
-                          caption_lang_code: str,
-                          is_auto: bool,
-                          views_boost: int,
-                          like_ratio_boost: int,
-                          subs_boost: int) -> dict:
-
+    def _build_search_query(cls,
+                            content: str,
+                            chan_lang_code: str,
+                            caption_lang_code: str,
+                            is_auto: bool,
+                            views_boost: int,
+                            like_ratio_boost: int,
+                            subs_boost: int) -> dict:
+        # build the filter
         filter_list = list()
         # if is_auto is given
         if is_auto is not None:
@@ -128,7 +128,12 @@ class Search:
                 "must": [
                     {
                         "match": {
-                            "content": text
+                            "content": content
+                        }
+                    },
+                    {
+                        "match": {
+                            "context": content  # match with the context as well
                         }
                     }
                 ],
@@ -157,7 +162,15 @@ class Search:
         }
 
         return {
-            "query": search_query
+            "query": search_query,
+            "highlight": {
+                "number_of_fragments": 0,
+                "pre_tags": ["<strong>"],
+                "post_tags": ["</strong>"],
+                "fields": {
+                    "context": {}
+                }
+            }
         }
 
 
