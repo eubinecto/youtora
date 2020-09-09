@@ -168,16 +168,19 @@ class Store:
                    doc: dict,
                    rep_id: str,
                    logger: Logger):
-        try:
-            coll.insert_one(document=doc)
-        except DuplicateKeyError:
-            # logger.warning(str(dke))
-            # delete the channel and then reinsert
-            coll.delete_one(filter={"_id": doc["_id"]})
-            coll.insert_one(document=doc)
-            logger.warning("overwritten: " + rep_id)
+        if doc:
+            try:
+                coll.insert_one(document=doc)
+            except DuplicateKeyError:
+                # logger.warning(str(dke))
+                # delete the channel and then reinsert
+                coll.delete_one(filter={"_id": doc["_id"]})
+                coll.insert_one(document=doc)
+                logger.warning("overwritten: " + rep_id)
+            else:
+                logger.info("stored: " + rep_id)
         else:
-            logger.info("stored: " + rep_id)
+            logger.warning("SKIP: the document is empty")
 
     @classmethod
     def _store_many(cls,
@@ -185,14 +188,17 @@ class Store:
                     docs: List[dict],
                     rep_id: str,
                     logger: Logger):
-        try:
-            # insert all tracks
-            coll.insert_many(documents=docs)
-        except BulkWriteError:
-            # logger.warning(str(bwe))
-            # delete and overwrite tracks
-            coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
-            coll.insert_many(documents=docs)
-            logger.warning("all overwritten for: " + rep_id)
+        if len(docs):
+            try:
+                # insert all tracks
+                coll.insert_many(documents=docs)
+            except BulkWriteError:
+                # logger.warning(str(bwe))
+                # delete and overwrite tracks
+                coll.delete_many(filter={"_id": {"$in": [doc["_id"] for doc in docs]}})
+                coll.insert_many(documents=docs)
+                logger.warning("all overwritten for: " + rep_id)
+            else:
+                logger.info("all stored for: " + rep_id)
         else:
-            logger.info("all stored for: " + rep_id)
+            logger.warning("SKIP: the documents list is empty")
