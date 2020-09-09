@@ -69,9 +69,7 @@ class Search:
             res = {
                 'tracks': tracks,
                 'features': {
-                    'views': hit['_source']['caption']['video']['views'],
-                    'like_ratio': hit['_source']['caption']['video']['like_ratio'],
-                    'subs': hit['_source']['caption']['video']['channel']['subs']
+                    'caption': hit['_source']['caption'],
                 }
             }  # the search data
             results.append(res)
