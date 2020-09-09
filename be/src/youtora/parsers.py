@@ -34,8 +34,8 @@ class HTMLParser:
 
     @classmethod
     def get_driver(cls,
+                   os: str,
                    time_out: int = 10,
-                   os: str = "mac",
                    is_mobile: bool = False,
                    is_silent: bool = False):
         # get the path to the chrome driver
@@ -84,9 +84,11 @@ class ChannelHTMLParser(HTMLParser):
     @classmethod
     def parse(cls,
               chan_url: str,
-              lang_code: str) -> Channel:
+              lang_code: str,
+              os: str) -> Channel:
         """
         now you might be able to do this.
+        :param os:
         :param chan_url: the id of the channel
         :param lang_code
         :return: a channel object
@@ -94,7 +96,8 @@ class ChannelHTMLParser(HTMLParser):
         logger = logging.getLogger("scrape_channel")
         # get the driver
         driver = super().get_driver(is_silent=True,
-                                    is_mobile=True)
+                                    is_mobile=True,
+                                    os=os)
 
         # get the channel page to get the channel id, subs, uploader
         try:
