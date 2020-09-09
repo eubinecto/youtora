@@ -4,7 +4,7 @@ from typing import List, Generator
 import re
 
 from .builders import CaptionBuilder
-from .models import Video, Track, Caption
+from .dataclasses import Video, Track, Caption
 
 # use youtube_dl for getting the automatic captions
 import youtube_dl
@@ -58,8 +58,8 @@ class TrackDownloader:
                 else:
                     track_comp_key = "|".join([caption.id, str(start)])
                     # append to the tracks
-                    tracks.append(Track(track_id=track_comp_key,
-                                        caption_id=caption.id,
+                    tracks.append(Track(id=track_comp_key,
+                                        parent_id=caption.id,
                                         start=start,
                                         duration=duration,
                                         content=text))
@@ -120,6 +120,8 @@ class VideoDownloader:
         'writeinfojson': True,
         'quiet': True
     }  # VIDEO_DL_OPTIONS
+
+    VID_URL_FORMAT = "https://www.youtube.com/watch?v={}"
 
     @classmethod
     def dl_videos_lazy(cls,
@@ -190,9 +192,10 @@ class VideoDownloader:
         likes, dislikes = VideoHTMLParser.likes_dislikes(vid_url)
 
         # creates a video object
-        video = Video(vid_id=vid_id,
+        video = Video(id=vid_id,
                       title=title,
-                      channel_id=channel_id,
+                      url=cls.VID_URL_FORMAT.format(vid_id),
+                      parent_id=channel_id,
                       publish_date=upload_date,
                       likes=likes,
                       dislikes=dislikes,
