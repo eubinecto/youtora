@@ -46,7 +46,7 @@ export default {
     actions: {
         SEARCH_GLOSSARY: async ({commit}) => {
             commit('SET_GLOSSARY_LOADING', true)
-            const targetLink = process.env.VUE_APP_API + '/mongo/corpora_db/ml_gloss_raw_coll'
+            const targetLink = process.env.VUE_APP_API + '/mongo/corpora_db/ml_gloss_coll'
 
 
             await axios.get(targetLink, {data: null, params: null})
