@@ -107,20 +107,11 @@ class Store:
         """
         store the given channel in MongoDB.
         :param channel:
-        :return:
         """
         logger = logging.getLogger("_store_channel")
-        # build the doc
-        doc = {
-            "_id": channel.id,
-            "url": channel.url,
-            "title": channel.title,
-            "subs": channel.subs,
-            "lang_code": channel.lang_code
-        }
         # store the channel
         cls._store_one(coll=cls.youtora_db.channel_coll,
-                       doc=doc,
+                       doc=channel.to_json(),
                        rep_id=channel.id,
                        logger=logger)
 
@@ -129,26 +120,11 @@ class Store:
         """
         store the given video in MongoDB.
         :param video:
-        :return:
         """
         logger = logging.getLogger("_store_videos")
-        # downloading the video will be initiated here
-        doc = {
-            # should add this field
-            "_id": video.id,
-            "parent_id": video.parent_id,
-            "url": video.url,
-            "title": video.title,
-            "publish_date": video.publish_date,
-            "views": video.views,
-            "likes": video.likes,
-            "dislikes": video.dislikes,
-            "category_raw": video.category
-        }  # doc
-
         # store the video
         cls._store_one(coll=cls.youtora_db.video_coll,
-                       doc=doc,
+                       doc=video.to_json(),
                        rep_id=video.id,
                        logger=logger)
 
@@ -157,20 +133,11 @@ class Store:
         """
         store all tracks of the given video in MongoDB.
         :param video:
-        :return:
         """
         logger = logging.getLogger("_store_captions_of")
         docs = list()
         for caption in video.captions:
-            doc = {
-                # video is the parent of caption
-                "_id": caption.id,
-                "parent_id": caption.parent_id,
-                "url": caption.url,
-                "lang_code": caption.lang_code,
-                "is_auto": caption.is_auto
-            }
-            docs.append(doc)
+            docs.append(caption.to_json())
             del caption  # memory management
         # store all captions
         cls._store_many(coll=cls.youtora_db.caption_coll,
@@ -187,17 +154,7 @@ class Store:
         docs = list()
         for caption in video.captions:
             for track in caption.tracks:
-                doc = {
-                        "_id": track.id,
-                        "parent_id": track.parent_id,
-                        "start": track.start,
-                        "duration": track.duration,
-                        "content": track.content,
-                        "prev_id": track.prev_id,
-                        "next_id": track.next_id,
-                        "context": track.context
-                }
-                docs.append(doc)
+                docs.append(track.to_json())
                 del track  # memory management
         # store all tracks
         cls._store_many(coll=cls.youtora_db.track_coll,
