@@ -1,6 +1,7 @@
 <template>
     <div id="homeView" class="homeView">
         <div class="homeSearchBar">
+            <img :src="require('../../assets/tmp_logo.png')" alt="Youtora" style="width: 600px"/>
             <home-body/>
         </div>
 
@@ -53,7 +54,7 @@
     .homeSearchBar{
         position: fixed;
         width: 600px;
-        top: 50%;
+        top: 40%;
         left: 50%;
         transform: translate(-50%, -50%);
     }
