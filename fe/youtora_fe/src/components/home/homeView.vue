@@ -7,11 +7,11 @@
         </main>
 
 
-        <footer class="footer">
+        <div class="footMain">
             <div class="container">
                 <home-footer class="homeFoot"/>
             </div>
-        </footer>
+        </div>
 
 
     </div>
@@ -37,13 +37,14 @@
 <style>
     /* Sticky footer styles
     -------------------------------------------------- */
-    .footer {
+    .footMain {
         position: absolute;
         bottom: 0;
         width: 100%;
         /* Set the fixed height of the footer here */
         height: 70px;
         line-height: 30px; /* Vertically center the text there */
+        padding: 1rem 1rem 5rem;
         background-color: #f5f5f5;
     }
 
@@ -56,7 +57,7 @@
         padding: 60px 15px 0;
     }
 
-    .footer > .container {
+    .footMain > .container {
         margin-top: 5px;
         text-align: left;
         margin-left: 0;
