@@ -62,11 +62,13 @@ class Store:
     @classmethod
     def store_youtora_db(cls,
                          channel_url: str,
-                         lang_code: str):
+                         lang_code: str,
+                         os: str = 'mac'):
         """
         scrapes the desired information from the given channel url
         this is the main function to be used
         and stores it in the local mongoDB.
+        :param os:
         :param channel_url:
         :param lang_code: the language of the channel. need this info on query time.
         """
@@ -77,7 +79,7 @@ class Store:
         cls.youtora_db = YoutoraDB()
 
         # this will get the video ids of all uploaded videos
-        channel = ChannelHTMLParser.parse(channel_url, lang_code)
+        channel = ChannelHTMLParser.parse(channel_url, lang_code, os)
 
         # split the video ids into batches
         batches = np.array_split(channel.vid_id_list, cls.BATCH_SIZE)
