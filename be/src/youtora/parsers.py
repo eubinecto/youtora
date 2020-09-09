@@ -1,4 +1,5 @@
-from typing import Tuple, List
+import json
+from typing import Tuple, List, Optional
 
 from selenium import webdriver
 
@@ -148,12 +149,12 @@ class ChannelHTMLParser(HTMLParser):
         # Now I have to parse this
         if re.match(r'[\d.]*[KMB]$', subs_data):
             if subs_data[-1] == 'K':
-                subs_cnt = int(float(subs_data[:-1]) * (10**3))
+                subs_cnt = int(float(subs_data[:-1]) * (10 ** 3))
             elif subs_data[-1] == 'M':
-                subs_cnt = int(float(subs_data[:-1]) * (10**6))
+                subs_cnt = int(float(subs_data[:-1]) * (10 ** 6))
             else:
                 # has a billion subs
-                subs_cnt = int(float(subs_data[:-1]) * (10**9))
+                subs_cnt = int(float(subs_data[:-1]) * (10 ** 9))
         else:
             # less than 1K
             subs_cnt = int(subs_data)
@@ -201,6 +202,7 @@ class VideoHTMLParser(HTMLParser):
     just focus on this for now
     likes, dislikes.
     """
+
     @classmethod
     def likes_dislikes(cls,
                        vid_url) -> Tuple[int, int]:
@@ -238,7 +240,7 @@ class VideoHTMLParser(HTMLParser):
             # get the dislike cnt
             if dislike_cnt_info == "No":
                 dislike_cnt = 0
-                logging.info("dislike_cnt:0:video:"+vid_url)
+                logging.info("dislike_cnt:0:video:" + vid_url)
             else:
                 dislike_cnt = int(dislike_cnt_info.replace(",", ""))
                 logging.info("dislike_cnt:{}:video:{}".format(dislike_cnt, vid_url))
@@ -247,13 +249,32 @@ class VideoHTMLParser(HTMLParser):
 
 class MLGlossRawHTMLParser(HTMLParser):
     # get all the definitions from here
-    ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary"
-
-    CONTENTS_DELIM_REGEXP = re.compile("<p><a class=\"glossary-anchor\" name=\".*\"></a>\n</p>" +
-                                       "<h2 class=\"hide-from-toc\" data-text=\".*\" id=\".*\" " +
+    ML_GLOSS_ENDPOINT = "https://developers.google.com/machine-learning/glossary"
+    CREDIT_FORMAT = ML_GLOSS_ENDPOINT + "/#{}"
+    # regular expression objects to be used for parsing
+    CONTENTS_DELIM_REGEXP = re.compile("<p><a class=\"glossary-anchor\" name=\".*\"></a>\n</p>"
+                                       "<h2 class=\"hide-from-toc\" data-text=\".*\" id=\".*\" "
                                        "tabindex=\"[0-9]\">.*</h2>")
-    META_REGEXP = re.compile("<p><a class=\"glossary-anchor\" name=\"(.*)\"></a>\n</p><h2 class=\"hide-from-toc\""
-                                       + " data-text=\"(.*)\" id=\".*\" tabindex=\"[0-9]\">.*</h2>")
+    META_REGEXP = re.compile("<p><a class=\"glossary-anchor\" name=\"(.*)\"></a>\n</p>"
+                             "<h2 class=\"hide-from-toc\" data-text=\"(.*)\" id=\".*\" tabindex=\"[0-9]\">.*</h2>")
+    GLOSS_H2_REGEXP = re.compile("<h2 class=\"glossary\" data-text=\".*\" id=\".*\" tabindex=\"[0-9]\">.*</h2>")
+    GLOSS_ANC_REGEXP = re.compile("<a class=\"glossary-anchor\" name=\".*\"></a>")
+    CATEGORY_DIV_1_REGEXP = re.compile("<div class=\"glossary-icon-container\">\n"
+                                       "<div class=\"glossary-icon\" title=\".*\">.*</div>\n"
+                                       "</div>")
+    CATEGORY_DIV_2_REGEXP = re.compile("<div class=\"glossary-icon-container\">\n"
+                                       "<div class=\"glossary-icon\" title=\".*\">.*</div>\n"
+                                       "<div class=\"glossary-icon\" title=\".*\">.*</div>\n"
+                                       "</div>")
+    EMPTY_P_REGEXP = re.compile("<p></p>")
+    # to be used for filer out the description part
+    DESC_RAW_FILTER_REGEXP = re.compile("|".join([
+        regexp.pattern for regexp in [GLOSS_H2_REGEXP,
+                                      GLOSS_ANC_REGEXP,
+                                      CATEGORY_DIV_1_REGEXP,
+                                      CATEGORY_DIV_2_REGEXP,
+                                      EMPTY_P_REGEXP]
+    ]))
 
     @classmethod
     def parse(cls) -> List[MLGlossRaw]:
@@ -263,19 +284,20 @@ class MLGlossRawHTMLParser(HTMLParser):
         try:
             # get the html
             logger.info("loading ml glossary page...")
-            driver.get(cls.ML_GLOSS_URL)
+            driver.get(cls.ML_GLOSS_ENDPOINT)
             html = driver.page_source
         except Exception as e:
             raise e
         else:
             # parse html to get the result you want
-            parsed_words, parsed_metas = cls._parse_html(html)
+            parsed_contents, parsed_metas = cls._parse_html(html)
             ml_gloss_raws = [
                 MLGlossRaw(id="ml_gloss_raw|" + parsed_meta['id'],
                            word=parsed_meta['word'],
-                           desc_raw=parsed_word['desc_raw'],
-                           category_raw=parsed_word['category_raw'])
-                for parsed_word, parsed_meta in zip(parsed_words, parsed_metas)
+                           credit=cls.CREDIT_FORMAT.format(parsed_meta['id']),
+                           desc_raw=parsed_content['desc_raw'],
+                           category_raw=parsed_content['category_raw'])
+                for parsed_content, parsed_meta in zip(parsed_contents, parsed_metas)
             ]
             return ml_gloss_raws
         finally:
@@ -288,21 +310,20 @@ class MLGlossRawHTMLParser(HTMLParser):
         soup = BeautifulSoup(html, 'html.parser')
         gloss_div = soup.find("div", attrs={'class': "devsite-article-body clearfix"})
         # split them by this delimiter
-        words = re.split(cls.CONTENTS_DELIM_REGEXP, str(gloss_div))
+        contents = cls.CONTENTS_DELIM_REGEXP.split(str(gloss_div))
         # use pyfunctional module to parse them to build the rep_id I want
-        parsed_words = seq(words) \
-                           .map(lambda x: BeautifulSoup(x, 'html.parser')) \
-                           .map(lambda x: (x.find_all('p'), x.find('div', attrs={'class': 'glossary-icon'}))) \
-                           .map(lambda x: ([str(p_tag) for p_tag in x[0]],
-                                            str(x[1] if x[1] else None))) \
-                           .map(lambda x: ("".join(x[0]), x[1])) \
-                           .map(lambda x: {'desc_raw': x[0], 'category_raw': x[1]}) \
-                           .sequence[1:]  # ignore the first one
+        parsed_content = seq(contents) \
+                             .map(lambda x: BeautifulSoup(x, 'html.parser')) \
+                             .map(lambda x: (str(x).strip(), x.find('div', attrs={'class': 'glossary-icon'}))) \
+                             .map(lambda x: (cls.DESC_RAW_FILTER_REGEXP.sub(repl="", string=x[0]),
+                                             str(x[1]).strip() if x[1] else None)) \
+                             .map(lambda x: {'desc_raw': x[0], 'category_raw': x[1]}) \
+                             .sequence[1:]  # ignore the first one
         # get the meta
-        parsed_metas = seq(re.findall(cls.META_REGEXP, str(gloss_div))) \
+        parsed_metas = seq(cls.META_REGEXP.findall(str(gloss_div))) \
             .map(lambda x: {'id': x[0].strip(), 'word': x[1].strip()}) \
             .sequence
-        return parsed_words, parsed_metas
+        return parsed_content, parsed_metas
 
 
 class DataParser:
@@ -316,6 +337,13 @@ class MLGlossRawParser(DataParser):
     """
     houses logic for parsing raw MLGloss
     """
+    # format with the file name of the svg file
+    IMAGES_ENDPOINT = "https://developers.google.com/machine-learning/glossary/images/"
+    # note: .* does not match new line.
+    TOPIC_SENT_REGEXP = re.compile(r"^[\s\S]*?[.|:]")
+    IMG_SRC_REGEXP = re.compile(r"<img src=\"(/machine-learning/glossary/images/).*\" alt=\".*\">")
+    CATEGORY_REGEXP = re.compile(r"<div class=\"glossary-icon\" title=\"(.*)\">.*</div>")
+
     @classmethod
     def parse(cls) -> List[MLGloss]:
         corpora_db = CorporaDB()
@@ -323,14 +351,16 @@ class MLGlossRawParser(DataParser):
         ml_gloss_raws: List[MLGlossRaw] = [
             MLGlossRaw(id=res['_id'],
                        word=res['word'],
+                       credit=res['credit'],
                        desc_raw=res['desc_raw'],
                        category_raw=res['category_raw'])
             for res in list(corpora_db.ml_gloss_raw_coll.find())
         ]
         # parse it into ml glosses
         ml_glosses: List[MLGloss] = [
-            MLGloss(id=ml_gloss_raw.id,
+            MLGloss(id="ml_gloss|" + ml_gloss_raw.id.split("|")[-1],
                     word=ml_gloss_raw.word,
+                    credit=ml_gloss_raw.credit,
                     desc=cls._parse_desc_raw(ml_gloss_raw.desc_raw),
                     category=cls._parse_category_raw(ml_gloss_raw.category_raw))
             for ml_gloss_raw in ml_gloss_raws
@@ -340,26 +370,20 @@ class MLGlossRawParser(DataParser):
 
     @classmethod
     def _parse_desc_raw(cls, desc_raw: str) -> MLGlossDesc:
+        desc_raw = cls.IMG_SRC_REGEXP.sub(repl=cls.IMAGES_ENDPOINT, string=desc_raw)
         desc_raw_bs = BeautifulSoup(desc_raw, 'html.parser')
-        # the first sentence
-        topic_sent = ...
-        # just get the text alone
-        pure_text = desc_raw_bs.get_text()
-        int_links = ...
-        ext_links = ...
-
+        pure_text = desc_raw_bs.get_text().strip()
+        topic_sent = cls.TOPIC_SENT_REGEXP.findall(string=pure_text)[0]
         return MLGlossDesc(topic_sent=topic_sent,
                            pure_text=pure_text,
-                           int_links=int_links,
-                           ext_links=ext_links)
+                           desc_raw=desc_raw)
 
     @classmethod
-    def _parse_category_raw(cls, category_raw: str) -> str:
+    def _parse_category_raw(cls, category_raw: Optional[str]) -> Optional[str]:
         """
+        category raw may not exist.
         e.g. <div class="glossary-icon" title="Sequence Models">#seq</div>
         """
-        category_raw_bs = BeautifulSoup(category_raw, 'html.parser')
-        return category_raw_bs['title']
-
-
-
+        if category_raw:
+            return cls.CATEGORY_REGEXP.findall(category_raw)[0]
+        return None

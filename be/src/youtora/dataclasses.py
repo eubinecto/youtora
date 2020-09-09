@@ -150,8 +150,19 @@ class Chapter(YouTubeData):
 class MLGlossRaw(Data):
     id: str
     word: str
+    credit: str
     desc_raw: str
     category_raw: str
+
+    def to_json(self) -> dict:
+        doc = {
+                '_id': self.id,
+                'word': self.word,
+                "credit": self.credit,
+                "desc_raw": self.desc_raw,
+                "category_raw": self.category_raw
+        }
+        return doc
 
     def __str__(self) -> str:
         return self.word
@@ -161,13 +172,30 @@ class MLGlossRaw(Data):
 class MLGlossDesc(Data):
     topic_sent: str
     pure_text: str
-    int_links: List[str]
-    ext_links: List[str]
+    desc_raw: str
+
+    def to_json(self) -> dict:
+        doc = {
+            "topic_sent": self.topic_sent,
+            "pure_text": self.pure_text,
+            "desc_raw": self.desc_raw
+        }
+        return doc
 
 
 @dataclass
 class MLGloss(Data):
     id: str
     word: str
+    credit: str
     desc: MLGlossDesc
     category: str
+
+    def to_json(self) -> dict:
+        doc = {
+            "_id": self.id,
+            "word": self.word,
+            "desc": self.desc.to_json(),
+            "category": self.category
+        }
+        return doc

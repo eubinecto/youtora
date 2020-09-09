@@ -7,7 +7,7 @@ from pymongo.collection import Collection
 from .builders import CaptionBuilder
 from .dloaders import VideoDownloader
 from .dataclasses import Channel, Video
-from .parsers import ChannelHTMLParser, MLGlossRawHTMLParser
+from .parsers import ChannelHTMLParser, MLGlossRawHTMLParser, MLGlossRawParser
 
 from ..elastic.main import Index
 from ..mongo.settings import YoutoraDB, CorporaDB
@@ -39,25 +39,24 @@ class Store:
         """
         1. ml gloss raw
         2. ml gloss
-        3. (later) idiom dict.
+        3. (later) idiom dictionary.
         """
         # init the client
         logger = logging.getLogger("store_corpora_db")
         cls.corpora_db = CorporaDB()
-        # get the from parser
-        ml_gloss_raw_list = MLGlossRawHTMLParser.parse()
-        docs = [
-            {
-                '_id': ml_gloss_raw.id,
-                'word': ml_gloss_raw.word,
-                "desc_raw": ml_gloss_raw.desc_raw,
-                "category_raw": ml_gloss_raw.category_raw
-            }
-            for ml_gloss_raw in ml_gloss_raw_list
-        ]
+        # get raw data from HTML parser
+        ml_gloss_raws = MLGlossRawHTMLParser.parse()
+        ml_gloss_raw_docs = [ml_gloss_raw.to_json() for ml_gloss_raw in ml_gloss_raws]
         cls._store_many(cls.corpora_db.ml_gloss_raw_coll,
-                        docs=docs,
+                        docs=ml_gloss_raw_docs,
                         rep_id="ml_gloss_raw",
+                        logger=logger)
+        # get processed data from parser
+        ml_glosses = MLGlossRawParser.parse()
+        ml_gloss_docs = [ml_gloss.to_json() for ml_gloss in ml_glosses]
+        cls._store_many(cls.corpora_db.ml_gloss_coll,
+                        docs=ml_gloss_docs,
+                        rep_id="ml_gloss",
                         logger=logger)
 
     @classmethod
