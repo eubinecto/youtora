@@ -107,10 +107,10 @@ YOUTORA_TRACKS_ML_IDX_MAPPINGS = {
       "context": {
         "type": "text"
       },
-      "text_area_rel_img": {
+      "text_area_rel_frame": {
         "type": "rank_feature"
       },
-      "non_text_area_rel_img": {
+      "non_text_area_rel_frame": {
         "type": "rank_feature"
       },
       "caption": CAPTION_MAPPINGS
