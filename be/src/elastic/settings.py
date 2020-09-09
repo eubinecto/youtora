@@ -2,37 +2,8 @@
 # list of nodes we should connect to.
 # using the eubinCloud's internal IP
 HOSTS = [{"host": "192.168.219.197", "port": 9200}]
-
-# index to store the tracks
-YOUTORA_TRACKS_IDX_NAME = "youtora_tracks"
-YOUTORA_TRACKS_IDX_MAPPINGS = {
-  "mappings": {
-    "properties": {
-      "start": {
-        "type": "double"
-      },
-      "duration": {
-        "type": "double"
-      },
-      "content": {
-        "type": "text"
-      },
-      "prev_id": {
-        "type": "keyword"
-      },
-      "next_id": {
-        "type": "keyword"
-      },
-      "context": {
-        "type": "text"
-      },
-      # "text_area_rel_img": {
-      #   "type": "rank_feature"
-      # },
-      # "non_text_area_rel_img": {
-      #   "type": "rank_feature"
-      # },
-      "caption": {
+# common attributes
+CAPTION_MAPPINGS = {
         "properties": {
           "id": {
             # keyword data type: only searchable by the exact value
@@ -86,7 +57,63 @@ YOUTORA_TRACKS_IDX_MAPPINGS = {
           }
         }
       }
+# index to store the tracks
+YOUTORA_TRACKS_IDX_NAME = "youtora_tracks"
+YOUTORA_TRACKS_IDX_MAPPINGS = {
+  "mappings": {
+    "properties": {
+      "start": {
+        "type": "double"
+      },
+      "duration": {
+        "type": "double"
+      },
+      "content": {
+        "type": "text"
+      },
+      "prev_id": {
+        "type": "keyword"
+      },
+      "next_id": {
+        "type": "keyword"
+      },
+      "context": {
+        "type": "text"
+      },
+      "caption": CAPTION_MAPPINGS
     }
   }
 }
-
+# index to store the tracks for ml glossary
+YOUTORA_TRACKS_ML_IDX_NAME = "youtora_tracks_ml"
+YOUTORA_TRACKS_ML_IDX_MAPPINGS = {
+  "mappings": {
+    "properties": {
+      "start": {
+        "type": "double"
+      },
+      "duration": {
+        "type": "double"
+      },
+      "content": {
+        "type": "text"
+      },
+      "prev_id": {
+        "type": "keyword"
+      },
+      "next_id": {
+        "type": "keyword"
+      },
+      "context": {
+        "type": "text"
+      },
+      "text_area_rel_img": {
+        "type": "rank_feature"
+      },
+      "non_text_area_rel_img": {
+        "type": "rank_feature"
+      },
+      "caption": CAPTION_MAPPINGS
+    }
+  }
+}
