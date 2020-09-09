@@ -2,25 +2,30 @@ from typing import List
 from dataclasses import dataclass
 
 
+@dataclass
 class Data:
-    def __init__(self):
-        self.id = None
 
-
-class YouTubeData(Data):
-    def __init__(self):
-        super().__init__()
-        self.parent_id = None
+    def to_json(self) -> dict:
+        raise NotImplementedError
 
 
 @dataclass
-class Channel(YouTubeData):
+class Channel(Data):
     id: str
     url: str
     title: str
     subs: int
     lang_code: str
     vid_id_list: List[str]
+
+    def to_json(self) -> dict:
+        return {
+            "_id": self.id,
+            "url": self.url,
+            "title": self.title,
+            "subs": self.subs,
+            "lang_code": self.lang_code
+        }
 
     def __str__(self) -> str:
         """
@@ -30,8 +35,7 @@ class Channel(YouTubeData):
 
 
 @dataclass
-class Track(YouTubeData):
-    id: str
+class Track(Data):
     parent_id: str
     start: float
     duration: float
@@ -40,6 +44,13 @@ class Track(YouTubeData):
     prev_id: str = None
     next_id: str = None
     context: str = None
+
+    def get_id(self) -> str:
+        """
+        combine with the hash value of the track to get the id.
+        :return: the id of this track.
+        """
+        return "|".join([self.parent_id, str(self.__hash__())])
 
     def set_prev_id(self, prev_id: str):
         self.prev_id = prev_id
@@ -50,16 +61,31 @@ class Track(YouTubeData):
     def set_context(self, context: str):
         self.context: str = context
 
+    def to_json(self) -> dict:
+        return {
+            "_id": self.get_id(),
+            "parent_id": self.parent_id,
+            "start": self.start,
+            "duration": self.duration,
+            "content": self.content,
+            "prev_id": self.prev_id,
+            "next_id": self.next_id,
+            "context": self.context
+        }
+
+    def __hash__(self) -> int:
+        return hash((self.parent_id, self.start, self.content))
+
     # overrides dunder string method
     def __str__(self) -> str:
         """
         overrides the dunder string method
         """
-        return self.id
+        return self.content
 
 
 @dataclass
-class Caption(YouTubeData):
+class Caption(Data):
     id: str
     parent_id: str
     is_auto: bool
@@ -71,6 +97,16 @@ class Caption(YouTubeData):
     def set_tracks(self, tracks: List[Track]):
         self.tracks: List[Track] = tracks
 
+    def to_json(self) -> dict:
+        return {
+            # video is the parent of caption
+            "_id": self.id,
+            "parent_id": self.parent_id,
+            "url": self.url,
+            "lang_code": self.lang_code,
+            "is_auto": self.is_auto
+        }
+
     # overrides dunder string method
     def __str__(self) -> str:
         """
@@ -80,7 +116,7 @@ class Caption(YouTubeData):
 
 
 @dataclass
-class Video(YouTubeData):
+class Video(Data):
     id: str
     parent_id: str
     url: str
@@ -97,13 +133,27 @@ class Video(YouTubeData):
     def set_captions(self, captions: List[Caption]):
         self.captions: List[Caption] = captions
 
+    def to_json(self) -> dict:
+        return {
+            # should add this field
+            "_id": self.id,
+            "parent_id": self.parent_id,
+            "url": self.url,
+            "title": self.title,
+            "publish_date": self.publish_date,
+            "views": self.views,
+            "likes": self.likes,
+            "dislikes": self.dislikes,
+            "category_raw": self.category
+        }  # doc
+
     # overrides the dunder string method
     def __str__(self) -> str:
         return self.title
 
 
 @dataclass
-class Chapter(YouTubeData):
+class Chapter(Data):
     id: str
     parent_id: str
     start: float
@@ -118,6 +168,9 @@ class Chapter(YouTubeData):
 
     def set_next_id(self, next_chap_id):
         self.next_id = next_chap_id
+
+    def to_json(self):
+        pass
 
     def __str__(self) -> str:
         return self.title

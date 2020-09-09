@@ -177,7 +177,7 @@ class Index:
                     query = {
                         "index": {
                             "_index": YOUTORA_TRACKS_IDX_NAME,
-                            "_id": track.id,
+                            "_id": track.get_id(),
                         }  # index
                     }  # query
                     # build the doc_body
