@@ -1,7 +1,7 @@
 <template>
     <div id="homeView" class="homeView">
         <main>
-            <div class="homeBody">
+            <div class="homeBody" style="vertical-align: center; horiz-align: center">
                 <home-body/>
             </div>
         </main>

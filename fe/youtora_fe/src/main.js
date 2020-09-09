@@ -4,11 +4,12 @@ import App from './App.vue'
 import Vuex from 'vuex'
 
 import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
-import Buefy from 'buefy'
-import 'buefy/dist/buefy.css'
+
 
 import store from './store/index';
 
+import Buefy from 'buefy'
+// import 'buefy/dist/buefy.css'
 Vue.use(Buefy)
 
 // Install BootstrapVue

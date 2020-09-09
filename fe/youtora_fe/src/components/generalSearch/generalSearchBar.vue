@@ -1,14 +1,18 @@
 <template>
     <div id="generalSearchBar">
         <b-form @submit="onSubmit" @reset="onReset" v-if="show">
-
             <b-form-group id="input-group-2" label-for="input-2" class="ml-4 mr-4 mt-4">
-                <b-form-input
-                        id="input-2"
-                        v-model="query"
-                        required
-                        placeholder="Search Here"
-                ></b-form-input>
+                <b-input-group>
+                    <b-form-input
+                            id="input-2"
+                            v-model="query"
+                            required
+                            placeholder="Search Here"
+                    ></b-form-input>
+                    <b-input-group-append>
+                        <b-button type="submit"><b-icon icon="search"></b-icon></b-button>
+                    </b-input-group-append>
+                </b-input-group>
             </b-form-group>
 
             <b-card-group style="font-size: 100%; font-weight: bold" class="mt-0">
@@ -43,10 +47,10 @@
                 </b-card>
             </b-card-group>
 
-            <b-card class="border-white">
-                <b-button type="submit" variant="primary">Submit</b-button>
-                <b-button type="reset" variant="danger">Reset</b-button>
-            </b-card>
+<!--            <b-card class="border-white">-->
+<!--                <b-button type="submit" variant="primary">Submit</b-button>-->
+<!--                <b-button type="reset" variant="danger">Reset</b-button>-->
+<!--            </b-card>-->
 
         </b-form>
 
