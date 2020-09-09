@@ -341,7 +341,7 @@ class MLGlossRawParser(DataParser):
     IMAGES_ENDPOINT = "https://developers.google.com/machine-learning/glossary/images/"
     # note: .* does not match new line.
     TOPIC_SENT_REGEXP = re.compile(r"^[\s\S]*?[.|:]")
-    IMG_SRC_REGEXP = re.compile(r"<img src=\"(/machine-learning/glossary/images/).*\" alt=\".*\">")
+    IMG_SRC_REGEXP = re.compile(r"/machine-learning/glossary/images/")
     CATEGORY_REGEXP = re.compile(r"<div class=\"glossary-icon\" title=\"(.*)\">.*</div>")
 
     @classmethod
