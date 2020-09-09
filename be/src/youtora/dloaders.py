@@ -1,7 +1,4 @@
-# the models that I'll be using.
 from typing import List, Generator
-
-import re
 
 from .builders import CaptionBuilder
 from .dataclasses import Video, Track, Caption
@@ -56,10 +53,8 @@ class TrackDownloader:
                     logger.warning("SKIP: track does not have:" + str(ke))
                     continue
                 else:
-                    track_comp_key = "|".join([caption.id, str(start)])
                     # append to the tracks
-                    tracks.append(Track(id=track_comp_key,
-                                        parent_id=caption.id,
+                    tracks.append(Track(parent_id=caption.id,
                                         start=start,
                                         duration=duration,
                                         content=text))
@@ -75,21 +70,18 @@ class TrackDownloader:
         sets the prev_id & next_id of all the tracks in the list
         """
         for idx, track in enumerate(tracks):
-            # get the current id
-            curr_id = track.id
             if idx == 0:
                 # the first track has no prev_id; it only has next_id
                 prev_id = None
-                next_id = re.sub(r'[0-9.]+$', str(tracks[idx + 1].start), curr_id)
+                next_id = tracks[idx + 1].get_id()
             elif idx == (len(tracks) - 1):
                 # the last track has no next_id; it only has prev_id
-                prev_id = re.sub(r'[0-9.]+$', str(tracks[idx - 1].start), curr_id)
+                prev_id = tracks[idx - 1].get_id()
                 next_id = None
             else:
                 # middle tracks have both prev_id and next_id
-                prev_id = re.sub(r'[0-9.]+$', str(tracks[idx - 1].start), curr_id)
-                next_id = re.sub(r'[0-9.]+$', str(tracks[idx + 1].start), curr_id)
-
+                prev_id = tracks[idx - 1].get_id()
+                next_id = tracks[idx + 1].get_id()
             # set prev & next
             track.set_prev_id(prev_id)
             track.set_next_id(next_id)
