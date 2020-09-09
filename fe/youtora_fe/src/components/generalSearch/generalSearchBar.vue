@@ -1,14 +1,18 @@
 <template>
     <div id="generalSearchBar">
         <b-form @submit="onSubmit" @reset="onReset" v-if="show">
-
             <b-form-group id="input-group-2" label-for="input-2" class="ml-4 mr-4 mt-4">
-                <b-form-input
-                        id="input-2"
-                        v-model="query"
-                        required
-                        placeholder="Search Here"
-                ></b-form-input>
+                <b-input-group>
+                    <b-form-input
+                            id="input-2"
+                            v-model="query"
+                            required
+                            placeholder="Search Here"
+                    ></b-form-input>
+                    <b-input-group-append>
+                        <b-button type="submit" variant="info"><b-icon icon="search"></b-icon></b-button>
+                    </b-input-group-append>
+                </b-input-group>
             </b-form-group>
 
             <b-card-group style="font-size: 100%; font-weight: bold" class="mt-0">
@@ -21,6 +25,7 @@
                                 class="mb-3"
                                 value-field="item"
                                 text-field="name"
+                                button-variant="outline-info"
                                 buttons
                                 name="langId"
                         ></b-form-radio-group>
@@ -32,10 +37,11 @@
                         <b-form-radio-group
                                 id="chan_lang"
                                 v-model="chan_lang"
-                                :options="optLang"
+                                :options="chan_opt_lang"
                                 class="mb-3"
                                 value-field="item"
                                 text-field="name"
+                                button-variant="outline-info"
                                 buttons
                                 name="chan_lang"
                         ></b-form-radio-group>
@@ -43,10 +49,10 @@
                 </b-card>
             </b-card-group>
 
-            <b-card class="border-white">
-                <b-button type="submit" variant="primary">Submit</b-button>
-                <b-button type="reset" variant="danger">Reset</b-button>
-            </b-card>
+<!--            <b-card class="border-white">-->
+<!--                <b-button type="submit" variant="primary">Submit</b-button>-->
+<!--                <b-button type="reset" variant="danger">Reset</b-button>-->
+<!--            </b-card>-->
 
         </b-form>
 
@@ -80,11 +86,19 @@
                     {item: 10, 'name': 10},
                 ],
 
-                query: '',
+                query: this.$store.state.generalSearch.search.query,
 
-                lang:'en',
-                chan_lang: 'en',
+                lang:'',
                 optLang:[
+                    {item: '', 'name': 'All'},
+                    {item: 'ko', 'name': 'Korean'},
+                    {item: 'en', 'name': 'English'},
+                    {item: 'fr', 'name': 'French'},
+                    {item: 'jp', 'name': 'Japanese'},
+                ],
+                chan_lang: '',
+                chan_opt_lang:[
+                    {item: '', 'name': 'All'},
                     {item: 'ko', 'name': 'Korean'},
                     {item: 'en', 'name': 'English'},
                     {item: 'fr', 'name': 'French'},
@@ -111,12 +125,18 @@
                 //do something when the data changes.
                 if (val) {
                     this.$store.commit('generalSearch/SET_SEARCH_LANGUAGE', val)
-                    this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+
+                    if (this.$store.state.generalSearch.videoQueryResult.length > 0 || this.query.length > 0) {
+                        this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+                    }
                 }
             },
             chan_lang: function (val) {
                 this.$store.commit('generalSearch/SET_CHAN_LANG', val)
-                this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+
+                if (this.$store.state.generalSearch.videoQueryResult.length > 0 || this.query.length > 0) {
+                    this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+                }
             }
         },
         methods: {

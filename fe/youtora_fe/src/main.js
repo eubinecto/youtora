@@ -1,9 +1,16 @@
 import Vue from 'vue'
 import router from './router'
 import App from './App.vue'
-import store from './store/index';
-import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 import Vuex from 'vuex'
+
+import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
+
+
+import store from './store/index';
+
+import Buefy from 'buefy'
+// import 'buefy/dist/buefy.css'
+Vue.use(Buefy)
 
 // Install BootstrapVue
 Vue.use(BootstrapVue)

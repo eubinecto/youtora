@@ -4,10 +4,10 @@ export default {
     namespaced: true,
     state: {
         search: {
-            query: null,
-            language: null,
-            chan_lang: null,
-            perPage: 10
+            query: '',
+            language: '',
+            chan_lang: '',
+            perPage: 5
         },
         currentPage: 1,
 

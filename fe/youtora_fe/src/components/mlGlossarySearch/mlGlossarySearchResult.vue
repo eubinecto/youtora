@@ -23,20 +23,24 @@
 
                     <b-card-group id="metaInfo" class="mb-2 mt-2">
                         <b-card align="center">
-                            <span class="mr-4">
-                                <b-icon icon="hand-thumbs-up" aria-hidden="true"></b-icon>
-                                /
-                                <b-icon icon="hand-thumbs-down" aria-hidden="true"></b-icon>
-                                : {{ Math.round(item.features.like_ratio * 10000) /100 }} %
-                            </span>
-                            <span class="mr-4">
-                                <b-icon icon="bookmark-check" aria-hidden="true"></b-icon>
-                                : {{ item.features.subs }}
-                            </span>
-                            <span class="">
-                                <b-icon icon="eye" aria-hidden="true"></b-icon>
-                                : {{ item.features.views }}
-                            </span>
+                            <b-card-group>
+                                <b-card class="border-white">
+                                    <b-icon icon="hand-thumbs-up" aria-hidden="true"/>
+                                    /
+                                    <b-icon icon="hand-thumbs-down" aria-hidden="true" class="mr-2"/>
+                                        {{ Math.round(item.features.like_ratio * 10000) /100 }} %
+                                </b-card>
+
+                                <b-card class="border-white">
+                                    <b-icon icon="bookmark-check" aria-hidden="true" class="mr-2"/>
+                                        {{ item.features.subs }}
+                                </b-card>
+
+                                <b-card class="border-white">
+                                    <b-icon icon="eye" aria-hidden="true" class="mr-2"/>
+                                    {{ item.features.views }}
+                                </b-card>
+                            </b-card-group>
                         </b-card>
                     </b-card-group>
                 </b-card>
