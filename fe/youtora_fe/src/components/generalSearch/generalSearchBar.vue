@@ -64,6 +64,38 @@
                     </b-form-group>
                 </b-card>
             </b-card-group>
+            <b-card-group style="font-size: 100%; font-weight: bold" class="mt-0">
+                <b-card class="border-white" style="min-width: 200px">
+                    <b-form-group id="views_boost_g" label="Views Boost by:">
+                        <b-form-input
+                                id="views_boost"
+                                v-model="viewBoost"
+                                class="mb-3"
+                                name="views_boost"
+                        ></b-form-input>
+                    </b-form-group>
+                </b-card>
+                <b-card class="border-white" style="min-width: 100px">
+                    <b-form-group id="subs_boost_g" label="Subscribers Boost by:">
+                        <b-form-input
+                                id="views_boost"
+                                v-model="subsBoost"
+                                class="mb-3"
+                                name="views_boost"
+                        ></b-form-input>
+                    </b-form-group>
+                </b-card>
+                <b-card class="border-white" style="min-width: 200px">
+                    <b-form-group id="like_ratio_boost_g" label="Like Ratio Boost by:">
+                        <b-form-input
+                                id="views_boost"
+                                v-model="likeRBoost"
+                                class="mb-3"
+                                name="views_boost"
+                        ></b-form-input>
+                    </b-form-group>
+                </b-card>
+            </b-card-group>
 
             <b-card-group style="font-size: 100%; font-weight: bold" class="mt-0">
 
@@ -147,7 +179,9 @@
                     {item: 'test2', 'name': 'test2'},
                     {item: 'test3', 'name': 'test3'},
                 ],
-
+                viewBoost: 2,
+                subsBoost: 2,
+                likeRBoost: 2,
                 show: true
             }
         },
@@ -189,6 +223,27 @@
                     this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
                 }
             },
+            viewBoost: function (val) {
+                this.$store.commit('generalSearch/SET_BOOST_VIEW', val)
+
+                if (this.$store.state.generalSearch.videoQueryResult.length > 0 || this.query.length > 0) {
+                    this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+                }
+            },
+            subsBoost: function (val) {
+                this.$store.commit('generalSearch/SET_BOOST_SUBS', val)
+
+                if (this.$store.state.generalSearch.videoQueryResult.length > 0 || this.query.length > 0) {
+                    this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+                }
+            },
+            likeRBoost: function (val) {
+                this.$store.commit('generalSearch/SET_BOOST_LIKER', val)
+
+                if (this.$store.state.generalSearch.videoQueryResult.length > 0 || this.query.length > 0) {
+                    this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+                }
+            },
         },
         methods: {
             onSubmit(evt) {
@@ -198,6 +253,11 @@
                 this.$store.commit('generalSearch/SET_SEARCH_LANGUAGE', this.lang)
                 this.$store.commit('generalSearch/SET_SEARCH_QUERY', this.query)
                 this.$store.commit('generalSearch/SET_CHAN_LANG', this.chan_lang)
+
+                this.$store.commit('generalSearch/SET_BOOST_VIEW', this.viewBoost)
+                this.$store.commit('generalSearch/SET_BOOST_SUBS', this.subsBoost)
+                this.$store.commit('generalSearch/SET_BOOST_LIKER', this.likeRBoost)
+
                 this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
             },
             onReset() {

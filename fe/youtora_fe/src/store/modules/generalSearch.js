@@ -10,6 +10,12 @@ export default {
             cc_type: '',
             perPage: 5
         },
+        boost: {
+            view: 2,
+            subs: 2,
+            likeR: 2
+        },
+
         currentPage: 1,
 
         videoQueryResult: [],
@@ -23,6 +29,10 @@ export default {
         GET_CHAN_LANG: (state) => {return state.search.chan_lang},
         GET_CC_TYPE: (state) => {return state.search.cc_type},
         GET_PER_PAGE: (state) => {return state.search.perPage},
+
+        GET_BOOST_VIEW: (state) => {return state.boost.view},
+        GET_BOOST_SUBS: (state) => {return state.boost.subs},
+        GET_BOOST_LIKER: (state) => {return state.boost.likeR},
 
         GET_CURRENT_PAGE: (state) => {return state.currentPage},
 
@@ -43,6 +53,10 @@ export default {
         SET_CC_TYPE: (state, cc) => {state.search.cc_type = cc},
         SET_PER_PAGE: (state, perPage) => {state.search.perPage = perPage},
 
+        SET_BOOST_VIEW: (state, boostVal) => {state.boost.view = boostVal},
+        SET_BOOST_SUBS: (state, boostVal) => {state.boost.subs = boostVal},
+        SET_BOOST_LIKER: (state, boostVal) => {state.boost.likeR = boostVal},
+
         SET_CURRENT_PAGE: (state, curPage) => {state.currentPage = curPage},
 
         SET_VIDEO_LIST: (state, videoList) => {state.videoQueryResult = videoList},
@@ -56,6 +70,9 @@ export default {
                 "caption_lang_code": state.search.language,
                 "chan_lang_code": state.search.chan_lang,
                 "caption_type": state.search.cc_type,
+                "views_boost": state.boost.view,
+                "subs_boost": state.boost.subs,
+                "like_ratio_boost": state.boost.likeR,
                 "from": (state.currentPage - 1) * state.search.perPage + 1,
                 "size": state.search.perPage
             }
