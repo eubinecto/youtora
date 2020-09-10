@@ -16,7 +16,7 @@
             </b-form-group>
 
             <b-card-group style="font-size: 100%; font-weight: bold" class="mt-0">
-                <b-card class="border-white">
+                <b-card class="border-white" style="min-width: 400px">
                     <b-form-group id="input-group-3" label="Subtitle Language:" label-for="input-3">
                         <b-form-radio-group
                                 id="langId"
@@ -32,7 +32,7 @@
                     </b-form-group>
                 </b-card>
 
-                <b-card class="border-white">
+                <b-card class="border-white" style="min-width: 400px">
                     <b-form-group id="input-group-4" label="Channel Language:" label-for="input-3">
                         <b-form-radio-group
                                 id="chan_lang"
@@ -47,19 +47,50 @@
                         ></b-form-radio-group>
                     </b-form-group>
                 </b-card>
+
+                <b-card class="border-white" style="min-width: 200px">
+                    <b-form-group id="input-group-5" label="Subtitle Type:" label-for="input-3">
+                        <b-form-radio-group
+                                id="ccType"
+                                v-model="cc_type"
+                                :options="cc_opt_type"
+                                class="mb-3"
+                                value-field="item"
+                                text-field="name"
+                                button-variant="outline-info"
+                                buttons
+                                name="ccType"
+                        ></b-form-radio-group>
+                    </b-form-group>
+                </b-card>
             </b-card-group>
 
-<!--            <b-card class="border-white">-->
-<!--                <b-button type="submit" variant="primary">Submit</b-button>-->
-<!--                <b-button type="reset" variant="danger">Reset</b-button>-->
-<!--            </b-card>-->
+            <b-card-group style="font-size: 100%; font-weight: bold" class="mt-0">
 
+                <b-card class="border-white">
+                    <b-form-group id="input-group-6" label="Category:" label-for="input-3">
+                        <b-form-select
+                                style="width: 40%"
+                                id="category"
+                                v-model="category"
+                                :options="category_opt"
+                                class="mb-3"
+                                value-field="item"
+                                text-field="name"
+                                button-variant="outline-info"
+                                buttons
+                                name="category"
+                        ></b-form-select>
+                    </b-form-group>
+                </b-card>
+            </b-card-group>
         </b-form>
 
         <b-card-group v-if="this.$store.state.generalSearch.videoQueryResult.length > 0">
             <b-card style="font-size: 100%; font-weight: bold" class="border-white">
                 <b-form-group label="per_page" class="ml-4 mr-4">
                     <b-form-select
+                            style="width: 20%"
                             id="perPage"
                             v-model="perPage"
                             :options="optPerPage"
@@ -104,6 +135,19 @@
                     {item: 'fr', 'name': 'French'},
                     {item: 'jp', 'name': 'Japanese'},
                 ],
+                cc_type: '',
+                cc_opt_type: [
+                    {item: '', 'name': 'All'},
+                    {item: 'auto', 'name': 'Auto'},
+                    {item: 'manual', 'name': 'Manual'},
+                ],
+                category: '',
+                category_opt: [
+                    {item: 'test1', 'name': 'test1'},
+                    {item: 'test2', 'name': 'test2'},
+                    {item: 'test3', 'name': 'test3'},
+                ],
+
                 show: true
             }
         },
@@ -137,7 +181,14 @@
                 if (this.$store.state.generalSearch.videoQueryResult.length > 0 || this.query.length > 0) {
                     this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
                 }
-            }
+            },
+            cc_type: function (val) {
+                this.$store.commit('generalSearch/SET_CC_TYPE', val)
+
+                if (this.$store.state.generalSearch.videoQueryResult.length > 0 || this.query.length > 0) {
+                    this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
+                }
+            },
         },
         methods: {
             onSubmit(evt) {

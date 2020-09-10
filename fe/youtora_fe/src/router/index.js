@@ -19,7 +19,17 @@ const routes = [
     { path: '/', redirect: '/home'},
     { path: '/home', component: homeView},
     { path: '/generalSearch', component: generalSearch },
-    { path: '/MLGlossarySearch', component: mlGlossarySearch },
+    { path: '/mlGlossarySearch', component: mlGlossarySearch},
+    // {
+    //     path: '/mlGlossarySearch',
+    //     component: mlGlossarySearch,
+    //     children: [
+    //         {
+    //             path: '/mlGlossarySearch#:word',
+    //             component: 'something'
+    //         }
+    //     ]
+    // },
 
 ]
 

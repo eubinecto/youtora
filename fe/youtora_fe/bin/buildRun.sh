@@ -8,5 +8,11 @@ echo enter host name:
 read host_name
 
 docker build -t youtora_fe ./
-docker run --rm -d -it -h "$host_name" -p 11000:80 --name youtora_fe youtora_fe
+
+if [ ${#hostname} == 0]
+then
+	docker run --rm -d -it -h "johnjongyoonkim.com" -p 11000:80 --name youtora_fe youtora_fe
+else
+	docker run --rm -d -it -h "$host_name" -p 11000:80 --name youtora_fe youtora_fe
+fi
 exit 0
