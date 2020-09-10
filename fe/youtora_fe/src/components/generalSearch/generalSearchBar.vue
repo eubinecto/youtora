@@ -64,6 +64,7 @@
                     </b-form-group>
                 </b-card>
             </b-card-group>
+
             <b-card-group style="font-size: 100%; font-weight: bold" class="mt-0">
                 <b-card class="border-white" style="min-width: 200px">
                     <b-form-group id="views_boost_g" label="Views Boost by:">
@@ -100,25 +101,24 @@
                 </b-card>
             </b-card-group>
 
-            <b-card-group style="font-size: 100%; font-weight: bold" class="mt-0">
-
-                <b-card class="border-white">
-                    <b-form-group id="input-group-6" label="Category:" label-for="input-3">
-                        <b-form-select
-                                style="width: 40%"
-                                id="category"
-                                v-model="category"
-                                :options="category_opt"
-                                class="mb-3"
-                                value-field="item"
-                                text-field="name"
-                                button-variant="outline-info"
-                                buttons
-                                name="category"
-                        ></b-form-select>
-                    </b-form-group>
-                </b-card>
-            </b-card-group>
+<!--            <b-card-group style="font-size: 100%; font-weight: bold" class="mt-0">-->
+<!--                <b-card class="border-white">-->
+<!--                    <b-form-group id="input-group-6" label="Category:" label-for="input-3">-->
+<!--                        <b-form-select-->
+<!--                                style="width: 40%"-->
+<!--                                id="category"-->
+<!--                                v-model="category"-->
+<!--                                :options="category_opt"-->
+<!--                                class="mb-3"-->
+<!--                                value-field="item"-->
+<!--                                text-field="name"-->
+<!--                                button-variant="outline-info"-->
+<!--                                buttons-->
+<!--                                name="category"-->
+<!--                        ></b-form-select>-->
+<!--                    </b-form-group>-->
+<!--                </b-card>-->
+<!--            </b-card-group>-->
         </b-form>
 
         <b-card-group v-if="this.$store.state.generalSearch.videoQueryResult.length > 0">
