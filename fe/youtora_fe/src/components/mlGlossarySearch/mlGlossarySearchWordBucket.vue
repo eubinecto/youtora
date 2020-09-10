@@ -1,47 +1,32 @@
 <template>
     <div id="mlWordBucket">
+        <div class="spinner-grow text-info" role="status" v-if="isLoading === true" style="margin-top: 40%">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <div class="loaded" v-if="isLoading === false">
+            <b-card-group v-for="alphabet in Object.keys(alphabetGlossaries)" :key="alphabet">
+                <b-card align="left">
+                    <h3>{{ alphabet.toUpperCase() }}</h3>
+                    <b-card-group>
+                        <div v-for="item in alphabetGlossaries[alphabet]" :key="item._id">
+                            <b-card class="border-white">
+                                <b-button @click="setModal(item)">{{ item.word.charAt(0).toUpperCase() + item.word.slice(1) }}</b-button>
+                            </b-card>
+                        </div>
+                    </b-card-group>
+                </b-card>
+            </b-card-group>
+        </div>
 
-        <b-card-group v-for="alphabet in Object.keys(alphabetGlossaries)" :key="alphabet">
-            <b-card align="left">
-                <h3>{{ alphabet.toUpperCase() }}</h3>
-                <b-card-group>
-                    <div v-for="item in alphabetGlossaries[alphabet]" :key="item._id">
-                        <b-card class="border-white">
-                            <b-button @click="setModal(item)">{{ item.word.charAt(0).toUpperCase() + item.word.slice(1) }}</b-button>
-                        </b-card>
-                    </div>
-                </b-card-group>
-            </b-card>
-        </b-card-group>
+        <router-view/>
 
-        <b-modal size="xl" v-model="modalShow" :title-html="this.modalWord.charAt(0).toUpperCase() + this.modalWord.slice(1)">
-            <div class="referenceLink mb-4" style="font-size: 75%">
-                <span><i>Reference :</i></span>
-                <a :href="this.credit">{{ this.credit }}</a>
-            </div>
-
-            <div class="wordDescription">
-                <span v-html="this.modalDesc"></span>
-            </div>
-
-
-            <br/>
-
-            <ml-glossary-search-result/>
-            <ml-glossary-search-pagination/>
-        </b-modal>
     </div>
 </template>
 
 <script>
-    import mlGlossarySearchPagination from "./mlGlossarySearchPagination";
-    import mlGlossarySearchResult from "./mlGlossarySearchResult";
-
     export default {
         name: 'mlWordBucket',
         components:{
-            mlGlossarySearchResult,
-            mlGlossarySearchPagination
         },
         data() {
             return {
@@ -52,58 +37,21 @@
             }
         },
         methods: {
-            getAlphabetGlossary: function() {
-                const glossaries = this.glossaries
-                var glossaryDict = {
-                    'a': [],
-                    'b': [],
-                    'c': [],
-                    'd': [],
-                    'e': [],
-                    'f': [],
-                    'g': [],
-                    'h': [],
-                    'i': [],
-                    'j': [],
-                    'k': [],
-                    'l': [],
-                    'm': [],
-                    'n': [],
-                    'o': [],
-                    'p': [],
-                    'q': [],
-                    'r': [],
-                    's': [],
-                    't': [],
-                    'u': [],
-                    'v': [],
-                    'w': [],
-                    'x': [],
-                    'y': [],
-                    'z': []
-
-                }
-                for (let i = 0; i < glossaries.length; i++) {
-                    var curWord = glossaries[i].word
-                    curWord = curWord.charAt(0).toUpperCase() + curWord.slice(1)
-                    var firstChar = curWord.charAt(0).toLowerCase()
-
-                    glossaryDict[firstChar].push(glossaries[i])
-                }
-
-                return glossaryDict
+            getModalWord: function (orgString) {
+                return orgString.split(' ').join('_')
             },
             getGlossaryList: function () {
                 this.$store.dispatch('mlGlossary/SEARCH_GLOSSARY')
             },
             setModal: function(item) {
-                this.modalShow = !this.modalShow
                 this.modalWord = item.word
-                this.modalDesc = this.addHyperEndpoint(item.desc.desc_raw)
-                this.credit = item.credit
 
-                this.$store.commit('mlGlossary/SET_SEARCH_QUERY', this.modalWord)
-                this.$store.dispatch('mlGlossary/SEARCH_WORD')
+                // this.$store.commit('mlGlossary/SET_TARGET_CREDIT', item.credit)
+                // this.$store.commit('mlGlossary/SET_TARGET_DESC', this.addHyperEndpoint(item.desc.desc_raw))
+                //
+                // this.$store.commit('mlGlossary/SET_SEARCH_QUERY', this.modalWord)
+                // this.$store.dispatch('mlGlossary/SEARCH_WORD')
+                this.$router.push({path: '/MLGlossarySearch/'+this.getModalWord(item.word)})
             },
             imageResize: function(htmlString) {
                 return htmlString.split('<img src="').join('<img style="width: 500px%; height: auto; padding: 10px" src="')
@@ -145,11 +93,8 @@
             isLoading() {
                 return this.$store.state.mlGlossary.isLoadingGlossaries
             },
-            glossaries() {
-                return this.$store.state.mlGlossary.glossaryList
-            },
             alphabetGlossaries(){
-                return this.getAlphabetGlossary()
+                return this.$store.state.mlGlossary.glossaryDict
             }
         }
     }

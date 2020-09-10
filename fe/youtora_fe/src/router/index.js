@@ -3,6 +3,7 @@ import VueRouter from "vue-router";
 import generalSearch from "../components/generalSearch/generalSearch";
 import mlGlossarySearch from "../components/mlGlossarySearch/mlGlossarySearch";
 import homeView from "../components/home/homeView";
+import mlGlossarySearchWordModal from "../components/mlGlossarySearch/mlGlossarySearchWordModal";
 
 Vue.use(VueRouter)
 
@@ -19,17 +20,17 @@ const routes = [
     { path: '/', redirect: '/home'},
     { path: '/home', component: homeView},
     { path: '/generalSearch', component: generalSearch },
-    { path: '/mlGlossarySearch', component: mlGlossarySearch},
-    // {
-    //     path: '/mlGlossarySearch',
-    //     component: mlGlossarySearch,
-    //     children: [
-    //         {
-    //             path: '/mlGlossarySearch#:word',
-    //             component: 'something'
-    //         }
-    //     ]
-    // },
+    // { path: '/mlGlossarySearch', component: mlGlossarySearch},
+    {
+        path: '/mlGlossarySearch',
+        component: mlGlossarySearch,
+        children: [
+            {
+                path: '/mlGlossarySearch/:word',
+                component: mlGlossarySearchWordModal
+            }
+        ]
+    },
 
 ]
 
