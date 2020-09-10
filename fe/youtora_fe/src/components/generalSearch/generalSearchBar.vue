@@ -70,6 +70,7 @@
                         <b-form-input
                                 id="views_boost"
                                 v-model="viewBoost"
+                                type="number"
                                 class="mb-3"
                                 name="views_boost"
                         ></b-form-input>
@@ -80,6 +81,7 @@
                         <b-form-input
                                 id="views_boost"
                                 v-model="subsBoost"
+                                type="number"
                                 class="mb-3"
                                 name="views_boost"
                         ></b-form-input>
@@ -90,6 +92,7 @@
                         <b-form-input
                                 id="views_boost"
                                 v-model="likeRBoost"
+                                type="number"
                                 class="mb-3"
                                 name="views_boost"
                         ></b-form-input>
