@@ -12,45 +12,53 @@
                     />
 
                     <b-card-group id="subtitles" class="mb-2 mt-2">
-                        <b-card class="subtitleSection border-white" style="font-size: 150%; vertical-align: center" align="center">
-                            <h5>... </h5>
-                            <div v-for="track in item.tracks" :key="item.tracks.indexOf(track)">
-                                <h5>{{ track.content }}</h5>
-                            </div >
-                            <h5> ...</h5>
+                        <b-card class="subtitleSection border-white" style="font-size: 130%; vertical-align: center" align="center">
+                            <span>..... </span>
+                            <span v-html="item.highlight.context[0]"></span>
+                            <span> .....</span>
                         </b-card>
                     </b-card-group>
 
                     <b-card-group id="metaInfo" class="mb-2 mt-2">
-                        <b-card align="center">
+                        <b-card align="center" style="font-size: 75%">
                             <b-card-group>
-                                <b-card class="border-white">
-                                    <span class="mr-4">
-                                        <font-awesome-icon icon="thumbs-up" size="lg"/>
-                                        /
-                                        <font-awesome-icon icon="thumbs-down" size="lg"/>
-                                        : {{ Math.round(item.features.caption.video.like_ratio * 10000) /100 }} %
-                                    </span>
-                                    <span class="mr-4">
-                                        <font-awesome-icon icon="bookmark" size="lg"/>
-                                        : {{ item.features.caption.video.channel.subs }}
-                                    </span>
-                                    <span class="mr-4">
-                                        <font-awesome-icon icon="eye" size="lg"/>
-                                        : {{ item.features.caption.video.views }}
-                                    </span>
-                                    <span class="mr-4">
-                                        <font-awesome-icon icon="closed-captioning" size="lg"/>
-                                        : {{ isAuto(item.features.caption.is_auto) }}
-                                    </span>
-                                    <span class="mr-4">
-                                        <font-awesome-icon icon="language" size="lg"/>
-                                        : {{ item.features.caption.lang_code }}
-                                    </span>
-                                    <span class="">
-                                        <font-awesome-icon icon="filter" size="lg"/>
-                                        : {{ item.features.caption.video.category }}
-                                    </span>
+                                <b-card class="border-white" style="min-width: 140px">
+                            <span>
+                                <font-awesome-icon icon="thumbs-up" size="lg"/>
+                                /
+                                <font-awesome-icon icon="thumbs-down" size="lg"/>
+                                : {{ Math.round(item.features.caption.video.like_ratio * 10000) /100 }}%
+                            </span>
+                                </b-card>
+                                <b-card class="border-white" style="min-width: 140px">
+                            <span>
+                                <font-awesome-icon icon="bookmark" size="lg"/>
+                                : {{ item.features.caption.video.channel.subs }}
+                            </span>
+                                </b-card>
+                                <b-card class="border-white" style="min-width: 140px">
+                            <span>
+                                <font-awesome-icon icon="eye" size="lg"/>
+                                : {{ item.features.caption.video.views }}
+                            </span>
+                                </b-card>
+                                <b-card class="border-white" style="min-width: 140px">
+                            <span>
+                                <font-awesome-icon icon="closed-captioning" size="lg"/>
+                                : {{ isAuto(item.features.caption.is_auto) }}
+                            </span>
+                                </b-card>
+                                <b-card class="border-white" style="min-width: 140px">
+                            <span>
+                                <font-awesome-icon icon="language" size="lg"/>
+                                : {{ item.features.caption.lang_code }}
+                            </span>
+                                </b-card>
+                                <b-card class="border-white" style="min-width: 150px">
+                            <span>
+                                <font-awesome-icon icon="filter" size="lg"/>
+                                : {{ item.features.caption.video.category }}
+                            </span>
                                 </b-card>
                             </b-card-group>
                         </b-card>
