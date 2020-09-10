@@ -261,6 +261,7 @@
                 this.$store.commit('generalSearch/SET_BOOST_SUBS', this.subsBoost)
                 this.$store.commit('generalSearch/SET_BOOST_LIKER', this.likeRBoost)
 
+                this.$router.push({path: '/generalSearch', query: { query: this.query } })
                 this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
             },
             onReset() {
