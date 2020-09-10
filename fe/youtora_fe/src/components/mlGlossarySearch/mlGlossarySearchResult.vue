@@ -25,20 +25,32 @@
                         <b-card align="center">
                             <b-card-group>
                                 <b-card class="border-white">
-                                    <b-icon icon="hand-thumbs-up" aria-hidden="true"/>
-                                    /
-                                    <b-icon icon="hand-thumbs-down" aria-hidden="true" class="mr-2"/>
-                                        {{ Math.round(item.features.like_ratio * 10000) /100 }} %
-                                </b-card>
-
-                                <b-card class="border-white">
-                                    <b-icon icon="bookmark-check" aria-hidden="true" class="mr-2"/>
-                                        {{ item.features.subs }}
-                                </b-card>
-
-                                <b-card class="border-white">
-                                    <b-icon icon="eye" aria-hidden="true" class="mr-2"/>
-                                    {{ item.features.views }}
+                                    <span class="mr-4">
+                                        <font-awesome-icon icon="thumbs-up" size="lg"/>
+                                        /
+                                        <font-awesome-icon icon="thumbs-down" size="lg"/>
+                                        : {{ Math.round(item.features.caption.video.like_ratio * 10000) /100 }} %
+                                    </span>
+                                    <span class="mr-4">
+                                        <font-awesome-icon icon="bookmark" size="lg"/>
+                                        : {{ item.features.caption.video.channel.subs }}
+                                    </span>
+                                    <span class="mr-4">
+                                        <font-awesome-icon icon="eye" size="lg"/>
+                                        : {{ item.features.caption.video.views }}
+                                    </span>
+                                    <span class="mr-4">
+                                        <font-awesome-icon icon="closed-captioning" size="lg"/>
+                                        : {{ isAuto(item.features.caption.is_auto) }}
+                                    </span>
+                                    <span class="mr-4">
+                                        <font-awesome-icon icon="language" size="lg"/>
+                                        : {{ item.features.caption.lang_code }}
+                                    </span>
+                                    <span class="">
+                                        <font-awesome-icon icon="filter" size="lg"/>
+                                        : {{ item.features.caption.video.category }}
+                                    </span>
                                 </b-card>
                             </b-card-group>
                         </b-card>
@@ -60,6 +72,13 @@
             }
         },
         methods: {
+            isAuto: function (target) {
+                if (target === true) {
+                    return 'Auto'
+                } else {
+                    return 'Manual'
+                }
+            },
             getTime: function (original_link) {
                 const timeSecond = original_link.split("=")[1]
                 const minute = Math.floor(timeSecond/60)
