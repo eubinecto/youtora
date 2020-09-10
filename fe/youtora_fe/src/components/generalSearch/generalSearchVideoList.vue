@@ -115,7 +115,7 @@
             urlConverter: function (original_link) {
                 const startTime = original_link.split("=")[1]
                 const videoKey = original_link.split("/")[3].split("=")[0].split("?")[0]
-                const langId = this.$store.state.generalSearch.search.language
+                let langId = this.$store.state.generalSearch.search.language
 
                 return `https://www.youtube.com/embed/${videoKey}?start=${startTime}&cc_load_policy=1&cc_lang_pref=${langId}`
             }

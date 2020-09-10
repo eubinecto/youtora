@@ -79,22 +79,22 @@
                 <b-card class="border-white" style="min-width: 100px">
                     <b-form-group id="subs_boost_g" label="Subscribers Boost by:">
                         <b-form-input
-                                id="views_boost"
+                                id="subs_boost"
                                 v-model="subsBoost"
                                 type="number"
                                 class="mb-3"
-                                name="views_boost"
+                                name="subs_boost"
                         ></b-form-input>
                     </b-form-group>
                 </b-card>
                 <b-card class="border-white" style="min-width: 200px">
                     <b-form-group id="like_ratio_boost_g" label="Like Ratio Boost by:">
                         <b-form-input
-                                id="views_boost"
+                                id="likeR_boost"
                                 v-model="likeRBoost"
                                 type="number"
                                 class="mb-3"
-                                name="views_boost"
+                                name="likeR_boost"
                         ></b-form-input>
                     </b-form-group>
                 </b-card>
