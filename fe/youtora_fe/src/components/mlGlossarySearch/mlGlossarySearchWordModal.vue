@@ -20,11 +20,11 @@
             </div>
 
             <br/>
-            <div class="spinner-grow text-info" role="status" v-if="modalLodaing === true" style="margin-top: 20%">
+            <div class="spinner-grow text-info" role="status" v-if="modalLoading === true" style="margin-top: 20%">
                 <span class="sr-only">Loading...</span>
             </div>
-            <ml-glossary-search-result v-if="modalLodaing === false"/>
-            <ml-glossary-search-pagination v-if="modalLodaing === false"/>
+            <ml-glossary-search-result v-if="modalLoading === false"/>
+            <ml-glossary-search-pagination v-if="modalLoading === false"/>
         </b-modal>
     </div>
 </template>
@@ -56,18 +56,17 @@
                 return htmlString.split('<img src="').join('<img style="width: 500px%; height: auto; padding: 10px" src="')
             },
             addHyperEndpoint: function(htmlString) {
-                return this.imageResize(htmlString).split('<a href="#').join('<a href="https://developers.google.com/machine-learning/glossary/#')
-            },
-            replaceHypertoButton: function(htmlString) {
-                const linkTag = new RegExp("<a href=\"#(.+?)\">", "gi")
-                const linkCloseTag = new RegExp("</a>", "gi")
-
-                const buttonOpen = this.imageResize(htmlString).toString().replace(linkTag, '<b-button @click="onNewModal(\''+'$1'+'\')">')
-                const buttonClose = buttonOpen.toString().replace(linkCloseTag, '</b-button>')
-                return buttonClose
+                // return this.imageResize(htmlString).split('<a href="#').join('<a href="https://developers.google.com/machine-learning/glossary/#')
+                return this.imageResize(htmlString).split('<a href="#').join('<a href="#ml_gloss|')
             },
         },
         watch: {
+            '$route': function () {
+                if (this.$route.hash.length > 0) {
+                    this.$store.commit('mlGlossary/SET_WORD_ID', this.$route.hash.slice(1))
+                    this.$store.dispatch('mlGlossary/SEARCH_WORD_DETAIL')
+                }
+            },
             modalShow: function(val) {
                 if (val) {
                     this.$refs['mlModal'].show()
@@ -87,7 +86,7 @@
             modalWord () {
                 return this.$store.state.mlGlossary.searchQuery
             },
-            modalLodaing() {
+            modalLoading() {
                 return this.$store.state.mlGlossary.isModalLoading
             }
         },
@@ -99,6 +98,8 @@
             }
 
         },
+
+
 
 
     }

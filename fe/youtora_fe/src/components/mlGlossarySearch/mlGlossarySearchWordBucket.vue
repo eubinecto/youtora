@@ -122,7 +122,7 @@
             },
             alphabetGlossaries(){
                 return this.getAlphabetGlossary()
-            }
+            },
         }
     }
 </script>
