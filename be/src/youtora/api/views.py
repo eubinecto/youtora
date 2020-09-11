@@ -3,7 +3,7 @@ from typing import Optional
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 from ...elastic.main import Search
-from ...mongo.settings import CorporaDB
+from ...mongo.settings import CorporaDB, YoutoraDB
 from ...youtora.api.errors import InvalidRequestError
 
 app = Flask(__name__)
@@ -86,6 +86,7 @@ def api_dl_frame():
     pass
 
 
+# DB queries #
 @app.route("/mongo/corpora_db/ml_gloss_raw_coll")
 @cross_origin()
 def api_ml_gloss_raw_coll():
@@ -94,9 +95,23 @@ def api_ml_gloss_raw_coll():
     return jsonify(results)
 
 
+# you can assign multiple routes to a function
+# https://stackoverflow.com/questions/14032066/can-flask-have-optional-url-parameters
 @app.route("/mongo/corpora_db/ml_gloss_coll")
+@app.route("/mongo/corpora_db/ml_gloss_coll/<string:ml_gloss_id>")
 @cross_origin()
-def api_ml_gloss_coll():
+def api_ml_gloss_coll(ml_gloss_id: Optional[str] = None):
     corpora_db = CorporaDB()
-    results = list(corpora_db.ml_gloss_coll.find())
+    if ml_gloss_id:
+        results = corpora_db.ml_gloss_coll.find_one(filter={"_id": ml_gloss_id})
+    else:
+        results = list(corpora_db.ml_gloss_coll.find())
+    return jsonify(results)
+
+
+@app.route("/mongo/youtora_db/channel_coll")
+@cross_origin()
+def api_channel_coll():
+    youtora_db = YoutoraDB()
+    results = list(youtora_db.channel_coll.find())
     return jsonify(results)
