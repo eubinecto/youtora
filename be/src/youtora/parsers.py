@@ -1,4 +1,4 @@
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Generator
 
 from selenium import webdriver
 
@@ -375,14 +375,14 @@ class MLGlossRawParser(DataParser):
     def parse(cls) -> List[MLGloss]:
         corpora_db = CorporaDB()
         # get MlGlossRaw data
-        ml_gloss_raws: List[MLGlossRaw] = [
+        ml_gloss_raws: Generator[MLGlossRaw] = (
             MLGlossRaw(id=res['_id'],
                        word=res['word'],
                        credit=res['credit'],
                        desc_raw=res['desc_raw'],
                        category_raw=res['category_raw'])
-            for res in list(corpora_db.ml_gloss_raw_coll.find())
-        ]
+            for res in corpora_db.ml_gloss_raw_coll.find()
+        )  # ml_gloss_raws generator
         # parse it into ml glosses
         ml_glosses: List[MLGloss] = [
             MLGloss(id="ml_gloss|" + ml_gloss_raw.id.split("|")[-1],
