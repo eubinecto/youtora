@@ -48,10 +48,14 @@
         methods: {
             offModal: function () {
                 this.modalShow = false
+                this.$store.commit('mlGlossary/CLEAR_RESULTS')
             },
             onModal: function(itemObj) {
                 this.modalShow = true
                 this.modalWordId = itemObj._id
+                this.$store.commit('mlGlossary/SET_WORD_ID', this.modalWordId)
+                this.$store.dispatch('mlGlossary/SEARCH_WORD_DETAIL')
+
                 this.$router.push({path: '/MLGlossarySearch', hash: '#'+this.modalWordId})
             },
             getAlphabetGlossary: function() {

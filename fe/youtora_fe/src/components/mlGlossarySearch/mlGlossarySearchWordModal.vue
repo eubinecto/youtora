@@ -2,14 +2,13 @@
     <div id="mlWordModal">
         <b-modal
                 size="xl"
+                scrollable
                 ref="mlModal"
                 :ok-only=true
                 ok-title="Close"
                 ok-variant="success"
                 @hide="$emit('modal-hide')"
                 :title-html="this.modalWord.charAt(0).toUpperCase() + this.modalWord.slice(1)">
-            {{ this.modalShow }}
-            {{ this.modalWordId }}
 
             <div class="referenceLink mb-4" style="font-size: 75%">
                 <span><i>Reference :</i></span>
@@ -21,9 +20,11 @@
             </div>
 
             <br/>
-
-            <ml-glossary-search-result/>
-            <ml-glossary-search-pagination/>
+            <div class="spinner-grow text-info" role="status" v-if="modalLodaing === true" style="margin-top: 20%">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <ml-glossary-search-result v-if="modalLodaing === false"/>
+            <ml-glossary-search-pagination v-if="modalLodaing === false"/>
         </b-modal>
     </div>
 </template>
@@ -43,18 +44,11 @@
         },
         data () {
             return {
-                modalWord: '',
-                modalDesc: '',
-                credit: ''
+
             }
         },
         methods: {
-            setModal: function(item) {
-                this.modalWord = item.word
-                this.modalWordId = item._id
-                this.modalDesc = this.addHyperEndpoint(item.desc.desc_raw)
-                this.credit = item.credit
-
+            setModal: function() {
                 this.$store.commit('mlGlossary/SET_SEARCH_QUERY', this.modalWord)
                 this.$store.dispatch('mlGlossary/SEARCH_WORD')
             },
@@ -81,8 +75,31 @@
                     this.$refs['mlModal'].hide()
                     this.$router.push({path: '/mlGlossarySearch'})
                 }
+            },
+        },
+        computed: {
+            modalDesc() {
+                return this.addHyperEndpoint(this.$store.state.mlGlossary.wordDesc)
+            },
+            credit() {
+                return this.$store.state.mlGlossary.wordCredit
+            },
+            modalWord () {
+                return this.$store.state.mlGlossary.searchQuery
+            },
+            modalLodaing() {
+                return this.$store.state.mlGlossary.isModalLoading
             }
-        }
+        },
+        beforeMount() {
+            if (this.$route.hash.length > 0) {
+                this.$store.commit('mlGlossary/SET_WORD_ID', this.$route.hash.slice(1))
+                this.$store.dispatch('mlGlossary/SEARCH_WORD_DETAIL')
+
+            }
+
+        },
+
 
     }
 
