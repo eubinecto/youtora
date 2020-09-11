@@ -22,6 +22,10 @@
             return {
 
             }
+        },
+        beforeMount() {
+            this.$store.commit('generalSearch/SET_SEARCH_QUERY', this.$route.query.query)
+            this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
         }
     }
 </script>

@@ -1,18 +1,23 @@
 <template>
     <div id="mlWordBucket">
+        <div class="spinner-grow text-info" role="status" v-if="isLoading === true" style="margin-top: 20%">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <div v-if="isLoading === false">
+            <b-card-group v-for="alphabet in Object.keys(alphabetGlossaries)" :key="alphabet">
+                <b-card align="left">
+                    <h3>{{ alphabet.toUpperCase() }}</h3>
+                    <b-card-group>
+                        <div v-for="item in alphabetGlossaries[alphabet]" :key="item._id">
+                            <b-card class="border-white">
+                                <b-button @click="setModal(item)">{{ item.word.charAt(0).toUpperCase() + item.word.slice(1) }}</b-button>
+                            </b-card>
+                        </div>
+                    </b-card-group>
+                </b-card>
+            </b-card-group>
+        </div>
 
-        <b-card-group v-for="alphabet in Object.keys(alphabetGlossaries)" :key="alphabet">
-            <b-card align="left">
-                <h3>{{ alphabet.toUpperCase() }}</h3>
-                <b-card-group>
-                    <div v-for="item in alphabetGlossaries[alphabet]" :key="item._id">
-                        <b-card class="border-white">
-                            <b-button @click="setModal(item)">{{ item.word.charAt(0).toUpperCase() + item.word.slice(1) }}</b-button>
-                        </b-card>
-                    </div>
-                </b-card-group>
-            </b-card>
-        </b-card-group>
 
         <b-modal size="xl" v-model="modalShow" :title-html="this.modalWord.charAt(0).toUpperCase() + this.modalWord.slice(1)">
             <div class="referenceLink mb-4" style="font-size: 75%">
@@ -23,7 +28,6 @@
             <div class="wordDescription">
                 <span v-html="this.modalDesc"></span>
             </div>
-
 
             <br/>
 

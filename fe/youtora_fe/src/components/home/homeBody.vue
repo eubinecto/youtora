@@ -43,8 +43,13 @@
                 this.$store.commit('generalSearch/SET_SEARCH_LANGUAGE', '')
                 this.$store.commit('generalSearch/SET_SEARCH_QUERY', this.query)
                 this.$store.commit('generalSearch/SET_CHAN_LANG', '')
+
+                this.$store.commit('generalSearch/SET_BOOST_VIEW', 2)
+                this.$store.commit('generalSearch/SET_BOOST_SUBS', 2)
+                this.$store.commit('generalSearch/SET_BOOST_LIKER', 2)
+
                 this.$store.dispatch('generalSearch/SEARCH_VIDEOS')
-                this.$router.push({path: '/generalSearch'})
+                this.$router.push({path: '/generalSearch', query: { query: this.query.toString() } })
             },
         }
     }
