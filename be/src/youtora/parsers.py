@@ -309,24 +309,50 @@ class MLGlossRawHTMLParser(HTMLParser):
 
     @classmethod
     def _parse_html(cls, html: str) -> Tuple[List[dict], List[dict]]:
-        # parse and find the div
         soup = BeautifulSoup(html, 'html.parser')
         gloss_div = soup.find("div", attrs={'class': "devsite-article-body clearfix"})
+        parsed_contents = cls._parse_contents(gloss_div)
+        parsed_metas = cls._parse_metas(gloss_div)
+        return parsed_contents, parsed_metas
+
+    @classmethod
+    def _parse_contents(cls, gloss_div: BeautifulSoup) -> List[dict]:
         # split them by this delimiter
         contents = cls.CONTENTS_DELIM_REGEXP.split(str(gloss_div))
-        # use pyfunctional module to parse them to build the rep_id I want
-        parsed_content = seq(contents) \
-                             .map(lambda x: BeautifulSoup(x, 'html.parser')) \
-                             .map(lambda x: (str(x).strip(), x.find('div', attrs={'class': 'glossary-icon'}))) \
-                             .map(lambda x: (cls.DESC_RAW_FILTER_REGEXP.sub(repl="", string=x[0]),
-                                             str(x[1]).strip() if x[1] else None)) \
-                             .map(lambda x: {'desc_raw': x[0], 'category_raw': x[1]}) \
-                             .sequence[1:]  # ignore the first one
+        soups = (
+            BeautifulSoup(content, 'html.parser')
+            for content in contents
+        )  # soup generator
+        desc_raws = (
+            cls.DESC_RAW_FILTER_REGEXP.sub(repl="", string=str(soup).strip())
+            for soup in soups
+        )  # desc_raws generator
+        category_raws = (
+            soup.find('div', attrs={'class': 'glossary-icon'})
+            for soup in soups
+        )  # category_raws generator
+        parsed_contents = [
+            {
+                "desc_raw": desc_raw,
+                "category_raw": str(category_raw).strip() if category_raw else None
+            }
+            for desc_raw in desc_raws
+            for category_raw in category_raws
+        ]  # action; build parsed_contents list
+        return parsed_contents
+
+    @classmethod
+    def _parse_metas(cls, gloss_div: BeautifulSoup) -> List[dict]:
         # get the meta
-        parsed_metas = seq(cls.META_REGEXP.findall(str(gloss_div))) \
-            .map(lambda x: {'id': x[0].strip(), 'word': x[1].strip()}) \
-            .sequence
-        return parsed_content, parsed_metas
+        metas = cls.META_REGEXP.findall(str(gloss_div))
+        parsed_metas = [
+            {
+                "id": meta[0].strip(),
+                "word": meta[1].strip()
+            }
+            for meta in metas
+        ]
+        return parsed_metas
 
 
 class DataParser:
