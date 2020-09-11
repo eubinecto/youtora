@@ -1,4 +1,3 @@
-import json
 from typing import Tuple, List, Optional
 
 from selenium import webdriver
@@ -10,7 +9,6 @@ from selenium.webdriver.support import expected_conditions as e_c
 from selenium.webdriver.common.by import By
 
 from bs4 import BeautifulSoup
-from functional import seq
 
 import requests
 import re
@@ -34,7 +32,7 @@ class HTMLParser:
 
     @classmethod
     def get_driver(cls,
-                   os: str,
+                   os: str = "mac",
                    time_out: int = 10,
                    is_mobile: bool = False,
                    is_silent: bool = False):
