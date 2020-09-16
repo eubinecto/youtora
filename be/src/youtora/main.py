@@ -135,10 +135,7 @@ class Store:
         :param video:
         """
         logger = logging.getLogger("_store_captions_of")
-        docs = list()
-        for caption in video.captions:
-            docs.append(caption.to_json())
-            del caption  # memory management
+        docs = [caption.to_json() for caption in video.captions]
         # store all captions
         cls._store_many(coll=cls.youtora_db.caption_coll,
                         docs=docs,
@@ -151,11 +148,11 @@ class Store:
         store all tracks of the given video in MongoDB.
         """
         logger = logging.getLogger("_store_tracks_of")
-        docs = list()
-        for caption in video.captions:
-            for track in caption.tracks:
-                docs.append(track.to_json())
-                del track  # memory management
+        docs = [
+            track.to_json()
+            for caption in video.captions
+            for track in caption.tracks
+        ]  # "flattening" the list with nested list comprehension
         # store all tracks
         cls._store_many(coll=cls.youtora_db.track_coll,
                         docs=docs,

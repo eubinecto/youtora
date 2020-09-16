@@ -43,7 +43,6 @@ class HTMLParser:
 
         # using mobile environment
         chrome_options = webdriver.ChromeOptions()
-
         #  open a mobile one
         #  opening with a mobile option will reduce the
         #  time it takes to load the page
