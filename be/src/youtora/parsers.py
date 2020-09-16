@@ -306,7 +306,7 @@ class MLGlossRawHTMLParser(HTMLParser):
             driver.quit()
 
     @classmethod
-    def _parse_html(cls, html: str) -> Tuple[List[dict], List[dict]]:
+    def _parse_html(cls, html: str) -> Tuple[Generator[dict, None, None], Generator[dict, None, None]]:
         soup = BeautifulSoup(html, 'html.parser')
         gloss_div = soup.find("div", attrs={'class': "devsite-article-body clearfix"})
         parsed_contents = cls._parse_contents(gloss_div)
@@ -314,7 +314,7 @@ class MLGlossRawHTMLParser(HTMLParser):
         return parsed_contents, parsed_metas
 
     @classmethod
-    def _parse_contents(cls, gloss_div: BeautifulSoup) -> List[dict]:
+    def _parse_contents(cls, gloss_div: BeautifulSoup) -> Generator[dict, None, None]:
         # split them by this delimiter
         contents = cls.CONTENTS_DELIM_REGEXP.split(str(gloss_div))
         soups = (
@@ -329,27 +329,27 @@ class MLGlossRawHTMLParser(HTMLParser):
             soup.find('div', attrs={'class': 'glossary-icon'})
             for soup in soups
         )  # category_raws generator
-        parsed_contents = [
+        parsed_contents = (
             {
                 "desc_raw": desc_raw,
                 "category_raw": str(category_raw).strip() if category_raw else None
             }
             for desc_raw in desc_raws
             for category_raw in category_raws
-        ]  # action; build parsed_contents list
+        )  # action; build parsed_contents list
         return parsed_contents
 
     @classmethod
-    def _parse_metas(cls, gloss_div: BeautifulSoup) -> List[dict]:
+    def _parse_metas(cls, gloss_div: BeautifulSoup) -> Generator[dict, None, None]:
         # get the meta
         metas = cls.META_REGEXP.findall(str(gloss_div))
-        parsed_metas = [
+        parsed_metas = (
             {
                 "id": meta[0].strip(),
                 "word": meta[1].strip()
             }
             for meta in metas
-        ]
+        )
         return parsed_metas
 
 
@@ -375,7 +375,7 @@ class MLGlossRawParser(DataParser):
     def parse(cls) -> List[MLGloss]:
         corpora_db = CorporaDB()
         # get MlGlossRaw data
-        ml_gloss_raws: Generator[MLGlossRaw] = (
+        ml_gloss_raws: Generator[MLGlossRaw, None, None] = (
             MLGlossRaw(id=res['_id'],
                        word=res['word'],
                        credit=res['credit'],
