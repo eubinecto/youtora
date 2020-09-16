@@ -72,37 +72,34 @@ class ChannelHTMLParser(HTMLParser):
     # XPaths for the elements that we want to access
     # inspect these from chrome browser
     CHAN_LINK_XPATH = "/html/head/link[4]"
-    CHAN_TITLE_XPATH = "//*[@id=\"app\"]/div[1]/ytm-browse/ytm-c4-tabbed-header-renderer/div[2]/div/h1"
-    CHAN_SUBS_XPATH = "//*[@id=\"app\"]/div[1]/ytm-browse/ytm-c4-tabbed-header-renderer/div[2]/div/div/span"
+    CHAN_TITLE_XPATH = "/html/head/title"
+    CHAN_SUB_CNT_CLASS = "c4-tabbed-header-subscriber-count"  # get rid of th empty space
     # the show more button changes its position. find it by its class name
-    SHOW_MORE_CLASS_NAME = "nextcontinuation-button"
-
-    CHAN_URL_FORMAT = "http://www.youtube.com/channel/{}"
+    SHOW_MORE_CLASS = "nextcontinuation-button"
+    CHAN_URL_FORMAT = "http://www.youtube.com/channel/{chan_id}"
 
     @classmethod
     def parse(cls,
               chan_url: str,
               lang_code: str,
-              os: str) -> Channel:
+              os: str,
+              is_silent: bool = True,
+              is_mobile: bool = True) -> Channel:
         """
-        now you might be able to do this.
-        :param os:
-        :param chan_url: the id of the channel
-        :param lang_code
         :return: a channel object
         """
         logger = logging.getLogger("scrape_channel")
         # get the driver
-        driver = super().get_driver(is_silent=True,
-                                    is_mobile=True,
+        driver = super().get_driver(is_silent=is_silent,
+                                    is_mobile=is_mobile,
                                     os=os)
 
-        # get the channel page to get the channel id, subs, uploader
+        # get the channel page to get the channel id, subs, title
         try:
             logger.info("loading channel page...")
             driver.get(chan_url)
             channel_id = cls._channel_id(driver)
-            uploader = cls._uploader(driver)
+            title = cls._title(driver)
             subs = cls._subs(driver)
             # get the uploads page
             logger.info("loading uploads page...")
@@ -113,8 +110,8 @@ class ChannelHTMLParser(HTMLParser):
         else:
             # the channel is given a lang code
             return Channel(id=channel_id,
-                           url=cls.CHAN_URL_FORMAT.format(channel_id),
-                           title=uploader,
+                           url=cls.CHAN_URL_FORMAT.format(chan_id=channel_id),
+                           title=title,
                            subs=subs,
                            lang_code=lang_code,
                            vid_id_list=vid_id_list)
@@ -130,35 +127,39 @@ class ChannelHTMLParser(HTMLParser):
         return chan_url.split("/")[-1]
 
     @classmethod
-    def _uploader(cls, driver: webdriver.Chrome) -> str:
-        chan_title_elem = driver.find_element_by_xpath(cls.CHAN_TITLE_XPATH)
-        return chan_title_elem.text.strip()
+    def _title(cls, driver: webdriver.Chrome) -> str:
+        """
+        e.g.
+        <title>Abdul Bari - YouTube</title>
+        """
+        title_elem = driver.find_element_by_xpath(cls.CHAN_TITLE_XPATH)
+        return title_elem.text.split("-")[0].strip()
 
     @classmethod
     def _subs(cls, driver: webdriver.Chrome) -> int:
         """
         keep in mind that the subs count is
         only a rough value.
+        e.g.
+        <span class="c4-tabbed-header-subscriber-count secondary-text">285K subscribers</span>
         :param driver: the driver that has already loaded the web page
         :return: the approximate sub count of the channel
         """
-        subs_span = driver.find_element_by_xpath(
-            cls.CHAN_SUBS_XPATH
-        )  # the span element that contains the sub data
+        span_elem = driver.find_element_by_class_name(cls.CHAN_SUB_CNT_CLASS)
         # get the data
-        subs_data = subs_span.text.split(" ")[0].strip()
+        span_data = span_elem.text.split(" ")[0].strip()
         # Now I have to parse this
-        if re.match(r'[\d.]*[KMB]$', subs_data):
-            if subs_data[-1] == 'K':
-                subs_cnt = int(float(subs_data[:-1]) * (10 ** 3))
-            elif subs_data[-1] == 'M':
-                subs_cnt = int(float(subs_data[:-1]) * (10 ** 6))
+        if re.match(r'[\d.]*[KMB]$', span_data):
+            if span_data[-1] == 'K':
+                subs_cnt = int(float(span_data[:-1]) * (10 ** 3))
+            elif span_data[-1] == 'M':
+                subs_cnt = int(float(span_data[:-1]) * (10 ** 6))
             else:
                 # has a billion subs
-                subs_cnt = int(float(subs_data[:-1]) * (10 ** 9))
+                subs_cnt = int(float(span_data[:-1]) * (10 ** 9))
         else:
             # less than 1K
-            subs_cnt = int(subs_data)
+            subs_cnt = int(span_data)
         # check the value for debugging
         return subs_cnt
 
@@ -171,7 +172,7 @@ class ChannelHTMLParser(HTMLParser):
             try:
                 # try getting the show more button
                 show_more_button = WebDriverWait(driver, 5).until(
-                    e_c.element_to_be_clickable((By.CLASS_NAME, cls.SHOW_MORE_CLASS_NAME))
+                    e_c.element_to_be_clickable((By.CLASS_NAME, cls.SHOW_MORE_CLASS))
                 )
             except TimeoutException as nse:
                 logger.debug(str(nse))
@@ -306,7 +307,7 @@ class MLGlossRawHTMLParser(HTMLParser):
             driver.quit()
 
     @classmethod
-    def _parse_html(cls, html: str) -> Tuple[List[dict], List[dict]]:
+    def _parse_html(cls, html: str) -> Tuple[Generator[dict, None, None], Generator[dict, None, None]]:
         soup = BeautifulSoup(html, 'html.parser')
         gloss_div = soup.find("div", attrs={'class': "devsite-article-body clearfix"})
         parsed_contents = cls._parse_contents(gloss_div)
@@ -314,7 +315,7 @@ class MLGlossRawHTMLParser(HTMLParser):
         return parsed_contents, parsed_metas
 
     @classmethod
-    def _parse_contents(cls, gloss_div: BeautifulSoup) -> List[dict]:
+    def _parse_contents(cls, gloss_div: BeautifulSoup) -> Generator[dict, None, None]:
         # split them by this delimiter
         contents = cls.CONTENTS_DELIM_REGEXP.split(str(gloss_div))
         soups = (
@@ -329,27 +330,27 @@ class MLGlossRawHTMLParser(HTMLParser):
             soup.find('div', attrs={'class': 'glossary-icon'})
             for soup in soups
         )  # category_raws generator
-        parsed_contents = [
+        parsed_contents = (
             {
                 "desc_raw": desc_raw,
                 "category_raw": str(category_raw).strip() if category_raw else None
             }
             for desc_raw in desc_raws
             for category_raw in category_raws
-        ]  # action; build parsed_contents list
+        )  # action; build parsed_contents list
         return parsed_contents
 
     @classmethod
-    def _parse_metas(cls, gloss_div: BeautifulSoup) -> List[dict]:
+    def _parse_metas(cls, gloss_div: BeautifulSoup) -> Generator[dict, None, None]:
         # get the meta
         metas = cls.META_REGEXP.findall(str(gloss_div))
-        parsed_metas = [
+        parsed_metas = (
             {
                 "id": meta[0].strip(),
                 "word": meta[1].strip()
             }
             for meta in metas
-        ]
+        )
         return parsed_metas
 
 
@@ -375,7 +376,7 @@ class MLGlossRawParser(DataParser):
     def parse(cls) -> List[MLGloss]:
         corpora_db = CorporaDB()
         # get MlGlossRaw data
-        ml_gloss_raws: Generator[MLGlossRaw] = (
+        ml_gloss_raws: Generator[MLGlossRaw, None, None] = (
             MLGlossRaw(id=res['_id'],
                        word=res['word'],
                        credit=res['credit'],
