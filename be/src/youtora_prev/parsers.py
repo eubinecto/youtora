@@ -16,7 +16,7 @@ import logging
 import sys
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
 from be.src.mongo.settings import CorporaDB
-from be.src.youtora.dataclasses import Channel, MLGlossRaw, MLGloss, MLGlossDesc
+from be.src.youtora_prev.dataclasses import Channel, MLGlossRaw, MLGloss, MLGlossDesc
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
