@@ -31,7 +31,7 @@ class Channel(models.Model):
 
 class Video(models.Model):
     _id = models.ObjectIdField()
-    channel = models.ForeignKey(to=Channel, name='channel', on_delete=models.CASCADE)
+    channel_id = models.ForeignKey(to=Channel, to_field='_id', on_delete=models.PROTECT)
     url = models.URLField(validators=[URLValidator], name='url')
     title = models.CharField(max_length=100, name='title')
     publish_date = models.DateField(name='publish_date')
@@ -71,7 +71,7 @@ class Video(models.Model):
 
 class Caption(models.Model):
     _id = models.ObjectIdField()
-    video = models.ForeignKey(to=Video, name='video', on_delete=models.CASCADE)
+    video_id = models.ForeignKey(to=Video, to_field="_id", on_delete=models.PROTECT)
     is_auto = models.BooleanField(name='is_auto')
     lang_code = models.CharField(max_length=10, choices=LANG_CODES_TO_COLLECT, name='lang_code')
     url = models.URLField(validators=[URLValidator], name='url')
@@ -91,20 +91,15 @@ class Caption(models.Model):
         """
         overrides the dunder string method
         """
-        return str("|".join([self._id, self.video, str(self.is_auto), self.lang_code]))
+        return str("|".join([self._id, self.video_id, str(self.is_auto), self.lang_code]))
 
 
 class Track(models.Model):
     _id = models.ObjectIdField()
     caption = models.ForeignKey(to=Caption, on_delete=models.CASCADE)
     # these three are nullable
-    prev_track = models.OneToOneField(to='self',
-                                      null=True,
-                                      related_name="+",
-                                      on_delete=models.CASCADE)
-    next_track = models.OneToOneField(to='self',
-                                      null=True,
-                                      on_delete=models.CASCADE)
+    prev_id = models.ForeignKey(to='self', null=True, to_field='_id', related_name="+", on_delete=models.PROTECT)
+    next_id = models.OneToOneField(to='self', null=True, to_field="_id", on_delete=models.PROTECT)
     context = models.CharField(max_length=100, null=True, name='context')
     start = models.FloatField(name='start')
     duration = models.FloatField(name='duration')

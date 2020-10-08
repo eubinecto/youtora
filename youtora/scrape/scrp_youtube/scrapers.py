@@ -18,25 +18,20 @@ import logging
 # import numpy as np
 
 
-class TrackDownloader:
+class TrackScraper:
     @classmethod
-    def dl_tracks(cls, caption: Caption) -> List[Track]:
+    def scrape(cls, caption: Caption) -> List[Track]:
         """
         dl all the tracks of the given caption
         :param caption
         :return:
         """
         logger = logging.getLogger("dl_tracks")
-        # bucket to collect tracks
-        tracks = list()
-        # first, get the response (download)
-        response = requests.get(caption.url)
-        # check if the response was erroneous
-        response.raise_for_status()
-        # get the xml. escape the character reference entities
-        tracks_xml = html.unescape(response.text)
-        # deserialize the xml to dict
-        tracks_dict = xmltodict.parse(tracks_xml)
+        tracks = list()  # bucket to collect tracks
+        response = requests.get(caption.url)  # first, get the response (download)
+        response.raise_for_status()  # check if the response was erroneous
+        tracks_xml = html.unescape(response.text)  # get the xml. escape the character reference entities
+        tracks_dict = xmltodict.parse(tracks_xml)  # deserialize the xml to dict
         # if not a  list, ignore. quirk of youtube_dl - if there is only one track,
         # then the value of text is a dict, not a list.
         # e.g. https://www.youtube.com/watch?v=1SMmc9gQmHQ
@@ -45,7 +40,7 @@ class TrackDownloader:
                 try:
                     start: float = float(trackItem["@start"])
                     duration: float = float(trackItem["@dur"])
-                    text = trackItem["#text"]
+                    content = trackItem["#text"]
                 except KeyError as ke:
                     # if either one of them does not exist,then just skip this track
                     # as it is not worthy of storing
@@ -53,10 +48,12 @@ class TrackDownloader:
                     continue
                 else:
                     # append to the tracks
-                    tracks.append(Track(parent_id=caption.id,
-                                        start=start,
-                                        duration=duration,
-                                        content=text))
+                    track = Track()
+                    track.caption = caption
+                    track.start = start
+                    track.duration = duration
+                    track.content = content
+                    tracks.append(track)
         # set the prev_id & next_id in this tracks batch
         cls._set_neighbours(tracks=tracks)
         # set the context
@@ -71,16 +68,16 @@ class TrackDownloader:
         for idx, track in enumerate(tracks):
             if idx == 0:
                 # the first track has no prev_id; it only has next_id
-                prev_id = None
-                next_id = tracks[idx + 1].id
+                prev_track = None
+                next_track = tracks[idx + 1]
             elif idx == (len(tracks) - 1):
                 # the last track has no next_id; it only has prev_id
-                prev_id = tracks[idx - 1].id
-                next_id = None
+                prev_track = tracks[idx - 1]
+                next_track = None
             else:
                 # middle tracks have both prev_id and next_id
-                prev_id = tracks[idx - 1].id
-                next_id = tracks[idx + 1].id
+                prev_track = tracks[idx - 1]
+                next_track = tracks[idx + 1]
             # set prev & next
             track.prev_id = prev_id
             track.next_id = next_id
@@ -103,7 +100,7 @@ class TrackDownloader:
             track.context = " ".join([prev_content, curr_content, next_content])
 
 
-class VideoDownloader:
+class VideoScraper:
     VIDEO_DL_OPTS = {
         'writesubtitles': True,
         'allsubtitles': True,
@@ -139,7 +136,7 @@ class VideoDownloader:
                 vid_url = "https://www.youtube.com/watch?v={}" \
                     .format(vid_id)
                 try:
-                    video = VideoDownloader.dl_video(vid_url=vid_url)
+                    video = VideoScraper.dl_video(vid_url=vid_url)
                 except youtube_dl.utils.DownloadError as de:
                     # if downloading the video fails, just skip this one
                     vid_logger.warning(de)
@@ -204,7 +201,7 @@ class VideoDownloader:
         total = len(video.captions)
         for idx, caption in enumerate(video.captions):
             # download and set tracks
-            tracks = TrackDownloader.dl_tracks(caption)
+            tracks = TrackScraper.scrape(caption)
             caption.set_tracks(tracks)
             done += 1
             logger.info("({}/{}), downloading tracks complete for caption:{}"

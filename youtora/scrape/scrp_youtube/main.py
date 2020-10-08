@@ -5,7 +5,7 @@ from typing import List
 from pymongo.collection import Collection
 
 from .builders import CaptionBuilder
-from .scrapers import VideoDownloader
+from .scrapers import VideoScraper
 from .dataclasses import Channel, Video
 from .parsers import ChannelHTMLParser, MLGlossRawHTMLParser, MLGlossRawParser
 
@@ -84,9 +84,9 @@ class Store:
         # split the video ids into batches
         batches = np.array_split(channel.vid_id_list, cls.BATCH_SIZE)
         for idx, batch in enumerate(batches):
-            vid_gen = VideoDownloader.dl_videos_lazy(vid_id_list=batch,
-                                                     batch_info="current={}/total={}"
-                                                     .format(idx + 1, len(batches)))
+            vid_gen = VideoScraper.dl_videos_lazy(vid_id_list=batch,
+                                                  batch_info="current={}/total={}"
+                                                  .format(idx + 1, len(batches)))
             for video in vid_gen:   # dl and iterate over each video in this batch
                 if not video.captions:
                     logger.info("SKIP: skipping storing the video because it has no captions at all")
