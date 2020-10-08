@@ -47,9 +47,9 @@ class TrackScraper:
                     logger.warning("SKIP: track does not have:" + str(ke))
                     continue
                 else:
-                    # append to the tracks
+                    # assign and append
                     track = Track()
-                    track.caption = caption
+                    track.caption_id = caption.id
                     track.start = start
                     track.duration = duration
                     track.content = content
@@ -68,16 +68,16 @@ class TrackScraper:
         for idx, track in enumerate(tracks):
             if idx == 0:
                 # the first track has no prev_id; it only has next_id
-                prev_track = None
-                next_track = tracks[idx + 1]
+                prev_id = None
+                next_id = tracks[idx + 1].id
             elif idx == (len(tracks) - 1):
                 # the last track has no next_id; it only has prev_id
-                prev_track = tracks[idx - 1]
-                next_track = None
+                prev_id = tracks[idx - 1].id
+                next_id = None
             else:
                 # middle tracks have both prev_id and next_id
-                prev_track = tracks[idx - 1]
-                next_track = tracks[idx + 1]
+                prev_id = tracks[idx - 1].id
+                next_id = tracks[idx + 1].id
             # set prev & next
             track.prev_id = prev_id
             track.next_id = next_id
@@ -112,9 +112,9 @@ class VideoScraper:
     VID_URL_FORMAT = "https://www.youtube.com/watch?v={}"
 
     @classmethod
-    def dl_videos_lazy(cls,
-                       vid_id_list: List[str],
-                       batch_info: str = None) -> Generator[Video, None, None]:
+    def scrape_from_ids(cls,
+                        vid_id_list: List[str],
+                        batch_info: str = None) -> Generator[Video, None, None]:
         """
         returns a generator that yields videos.
         :param vid_id_list:
@@ -136,7 +136,7 @@ class VideoScraper:
                 vid_url = "https://www.youtube.com/watch?v={}" \
                     .format(vid_id)
                 try:
-                    video = VideoScraper.dl_video(vid_url=vid_url)
+                    video = cls.scrape(vid_url=vid_url)
                 except youtube_dl.utils.DownloadError as de:
                     # if downloading the video fails, just skip this one
                     vid_logger.warning(de)
@@ -150,7 +150,7 @@ class VideoScraper:
                     yield video
 
     @classmethod
-    def dl_video(cls, vid_url: str) -> Video:
+    def scrape(cls, vid_url: str) -> Video:
         """
         given youtube video url, returns the meta data of the channel
         :param vid_url: the url of the video

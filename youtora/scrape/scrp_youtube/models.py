@@ -6,7 +6,7 @@ from .settings import LANG_CODES_TO_COLLECT
 
 
 class Channel(models.Model):
-    _id = models.ObjectIdField()
+    id = models.ObjectIdField()
     url = models.URLField(validators=[URLValidator], name='url')
     title = models.CharField(max_length=100, name='title')
     subs = models.IntegerField(name='subs')
@@ -30,7 +30,7 @@ class Channel(models.Model):
 
 
 class Video(models.Model):
-    _id = models.ObjectIdField()
+    id = models.ObjectIdField()
     channel_id = models.ForeignKey(to=Channel, to_field='_id', on_delete=models.PROTECT)
     url = models.URLField(validators=[URLValidator], name='url')
     title = models.CharField(max_length=100, name='title')
@@ -70,7 +70,7 @@ class Video(models.Model):
 
 
 class Caption(models.Model):
-    _id = models.ObjectIdField()
+    id = models.ObjectIdField()
     video_id = models.ForeignKey(to=Video, to_field="_id", on_delete=models.PROTECT)
     is_auto = models.BooleanField(name='is_auto')
     lang_code = models.CharField(max_length=10, choices=LANG_CODES_TO_COLLECT, name='lang_code')
@@ -91,12 +91,12 @@ class Caption(models.Model):
         """
         overrides the dunder string method
         """
-        return str("|".join([self._id, self.video_id, str(self.is_auto), self.lang_code]))
+        return str("|".join([self.id, self.video_id, str(self.is_auto), self.lang_code]))
 
 
 class Track(models.Model):
-    _id = models.ObjectIdField()
-    caption = models.ForeignKey(to=Caption, on_delete=models.CASCADE)
+    id = models.ObjectIdField()
+    caption_id = models.ForeignKey(to=Caption, to_field="_id", on_delete=models.CASCADE)
     # these three are nullable
     prev_id = models.ForeignKey(to='self', null=True, to_field='_id', related_name="+", on_delete=models.PROTECT)
     next_id = models.OneToOneField(to='self', null=True, to_field="_id", on_delete=models.PROTECT)
