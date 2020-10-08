@@ -1,12 +1,13 @@
 from typing import List, Generator
 
-from server.dataclasses import Channel, Video
 
 from elasticsearch import Elasticsearch
-from .settings import HOSTS, YOUTORA_IDX_NAME
 
 
 class Search:
+    """
+    move this to the api layer. don't put this here.
+    """
     es_client: Elasticsearch = None
 
     @classmethod

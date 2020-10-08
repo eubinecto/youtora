@@ -1,5 +1,5 @@
 
-from typing import List
+# from typing import List
 from django.core.validators import URLValidator
 from djongo import models
 from .settings import LANG_CODES_TO_COLLECT
@@ -12,15 +12,15 @@ class Channel(models.Model):
     subs = models.IntegerField(name='subs')
     lang_code = models.CharField(max_length=5, choices=LANG_CODES_TO_COLLECT)
 
-    # getter
-    @property
-    def vid_ids(self) -> List[str]:
-        return self._vid_ids
-
-    # setter
-    @vid_ids.setter
-    def vid_ids(self, vid_ids: List[str]):
-        self._vid_ids = vid_ids
+    # # getter
+    # @property
+    # def vid_ids(self) -> List[str]:
+    #     return self._vid_ids
+    #
+    # # setter
+    # @vid_ids.setter
+    # def vid_ids(self, vid_ids: List[str]):
+    #     self._vid_ids = vid_ids
 
     def __str__(self) -> str:
         """
@@ -29,37 +29,82 @@ class Channel(models.Model):
         return str(self.title)
 
 
+class Video(models.Model):
+    _id = models.ObjectIdField()
+    channel = models.ForeignKey(to=Channel, name='channel', on_delete=models.CASCADE)
+    url = models.URLField(validators=[URLValidator], name='url')
+    title = models.CharField(max_length=100, name='title')
+    publish_date = models.DateField(name='publish_date')
+    likes = models.IntegerField(name='likes')
+    dislikes = models.IntegerField(name='dislikes')
+    views = models.IntegerField(name='views')
+    category = models.CharField(max_length=100, name='category')
+
+    # @property
+    # def manual_sub_info(self) -> dict:
+    #     return self._manual_sub_info
+    #
+    # @property
+    # def auto_sub_info(self) -> dict:
+    #     return self._auto_sub_info
+    #
+    # @property
+    # def captions(self) -> List[Caption]:
+    #     return self._captions
+    #
+    # @manual_sub_info.setter
+    # def manual_sub_info(self, manual_sub_info: dict):
+    #     self._manual_sub_info = manual_sub_info
+    #
+    # @auto_sub_info.setter
+    # def auto_sub_info(self, auto_sub_info: dict):
+    #     self._auto_sub_info = auto_sub_info
+    #
+    # @captions.setter
+    # def captions(self, captions: List[Caption]):
+    #     self._captions: List[Caption] = captions
+
+    # overrides the dunder string method
+    def __str__(self) -> str:
+        return str(self.title)
+
+
 class Caption(models.Model):
     _id = models.ObjectIdField()
-    parent_id = models.CharField(max_length=100, name='parent_id')
+    video = models.ForeignKey(to=Video, name='video', on_delete=models.CASCADE)
     is_auto = models.BooleanField(name='is_auto')
     lang_code = models.CharField(max_length=10, choices=LANG_CODES_TO_COLLECT, name='lang_code')
     url = models.URLField(validators=[URLValidator], name='url')
 
-    # getter method
-    @property
-    def tracks(self) -> List[Track]:
-        return self.tracks
-
-    # setter method
-    @tracks.setter
-    def tracks(self, tracks: List[Track]):
-        self.tracks: List[Track] = tracks
+    # # getter method
+    # @property
+    # def tracks(self) -> List[Track]:
+    #     return self.tracks
+    #
+    # # setter method
+    # @tracks.setter
+    # def tracks(self, tracks: List[Track]):
+    #     self.tracks: List[Track] = tracks
 
     # overrides dunder string method
     def __str__(self) -> str:
         """
         overrides the dunder string method
         """
-        return str(self.id)
+        return str("|".join([self._id, self.video, str(self.is_auto), self.lang_code]))
 
 
 class Track(models.Model):
     _id = models.ObjectIdField()
-    parent_id = models.ForeignKey(to=Caption, on_delete=)
+    caption = models.ForeignKey(to=Caption, on_delete=models.CASCADE)
     # these three are nullable
-    prev_id = models.CharField(max_length=100, null=True, name='prev_id')
-    next_id = models.CharField(max_length=100, null=True, name='next_id')
+    prev_track = models.OneToOneField(to='self',
+                                      null=True,
+                                      related_name="+",
+                                      on_delete=models.CASCADE)
+    next_track = models.OneToOneField(to='self',
+                                      null=True,
+                                      on_delete=models.CASCADE)
     context = models.CharField(max_length=100, null=True, name='context')
     start = models.FloatField(name='start')
     duration = models.FloatField(name='duration')
@@ -72,48 +117,6 @@ class Track(models.Model):
         """
         return str(self.content)
 
-
-class Video(models.Model):
-    id = models.CharField(max_length=100, name='id', primary_key=True)
-    parent_id = models.CharField(max_length=100, name='parent_id')
-    url = models.URLField(validators=[URLValidator], name='url')
-    title = models.CharField(max_length=100, name='title')
-    publish_date = models.DateField(name='publish_date')
-    likes = models.IntegerField(name='likes')
-    dislikes = models.IntegerField(name='dislikes')
-    views = models.IntegerField(name='views')
-    category = models.CharField(max_length=100, name='category')
-
-    @property
-    def manual_sub_info(self) -> dict:
-        return self._manual_sub_info
-
-    @property
-    def auto_sub_info(self) -> dict:
-        return self._auto_sub_info
-
-    @property
-    def captions(self) -> List[Caption]:
-        return self._captions
-
-    @manual_sub_info.setter
-    def manual_sub_info(self, manual_sub_info: dict):
-        self._manual_sub_info = manual_sub_info
-
-    @auto_sub_info.setter
-    def auto_sub_info(self, auto_sub_info: dict):
-        self._auto_sub_info = auto_sub_info
-
-    @captions.setter
-    def captions(self, captions: List[Caption]):
-        self._captions: List[Caption] = captions
-
-    # overrides the dunder string method
-    def __str__(self) -> str:
-        return str(self.title)
-
-
-#
 # @dataclass
 # class Chapter(Data):
 #     id: str
@@ -136,6 +139,3 @@ class Video(models.Model):
 #
 #     def __str__(self) -> str:
 #         return self.title
-
-
-

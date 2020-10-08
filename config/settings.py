@@ -38,9 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'youtora.home',
-    'youtora.idx_general',  # for indexing data to elasticsearch index.
-    'youtora.scrp_youtube',  # for scraping data from youtube
-    'youtora.srch_general',  # app for general search
+    'youtora.index.idx_general',  # for indexing data to elasticsearch index.
+    'youtora.scrape.scrp_youtube',  # for scraping data from youtube
+    'youtora.search.srch_general',  # app for general search
 ]
 
 MIDDLEWARE = [
@@ -128,7 +128,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
-# elastic search dsl
+# elastic search dsl setting for django-elastic-dsl
 # https://django-elasticsearch-dsl.readthedocs.io/en/latest/quickstart.html
 ELASTICSEARCH_DSL = {
     'default': {
