@@ -39,7 +39,7 @@ class CaptionInnerDoc(InnerDoc):
     video = Nested(VideoInnerDoc)
 
 
-class GeneralDoc(Document):
+class GeneralIndex(Document):
     # define the fields here
     start = Double()
     duration = Double()
@@ -59,4 +59,4 @@ class GeneralDoc(Document):
 
 
 # on import, create the mappings in elasticsearch
-GeneralDoc.init()
+GeneralIndex.init()

@@ -1,32 +1,42 @@
-from typing import List, Generator
+from typing import List, Generator, Tuple
 
+# for checking when to stop loading uploads
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as e_c
+from selenium.webdriver.common.by import By
+
+from ..common import Scraper
 from .builders import CaptionBuilder
-from .models import Video, Track, Caption
+from .dataclasses import Video, Track, Caption, Channel
 # use youtube_dl for getting the automatic captions
 import youtube_dl
 import requests
 import html
 import xmltodict
-
-import subprocess
-
-from .parsers import VideoHTMLParser
 import logging
-
-# for downloading the frames
-# import subprocess
-# import numpy as np
+from selenium import webdriver
+import re
 
 
-class TrackScraper:
+class TrackScraper(Scraper):
+
     @classmethod
     def scrape(cls, caption: Caption) -> List[Track]:
         """
-        dl all the tracks of the given caption
-        :param caption
+        main function
         :return:
         """
-        logger = logging.getLogger("dl_tracks")
+        tracks = cls.dl_and_parse(caption)
+        # set the prev_id & next_id in this tracks batch
+        cls._set_neighbours(tracks=tracks)
+        # set the context
+        cls._set_contexts(tracks=tracks)
+        return tracks
+
+    @classmethod
+    def dl_and_parse(cls, caption: Caption) -> List[Track]:
+        logger = logging.getLogger("dl_and_parse")
         tracks = list()  # bucket to collect tracks
         response = requests.get(caption.url)  # first, get the response (download)
         response.raise_for_status()  # check if the response was erroneous
@@ -47,17 +57,12 @@ class TrackScraper:
                     logger.warning("SKIP: track does not have:" + str(ke))
                     continue
                 else:
-                    # assign and append
-                    track = Track()
-                    track.caption_id = caption.id
-                    track.start = start
-                    track.duration = duration
-                    track.content = content
+                    # build track and collect
+                    track = Track(parent_id=caption.id,
+                                  start=start,
+                                  duration=duration,
+                                  content=content)
                     tracks.append(track)
-        # set the prev_id & next_id in this tracks batch
-        cls._set_neighbours(tracks=tracks)
-        # set the context
-        cls._set_contexts(tracks=tracks)
         return tracks
 
     @classmethod
@@ -111,10 +116,15 @@ class VideoScraper:
 
     VID_URL_FORMAT = "https://www.youtube.com/watch?v={}"
 
+    HEADERS = {
+        # get the english page
+        "Accept-Language": "en"
+    }
+
     @classmethod
-    def scrape_from_ids(cls,
-                        vid_id_list: List[str],
-                        batch_info: str = None) -> Generator[Video, None, None]:
+    def scrape(cls,
+               vid_id_list: List[str],
+               batch_info: str = None) -> Generator[Video, None, None]:
         """
         returns a generator that yields videos.
         :param vid_id_list:
@@ -125,38 +135,36 @@ class VideoScraper:
         vid_done = 0
         # https://stackoverflow.com/questions/11548674/logging-info-doesnt-show-up-on-console-but-warn-and-error-do/11548754
         vid_logger = logging.getLogger("dl_videos_lazy")
-        # 여기를 multi-processing 으로?
-        # 어떻게 할 수 있는가?
-        if not len(vid_id_list):
+        if not vid_id_list:
             # if there are no ids, then yield None
             yield None
         else:
             for vid_id in vid_id_list:
                 # make a vid_url
-                vid_url = "https://www.youtube.com/watch?v={}" \
-                    .format(vid_id)
+                vid_url = "https://www.youtube.com/watch?v={}".format(vid_id)
                 try:
-                    video = cls.scrape(vid_url=vid_url)
+                    # try scraping the video
+                    video = cls.dl_and_parse(vid_url=vid_url)
                 except youtube_dl.utils.DownloadError as de:
-                    # if downloading the video fails, just skip this one
+                    # if downloading the video fails, log and just skip this one
                     vid_logger.warning(de)
                     continue
                 else:
                     # report
                     vid_done += 1
-                    vid_logger.info("dl vid objects done: {}/{}/batch={}"
-                                    .format(vid_done, total_vid_cnt, batch_info))
+                    vid_logger.info("dl vid objects done: {}/{}/batch={}".format(vid_done,
+                                                                                 total_vid_cnt,
+                                                                                 batch_info))
                     # yield the video
                     yield video
 
     @classmethod
-    def scrape(cls, vid_url: str) -> Video:
+    def dl_and_parse(cls, vid_url: str) -> Video:
         """
         given youtube video url, returns the meta data of the channel
         :param vid_url: the url of the video
         :return: a Video object
         """
-        logger = logging.getLogger("dl_video")
         # get the info.
         with youtube_dl.YoutubeDL(cls.VIDEO_DL_OPTS) as ydl:
             info = ydl.extract_info(url=vid_url, download=False)
@@ -177,7 +185,7 @@ class VideoScraper:
         category = info['categories'][0]
 
         # better collect these info separately
-        likes, dislikes = VideoHTMLParser.likes_dislikes(vid_url)
+        likes, dislikes = cls._parse_likes_dislikes(vid_url)
 
         # creates a video object
         video = Video(id=vid_id,
@@ -191,12 +199,57 @@ class VideoScraper:
                       category=category,
                       manual_sub_info=manual_sub_info,
                       auto_sub_info=auto_sub_info)
-        # build & set the captions
+        # set captions and tracks
+        cls._build_and_set_captions(video)
+        cls._dl_and_set_tracks(video)
+        return video
+
+    @classmethod
+    def _parse_likes_dislikes(cls, vid_url) -> Tuple[int, int]:
+        """
+        must collect them together because
+        """
+        # get the page
+        html_text = requests.get(url=vid_url, headers=cls.HEADERS).text
+        # the first will be like info, the latter will be dislike info
+        results = re.findall(r'"toggleButtonRenderer":{.*?"accessibilityData":{"label":"(.*?)"}}', html_text)
+        # search for like counts
+        like_info = results[0].strip()
+        dislike_info = results[1].strip()
+        if like_info == "I like this" and dislike_info == "I dislike this":
+            # like count and dislike count does not exist
+            # which means their values are zero.
+            like_cnt = 0
+            dislike_cnt = 0
+            logging.info("no likes & dislikes for video:" + vid_url)
+        else:
+            like_cnt_info = like_info.split(" ")[0].strip()
+            dislike_cnt_info = dislike_info.split(" ")[0].strip()
+            # get the like cnt
+            if like_cnt_info == "No":
+                like_cnt = 0
+                logging.info("like_cnt:0:video:" + vid_url)
+            else:
+                like_cnt = int(like_cnt_info.replace(",", ""))
+                logging.info("like_cnt:{}:video:{}".format(like_cnt, vid_url))
+            # get the dislike cnt
+            if dislike_cnt_info == "No":
+                dislike_cnt = 0
+                logging.info("dislike_cnt:0:video:" + vid_url)
+            else:
+                dislike_cnt = int(dislike_cnt_info.replace(",", ""))
+                logging.info("dislike_cnt:{}:video:{}".format(dislike_cnt, vid_url))
+        return like_cnt, dislike_cnt
+
+    @classmethod
+    def _build_and_set_captions(cls, video: Video):
         captions = CaptionBuilder(video).build_captions()
         video.set_captions(captions)
 
+    @classmethod
+    def _dl_and_set_tracks(cls, video: Video):
+        logger = logging.getLogger("_dl_and_set_tracks")
         # download the tracks
-        # ahh...this part.. downloading videos trigger downloading tracks..?
         done = 0
         total = len(video.captions)
         for idx, caption in enumerate(video.captions):
@@ -207,46 +260,145 @@ class VideoScraper:
             logger.info("({}/{}), downloading tracks complete for caption:{}"
                         .format(done, total, caption))
 
-        # then return the video
-        return video
 
+class ChannelScraper(Scraper):
+    # the url to the playlist for getting all uploaded videos
+    # fill in the channel Id
+    CHAN_ALL_UPLOADS_URL = "https://m.youtube.com/channel/{chan_id}/videos?view=0&flow=list"
+    # XPaths for the elements that we want to access
+    # inspect these from chrome browser
+    CHAN_LINK_XPATH = "/html/head/link[4]"
+    CHAN_TITLE_XPATH = "/html/head/title"
+    CHAN_SUB_CNT_CLASS = "c4-tabbed-header-subscriber-count"  # get rid of th empty space
+    # the show more button changes its position. find it by its class name
+    SHOW_MORE_CLASS = "nextcontinuation-button"
+    CHAN_URL_FORMAT = "http://www.youtube.com/channel/{chan_id}"
 
-# class FrameDownloader:
-#     # the format code used by youtube dl
-#     # https://askubuntu.com/questions/486297/how-to-select-video-quality-from-youtube-dl
-#     # we are using 240p resolution
-#     # as for just text detection, this will suffice
-#     SETTINGS_DICT = {
-#         'format_code': '135',  # 480P
-#         'frame_format': 'jpeg'
-#     }
-#
-#     @classmethod
-#     def dl_frame_jpeg(cls,
-#                       vid_url,
-#                       timestamp,
-#                       out_path) -> None:
-#         """
-#         :param out_path:
-#         :param vid_url: the video from which to download the frames
-#         :param timestamp: the timestamp at which to capture the frame
-#         """
-#         # credit: http://zulko.github.io/blog/2013/09/27/read-and-write-video-frames-in-python-using-ffmpeg/
-#         cmd = "ffmpeg -ss '{timestamp}'" \
-#               " -i $(youtube-dl -f {format_code} --get-url '{vid_url}')" \
-#               " -vframes 1" \
-#               " -q:v 2" \
-#               " {out_path}" \
-#             .format(timestamp=timestamp,
-#                     format_code=cls.SETTINGS_DICT['format_code'],
-#                     vid_url=vid_url,
-#                     out_path=out_path)
-#
-#         # build the subprocess
-#         proc = subprocess.Popen(
-#             cmd,
-#             shell=True,
-#             stdout=subprocess.PIPE,
-#             bufsize=10**8  # should be bigger than the size of the frame
-#         )
-#         proc.communicate()
+    @classmethod
+    def scrape(cls,
+               chan_url: str,
+               lang_code: str,
+               os: str,
+               is_silent: bool = True,
+               is_mobile: bool = True) -> Channel:
+        """
+        :return: a channel object
+        """
+        # get the driver
+        driver = super().get_driver(is_silent=is_silent,
+                                    is_mobile=is_mobile,
+                                    os=os)
+        # get the channel
+        channel = cls.dl_and_parse(driver, chan_url, lang_code)
+        # return the channel
+        return channel
+
+    @classmethod
+    def dl_and_parse(cls,
+                     driver: webdriver.Chrome,
+                     chan_url: str,
+                     lang_code: str) -> Channel:
+        logger = logging.getLogger("dl_and_parse")
+        # get the channel page to get the channel id, subs, title
+        try:
+            logger.info("loading channel page...")
+            driver.get(chan_url)
+            channel_id = cls._parse_channel_id(driver)
+            title = cls._parse_title(driver)
+            subs = cls._parse_subs(driver)
+            # get the uploads page
+            logger.info("loading uploads page...")
+            driver.get(cls.CHAN_ALL_UPLOADS_URL.format(chan_id=channel_id))
+            vid_id_list = cls._parse_vid_id_list(driver)
+        except Exception as e:
+            raise e
+        else:
+            # the channel is given a lang code
+            return Channel(id=channel_id,
+                           url=cls.CHAN_URL_FORMAT.format(chan_id=channel_id),
+                           title=title,
+                           subs=subs,
+                           lang_code=lang_code,
+                           vid_id_list=vid_id_list)
+        finally:
+            logger.info("quitting the driver")
+            driver.quit()
+
+    @classmethod
+    def _parse_channel_id(cls, driver: webdriver.Chrome) -> str:
+        chan_link_elem = driver.find_element_by_xpath(cls.CHAN_LINK_XPATH)
+        chan_url = chan_link_elem.get_attribute("href").strip()
+        # return the last one
+        return chan_url.split("/")[-1]
+
+    @classmethod
+    def _parse_title(cls, driver: webdriver.Chrome) -> str:
+        """
+        e.g.
+        <title>Abdul Bari - YouTube</title>
+        """
+        title_elem = driver.find_element_by_xpath(cls.CHAN_TITLE_XPATH)
+        return title_elem.text.split("-")[0].strip()
+
+    @classmethod
+    def _parse_subs(cls, driver: webdriver.Chrome) -> int:
+        """
+        keep in mind that the subs count is
+        only a rough value.
+        e.g.
+        <span class="c4-tabbed-header-subscriber-count secondary-text">285K subscribers</span>
+        :param driver: the driver that has already loaded the web page
+        :return: the approximate sub count of the channel
+        """
+        span_elem = driver.find_element_by_class_name(cls.CHAN_SUB_CNT_CLASS)
+        # get the data
+        span_data = span_elem.text.split(" ")[0].strip()
+        # Now I have to parse this
+        if re.match(r'[\d.]*[KMB]$', span_data):
+            if span_data[-1] == 'K':
+                subs_cnt = int(float(span_data[:-1]) * (10 ** 3))
+            elif span_data[-1] == 'M':
+                subs_cnt = int(float(span_data[:-1]) * (10 ** 6))
+            else:
+                # has a billion subs
+                subs_cnt = int(float(span_data[:-1]) * (10 ** 9))
+        else:
+            # less than 1K
+            subs_cnt = int(span_data)
+        # check the value for debugging
+        return subs_cnt
+
+    @classmethod
+    def _parse_vid_id_list(cls, driver: webdriver.Chrome) -> List[str]:
+        logger = logging.getLogger("_vid_id_list")
+        vid_id_list = list()
+        load_cnt = 0
+        while True:
+            try:
+                # try getting the show more button
+                show_more_button = WebDriverWait(driver, 5).until(
+                    e_c.element_to_be_clickable((By.CLASS_NAME, cls.SHOW_MORE_CLASS))
+                )
+            except TimeoutException as nse:
+                logger.debug(str(nse))
+                # how do I know if something went wrong or not..?
+                break
+            else:
+                # scroll down
+                driver.execute_script("window.scrollTo(0,document.body.scrollHeight)")
+                # click the button
+                show_more_button.click()
+                # while load more button is clickable..
+                load_cnt += 1
+                logger.info("loading uploads #" + str(load_cnt))
+        # get all the elements that are of this class
+        videos = driver.find_elements_by_class_name("compact-media-item-image")
+        for video in videos:
+            link = video.get_attribute('href')
+            video_id = link.split("=")[-1].strip()
+            vid_id_list.append(video_id)
+        # now get the boxes.
+        # when everything is done
+        # collect the video ids.
+        logger.info("video id download complete. # vids total: " + str(len(vid_id_list)))
+        return vid_id_list

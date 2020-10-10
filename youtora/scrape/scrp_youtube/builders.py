@@ -2,18 +2,7 @@ import logging
 from typing import List
 
 from .errors import CaptionNotFoundError
-from .dataclasses import Video, Caption, Chapter
-
-
-class ChapterBuilder:
-    def __init(self, video: Video):
-        raise NotImplementedError
-
-    def build_chapters(self) -> List[Chapter]:
-        raise NotImplementedError
-
-    def build_chapter(self, chap_idx) -> Chapter:
-        raise NotImplementedError
+from .dataclasses import Video, Caption
 
 
 class CaptionBuilder:

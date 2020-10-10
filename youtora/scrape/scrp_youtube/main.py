@@ -5,23 +5,20 @@ from typing import List
 from pymongo.collection import Collection
 
 from .builders import CaptionBuilder
-from .scrapers import VideoScraper
+from .scrapers import VideoScraper, ChannelScraper
 from .dataclasses import Channel, Video
-from .parsers import ChannelHTMLParser, MLGlossRawHTMLParser, MLGlossRawParser
-
-from apps.elastic import Index
-from apps.mongo import YoutoraDB, CorporaDB
+from youtora.index.idx_general.index import GeneralIndex
 
 # for splitting the videos into batches.
 import numpy as np
 
-from pymongo.errors import DuplicateKeyError, BulkWriteError
 
 import sys
 
 # global logger setting
 # https://stackoverflow.com/questions/20333674/pycharm-logging-output-colours/45534743
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+# this scraper stores data directly to elasticsearch idx.
 
 
 class Store:
@@ -30,34 +27,6 @@ class Store:
     """
     # process batch size
     BATCH_SIZE = 10
-
-    youtora_db: YoutoraDB = None
-    corpora_db: CorporaDB = None
-
-    @classmethod
-    def store_corpora_db(cls):
-        """
-        1. ml gloss raw
-        2. ml gloss
-        3. (later) idiom dictionary.
-        """
-        # init the client
-        logger = logging.getLogger("store_corpora_db")
-        cls.corpora_db = CorporaDB()
-        # get raw data from HTML parser
-        ml_gloss_raws = MLGlossRawHTMLParser.parse()
-        ml_gloss_raw_docs = [ml_gloss_raw.to_json() for ml_gloss_raw in ml_gloss_raws]
-        cls._store_many(cls.corpora_db.ml_gloss_raw_coll,
-                        docs=ml_gloss_raw_docs,
-                        rep_id="ml_gloss_raw",
-                        logger=logger)
-        # get processed data from parser
-        ml_glosses = MLGlossRawParser.parse()
-        ml_gloss_docs = [ml_gloss.to_json() for ml_gloss in ml_glosses]
-        cls._store_many(cls.corpora_db.ml_gloss_coll,
-                        docs=ml_gloss_docs,
-                        rep_id="ml_gloss",
-                        logger=logger)
 
     @classmethod
     def store_youtora_db(cls,
@@ -84,9 +53,9 @@ class Store:
         # split the video ids into batches
         batches = np.array_split(channel.vid_id_list, cls.BATCH_SIZE)
         for idx, batch in enumerate(batches):
-            vid_gen = VideoScraper.scrape_from_ids(vid_id_list=batch,
-                                                   batch_info="current={}/total={}"
-                                                   .format(idx + 1, len(batches)))
+            vid_gen = VideoScraper.scrape(vid_id_list=batch,
+                                          batch_info="current={}/total={}"
+                                          .format(idx + 1, len(batches)))
             for video in vid_gen:   # dl and iterate over each video in this batch
                 if not video.captions:
                     logger.info("SKIP: skipping storing the video because it has no captions at all")
