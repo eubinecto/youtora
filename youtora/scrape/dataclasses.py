@@ -1,11 +1,14 @@
-
-from dataclasses import dataclass
 from typing import List
+from dataclasses import dataclass
 
 
+# --- YouTube --- #
 @dataclass
-class Channel:
-    id: str
+class ChannelData:
+    """
+    define the parsed version here.
+    """
+    id: str  # id must be the same as channel Raw.
     url: str
     title: str
     subs: int
@@ -20,8 +23,8 @@ class Channel:
 
 
 @dataclass
-class Track:
-    parent_id: str
+class TrackData:
+    caption_id: str
     start: float
     duration: float
     content: str
@@ -36,7 +39,7 @@ class Track:
         combine with the hash value of the track to get the id.
         :return: the id of this track.
         """
-        return "|".join([self.parent_id, str(self.__hash__())])
+        return "|".join([self.caption_id, str(self.__hash__())])
 
     def set_prev_id(self, prev_id: str):
         self.prev_id = prev_id
@@ -48,7 +51,7 @@ class Track:
         self.context: str = context
 
     def __hash__(self) -> int:
-        return hash((self.parent_id, self.start, self.content))
+        return hash((self.caption_id, self.start, self.content))
 
     # overrides dunder string method
     def __str__(self) -> str:
@@ -59,17 +62,17 @@ class Track:
 
 
 @dataclass
-class Caption:
+class CaptionData:
     id: str
-    parent_id: str
+    video_id: str
     is_auto: bool
     lang_code: str
     url: str
-    tracks: List[Track] = None
+    tracks: List[TrackData] = None
 
     # setter method
-    def set_tracks(self, tracks: List[Track]):
-        self.tracks: List[Track] = tracks
+    def set_tracks(self, tracks: List[TrackData]):
+        self.tracks: List[TrackData] = tracks
 
     # overrides dunder string method
     def __str__(self) -> str:
@@ -80,9 +83,9 @@ class Caption:
 
 
 @dataclass
-class Video:
+class VideoData:
     id: str
-    parent_id: str
+    channel_id: str
     url: str
     title: str
     publish_date: str
@@ -90,14 +93,13 @@ class Video:
     dislikes: int
     views: int
     category: str
-    manual_sub_info: dict
-    auto_sub_info: dict
-    captions: List[Caption] = None
+    manual_captions_info: dict
+    auto_captions_info: dict
+    captions: List[CaptionData] = None
 
-    def set_captions(self, captions: List[Caption]):
-        self.captions: List[Caption] = captions
+    def set_captions(self, captions: List[CaptionData]):
+        self.captions: List[CaptionData] = captions
 
     # overrides the dunder string method
     def __str__(self) -> str:
         return self.title
-
