@@ -13,7 +13,7 @@ from .dataclasses import (
     CaptionData
 )
 from .scrapers import TracksRawScraper, MLGlossHTMLScraper
-from typing import List, Tuple, Generator
+from typing import List, Tuple, Generator, Collection
 import logging
 import requests
 import re
@@ -24,6 +24,8 @@ import json
 from bs4 import BeautifulSoup
 from .errors import CaptionNotFoundError
 
+# for zipping the generators
+import itertools
 
 class ChannelRawParser:
     # XPaths for the elements that we want to access
@@ -304,10 +306,10 @@ class VideoRawParser:
         return video
 
     @classmethod
-    def parse_multi(cls, video_raw_list: List[VideoRaw]) -> Generator[VideoData, None, None]:
+    def parse_multi(cls, video_raw_coll: Collection[VideoRaw]) -> Generator[VideoData, None, None]:
         return (
             cls.parse(video_raw)
-            for video_raw in video_raw_list
+            for video_raw in video_raw_coll
         )
 
     @classmethod
@@ -399,27 +401,23 @@ class MLGlossHTMLParser:
         words = cls._ext_words(gloss_div)
         refs = cls._ext_refs(gloss_div)
         categories = cls._ext_categories(gloss_div)
-        descs = cls._ext_ml_gloss_desc(gloss_div)
-        # so clean! I love comprehensions syntax
+        descs = cls._ext_ml_gloss_descs(gloss_div)
+        # so clean! I love comprehensions syntax + zip
         return (
             MLGloss().set_all(ml_gloss_id, word, ref, category, desc)
-            for ml_gloss_id in ml_gloss_ids
-            for word in words
-            for ref in refs
-            for category in categories
-            for desc in descs
+            for ml_gloss_id, word, ref, category, desc
+            in zip(ml_gloss_ids, words, refs, categories, descs)
         )
 
     @classmethod
-    def _ext_ml_gloss_desc(cls, gloss_div: BeautifulSoup) -> Generator[MLGlossDesc, None, None]:
+    def _ext_ml_gloss_descs(cls, gloss_div: BeautifulSoup) -> Generator[MLGlossDesc, None, None]:
         desc_raws = cls._ext_desc_raws(gloss_div)
         pure_texts = cls._ext_pure_texts(gloss_div)
         topic_sents = cls._ext_topic_sents(gloss_div)
         return (
             MLGlossDesc().set_all(desc_raw, pure_text, topic_sent)
-            for desc_raw in desc_raws
-            for pure_text in pure_texts
-            for topic_sent in topic_sents
+            for desc_raw, pure_text, topic_sent
+            in zip(desc_raws, pure_texts, topic_sents)
         )
 
     @classmethod

@@ -1,1 +1,1 @@
-# use django api
+# use django rest API.

@@ -4,6 +4,7 @@ from djongo import models
 
 # ---  Raw models (YouTube) --- #
 class ChannelRaw(models.Model):
+    objects = models.Manager()
     id = models.CharField(primary_key=True, max_length=100, verbose_name="channel_id")
     url = models.URLField(validators=[URLValidator])
     lang_code = models.CharField(max_length=10)
@@ -12,6 +13,7 @@ class ChannelRaw(models.Model):
 
 
 class TracksRaw(models.Model):
+    objects = models.Manager()
     id = models.CharField(primary_key=True, max_length=100, verbose_name="caption_id|tracks")
     caption_id = models.CharField(max_length=100)
     xml = models.TextField()
@@ -31,6 +33,7 @@ class CaptionsRaw(models.Model):
 
 
 class VideoRaw(models.Model):
+    objects = models.Manager()
     id = models.CharField(primary_key=True, max_length=100, verbose_name="video_id")
     channel_id = models.CharField(max_length=100)
     video_info_json = models.TextField()
@@ -61,6 +64,7 @@ class MLGloss(models.Model):
     """
     parsed MLGloss. the definition may vary
     """
+    objects = models.Manager()
     id = models.CharField(max_length=100, name='id', primary_key=True)
     word = models.CharField(max_length=100, name='word')
     ref = models.URLField(validators=[URLValidator], name='credit')
