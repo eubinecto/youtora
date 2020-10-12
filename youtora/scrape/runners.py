@@ -3,7 +3,8 @@ from .parsers import CaptionsRawParser, ChannelRawParser
 from .scrapers import (
     ChannelRawScraper,
     VideoRawScraper,
-    TracksRawScraper
+    TracksRawScraper,
+    CaptionsRawDataScraper
 )
 import logging
 import sys
@@ -41,14 +42,17 @@ class ScrapeYouTubeRawsRunner(Runner):
         vid_id_list = ChannelRawParser.parse(channel_raw).vid_id_list
         total_vid_cnt = len(vid_id_list)
         video_raws = VideoRawScraper.scrape_multi(vid_id_list, channel_raw)
-        for idx, video_raw in enumerate(video_raws):
-            # scrape and store tracks raws
-            captions = CaptionsRawParser.parse(video_raw.captions_raw)
-            tracks_raws = TracksRawScraper.scrape_multi(captions)
-            for tracks_raw in tracks_raws:
-                tracks_raw.save()
+        for vid_idx, video_raw in enumerate(video_raws):
+            # save video_raw
             video_raw.save()
-            logger.info("{}/{}: video_raw saved: {}" .format(idx + 1, total_vid_cnt, str(video_raw)))
+            logger.info("{}/{}: video_raw saved: {}" .format(vid_idx + 1, total_vid_cnt, str(video_raw)))
+            # scrape and store tracks raws
+            captions_raw = CaptionsRawDataScraper.scrape(video_raw)
+            captions = CaptionsRawParser.parse(captions_raw)
+            tracks_raws = TracksRawScraper.scrape_multi(captions)
+            for track_idx, tracks_raw in enumerate(tracks_raws):
+                tracks_raw.save()
+                logger.info("tracks saved #{}".format(track_idx + 1))
         channel_raw.save()
         logger.info("channel_raw saved: {}".format(str(channel_raw)))
 

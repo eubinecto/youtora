@@ -61,6 +61,15 @@ class TrackData:
         return self.content
 
 
+# need this as the mediator
+@dataclass
+class CaptionsRawData:
+    # just need these two.
+    video_id: str
+    manual_captions_info: dict
+    auto_captions_info: dict
+
+
 @dataclass
 class CaptionData:
     id: str

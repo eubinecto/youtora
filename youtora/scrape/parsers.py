@@ -2,7 +2,6 @@
 # import all the models needed
 from .models import (
     ChannelRaw,
-    CaptionsRaw,
     TracksRaw,
     VideoRaw, MLGloss, MLGlossDesc
 )
@@ -10,9 +9,9 @@ from .dataclasses import (
     ChannelData,
     VideoData,
     TrackData,
-    CaptionData
+    CaptionData, CaptionsRawData
 )
-from .scrapers import TracksRawScraper, MLGlossHTMLScraper
+from .scrapers import TracksRawScraper, MLGlossHTMLScraper, CaptionsRawDataScraper
 from typing import List, Tuple, Generator, Collection
 import logging
 import requests
@@ -129,11 +128,11 @@ class CaptionsRawParser:
     )
 
     @classmethod
-    def parse(cls, captions_raw: CaptionsRaw) -> List[CaptionData]:
+    def parse(cls, captions_raw: CaptionsRawData) -> List[CaptionData]:
         logger = logging.getLogger("parse")
         # as for json field, you must use getattr
-        auto_info: dict = getattr(captions_raw, captions_raw.auto_captions_info.column)
-        manual_info: dict = getattr(captions_raw, captions_raw.manual_captions_info.column)
+        auto_info: dict = captions_raw.auto_captions_info
+        manual_info: dict = captions_raw.manual_captions_info
         video_id = captions_raw.video_id
         captions = list()
         # loop through all the lang codes
@@ -157,7 +156,7 @@ class CaptionsRawParser:
         return captions
 
     @classmethod
-    def parse_multi(cls, captions_raw_list: List[CaptionsRaw]) -> List[CaptionData]:
+    def parse_multi(cls, captions_raw_list: List[CaptionsRawData]) -> List[CaptionData]:
         # flatten to list of captions
         return [
             caption
@@ -296,10 +295,8 @@ class VideoRawParser:
         views = info['view_count']
         # the length is always greater than zero;  use the first one as the category of this video
         category = info['categories'][0]
-        manual_info: dict = getattr(video_raw.captions_raw,
-                                    video_raw.captions_raw.manual_captions_info.column)
-        auto_info: dict = getattr(video_raw.captions_raw,
-                                  video_raw.captions_raw.auto_captions_info.column)
+        manual_info: dict = ...
+        auto_info: dict = ...
         channel_id = video_raw.channel_raw.id
         vid_url = cls.VID_URL_FORMAT.format(vid_id)
         # better collect these info separately
@@ -311,7 +308,7 @@ class VideoRawParser:
                           category=category, manual_captions_info=manual_info,
                           auto_captions_info=auto_info)
         # set captions and tracks
-        cls._ext_and_set_captions(video_raw.captions_raw, video)
+        cls._ext_and_set_captions(video_raw, video)
         return video
 
     @classmethod
@@ -359,7 +356,8 @@ class VideoRawParser:
         return like_cnt, dislike_cnt
 
     @classmethod
-    def _ext_and_set_captions(cls, captions_raw: CaptionsRaw, video: VideoData):
+    def _ext_and_set_captions(cls, video_raw: VideoRaw, video: VideoData):
+        captions_raw = CaptionsRawDataScraper.scrape(video_raw)
         captions = CaptionsRawParser.parse(captions_raw)
         video.set_captions(captions)
 

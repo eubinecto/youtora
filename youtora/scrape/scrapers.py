@@ -5,11 +5,8 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as e_c
 from selenium.webdriver.common.by import By
-from .models import (
-    CaptionsRaw, TracksRaw,
-    ChannelRaw, VideoRaw
-)
-from .dataclasses import CaptionData
+from .models import TracksRaw, ChannelRaw, VideoRaw
+from .dataclasses import CaptionData, CaptionsRawData
 import youtube_dl
 import requests
 import html
@@ -105,9 +102,9 @@ class TracksRawScraper(Scraper):
         )
 
 
-class CaptionsRawScraper:
+class CaptionsRawDataScraper:
     @classmethod
-    def scrape(cls, video_raw: VideoRaw) -> CaptionsRaw:
+    def scrape(cls, video_raw: VideoRaw) -> CaptionsRawData:
         """
         :param video_raw:
         :return:
@@ -116,13 +113,13 @@ class CaptionsRawScraper:
         manual_captions_info: dict = video_info.pop('subtitles')
         auto_captions_info: dict = video_info.pop('automatic_captions')
         # assign and return
-        captions_raw = CaptionsRaw(video_id=video_raw.id,
-                                   manual_captions_info=manual_captions_info,
-                                   auto_captions_info=auto_captions_info)
+        captions_raw = CaptionsRawData(video_id=video_raw.id,
+                                       manual_captions_info=manual_captions_info,
+                                       auto_captions_info=auto_captions_info)
         return captions_raw
 
     @classmethod
-    def scrape_multi(cls, video_raw_list: List[VideoRaw]) -> Generator[CaptionsRaw, None, None]:
+    def scrape_multi(cls, video_raw_list: List[VideoRaw]) -> Generator[CaptionsRawData, None, None]:
         """
         :param video_raw_list: list of VideoRaw objects.
         :return:
@@ -153,7 +150,6 @@ class VideoRawScraper:
         # assign and return. make sure to save them later.
         video_raw = VideoRaw(_id=vid_id, channel_raw=channel_raw,
                              video_info=video_info)
-        cls.scrape_and_set_captions_raw(video_raw)
         return video_raw
 
     @classmethod
@@ -176,12 +172,6 @@ class VideoRawScraper:
             else:
                 # yield the video
                 yield video_raw
-
-    @classmethod
-    def scrape_and_set_captions_raw(cls, video_raw: VideoRaw):
-        captions_raw = CaptionsRawScraper.scrape(video_raw)
-        # using the setter
-        video_raw.captions_raw = captions_raw
 
 
 class ChannelRawScraper(Scraper):

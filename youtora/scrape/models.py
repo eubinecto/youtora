@@ -30,41 +30,13 @@ class TracksRaw(models.Model):
         return self._id
 
 
-class CaptionsRaw(models.Model):
-    """
-    all the captions found for the given video
-    """
-    _id = models.CharField(primary_key=True, max_length=100, verbose_name="video_id|captions_raw")
-    video_id = models.CharField(max_length=100, null=False)
-    manual_captions_info = models.JSONField(null=False)
-    auto_captions_info = models.JSONField(null=False)
-
-    class Meta:
-        abstract = True
-
-    @property
-    def id(self):
-        return self._id
-
-    def to_dict(self) -> dict:
-        """
-        :return: a dictionary representation of this class
-        """
-        fields = self._meta.get_fields()
-        dict_rep = dict()
-        for field in fields:
-            dict_rep[field.name] = self._meta.get_field(field.name)
-        return dict_rep
-
-
 class VideoRaw(models.Model):
     objects = models.Manager()
     _id = models.CharField(primary_key=True, max_length=100, verbose_name="video_id")
     # on looking up channel_raw, djongo will create a pymongo query for that
     channel_raw = models.ForeignKey(to=ChannelRaw, null=False, on_delete=models.CASCADE)
-    video_info = models.JSONField(null=False)
+    video_info = models.JSONField(null=False)  # every info will be stored here
     # this collection includes the captions separately
-    _captions_raw = models.EmbeddedField(model_container=CaptionsRaw, null=False)
 
     def __str__(self) -> str:
         return str(self._id)
@@ -72,18 +44,6 @@ class VideoRaw(models.Model):
     @property
     def id(self):
         return self._id
-
-    @property
-    def captions_raw(self) -> CaptionsRaw:
-        captions_raw = CaptionsRaw()
-        for field_name, field_val in self._captions_raw.items():
-            # https://medium.com/@mgarod/dynamically-add-a-method-to-a-class-in-python-c49204b85bd6
-            setattr(captions_raw, field_name, field_val)
-        return captions_raw
-
-    @captions_raw.setter
-    def captions_raw(self, captions_raw: CaptionsRaw):
-        self._captions_raw = captions_raw.to_dict()
 
 
 # --- parsed models (ml glossary)  --- #
