@@ -9,7 +9,6 @@ from .models import TracksRaw, ChannelRaw, VideoRaw
 from .dataclasses import CaptionData, CaptionsRawData
 import youtube_dl
 import requests
-import html
 import logging
 from selenium import webdriver
 
@@ -85,12 +84,14 @@ class TracksRawScraper(Scraper):
         :param caption: parsed caption object.
         :return:
         """
+        logger = logging.getLogger("scrape")
+        logger.info("loading tracks...:" + caption.url)
         response = requests.get(caption.url)  # first, get the response (download)
         response.raise_for_status()  # check if the response was erroneous
-        tracks_xml = html.unescape(response.text)  # get the xml. escape the character reference entities
         tracks_raw = TracksRaw(_id="|".join([caption.id, "tracks"]),
-                               xml=tracks_xml)
-        # should be saved later
+                               caption_id=caption.id,
+                               raw_xml=response.text)
+        # should be saved later. scrape does scraping only.
         return tracks_raw
 
     @classmethod

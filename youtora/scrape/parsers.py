@@ -147,10 +147,12 @@ class CaptionsRawParser:
                                                     cls.CAPTION_TYPES[1],
                                                     lang_code)
                 except CaptionNotFoundError:  # automatic one was not found either
-                    logger.warning("NOT FOUND: manual & auto:" + lang_code)
+                    logger.warning("NOT FOUND:no manual nor auto:" + lang_code)
                 else:  # collect the automatic caption found
+                    logger.info("FOUND:auto:" + lang_code)
                     captions.append(auto_caption)
             else:  # collect the manual caption found
+                logger.info("FOUND:manual:" + lang_code)
                 captions.append(manual_caption)
         # return captions. this could be empty.
         return captions
@@ -206,8 +208,8 @@ class TracksRawParser:
         logger = logging.getLogger("parse")
         tracks = list()
         tracks_caption_id = tracks_raw.caption_id
-        tracks_xml = html.unescape(tracks_raw.xml.__str__())
-        tracks_dict = xmltodict.parse(tracks_xml)  # deserialize the xml to dict
+        tracks_xml = html.unescape(tracks_raw.raw_xml)  # get the tracks_html. escape the character reference entities
+        tracks_dict = xmltodict.parse(tracks_xml)  # deserialize the raw_xml to dict
         # if not a  list, ignore. quirk of youtube_dl - if there is only one track,
         # then the value of text is a dict, not a list.
         # e.g. https://www.youtube.com/watch?v=1SMmc9gQmHQ

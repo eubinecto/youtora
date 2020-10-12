@@ -45,7 +45,7 @@ class ScrapeYouTubeRawsRunner(Runner):
         for vid_idx, video_raw in enumerate(video_raws):
             # save video_raw
             video_raw.save()
-            logger.info("{}/{}: video_raw saved: {}" .format(vid_idx + 1, total_vid_cnt, str(video_raw)))
+            logger.info("=== {}/{}:video_raw saved:{} ===" .format(vid_idx + 1, total_vid_cnt, str(video_raw)))
             # scrape and store tracks raws
             captions_raw = CaptionsRawDataScraper.scrape(video_raw)
             captions = CaptionsRawParser.parse(captions_raw)
@@ -53,8 +53,9 @@ class ScrapeYouTubeRawsRunner(Runner):
             for track_idx, tracks_raw in enumerate(tracks_raws):
                 tracks_raw.save()
                 logger.info("tracks saved #{}".format(track_idx + 1))
+        # channel is saved at the end
         channel_raw.save()
-        logger.info("channel_raw saved: {}".format(str(channel_raw)))
+        logger.info("channel_raw saved:{}".format(str(channel_raw)))
 
 
 class ScrapeMLGlossRunner(Runner):

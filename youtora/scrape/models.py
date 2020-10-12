@@ -6,10 +6,10 @@ from djongo import models
 class ChannelRaw(models.Model):
     objects = models.Manager()
     _id = models.CharField(primary_key=True, max_length=100, verbose_name="channel_id")
-    url = models.URLField(validators=[URLValidator], null=False)
-    lang_code = models.CharField(max_length=10, null=False)
-    main_html = models.TextField(null=False)
-    uploads_html = models.TextField(null=False)
+    url = models.URLField(validators=[URLValidator], blank=False, null=False)
+    lang_code = models.CharField(max_length=10, blank=False, null=False)
+    main_html = models.TextField(blank=False, null=False)
+    uploads_html = models.TextField(blank=False, null=False)
 
     def __str__(self) -> str:
         return str(self._id)
@@ -18,12 +18,15 @@ class ChannelRaw(models.Model):
     def id(self):
         return self._id
 
+    def save(self, **kwargs):
+        super(ChannelRaw, self).save()
+
 
 class TracksRaw(models.Model):
     objects = models.Manager()
     _id = models.CharField(primary_key=True, max_length=100, verbose_name="caption_id|tracks_raw")
-    caption_id = models.CharField(max_length=100, null=False)
-    xml = models.TextField(null=False)
+    caption_id = models.CharField(max_length=100, blank=False, null=False)
+    raw_xml = models.TextField(blank=False, null=False)
 
     @property
     def id(self):
@@ -34,8 +37,8 @@ class VideoRaw(models.Model):
     objects = models.Manager()
     _id = models.CharField(primary_key=True, max_length=100, verbose_name="video_id")
     # on looking up channel_raw, djongo will create a pymongo query for that
-    channel_raw = models.ForeignKey(to=ChannelRaw, null=False, on_delete=models.CASCADE)
-    video_info = models.JSONField(null=False)  # every info will be stored here
+    channel_raw = models.ForeignKey(to=ChannelRaw, blank=False, null=False, on_delete=models.CASCADE)
+    video_info = models.JSONField(blank=False, null=False)  # every info will be stored here
     # this collection includes the captions separately
 
     def __str__(self) -> str:
@@ -54,9 +57,9 @@ class MLGlossDesc(models.Model):
     class Meta:
         abstract = True
     # have to parse this.
-    desc_raw = models.CharField(name='desc_raw', null=False)
-    pure_text = models.CharField(name='pure_text', null=False)
-    topic_sent = models.CharField(max_length=500, name='topic_sent', null=False)
+    desc_raw = models.CharField(name='desc_raw', blank=False, null=False)
+    pure_text = models.CharField(name='pure_text', blank=False, null=False)
+    topic_sent = models.CharField(max_length=500, blank=False, name='topic_sent', null=False)
 
     def set_all(self, desc_raw, pure_text, topic_sent):
         self.desc_raw = desc_raw
@@ -70,10 +73,10 @@ class MLGloss(models.Model):
     """
     objects = models.Manager()
     _id = models.CharField(max_length=100, name='id', primary_key=True)
-    word = models.CharField(max_length=100, name='word', null=False)
-    ref = models.URLField(validators=[URLValidator], name='ref', null=False)
+    word = models.CharField(max_length=100, name='word', blank=False, null=False)
+    ref = models.URLField(validators=[URLValidator], name='ref', blank=False, null=False)
     category = models.CharField(max_length=100, name='category')
-    desc = models.EmbeddedField(model_container=MLGlossDesc, null=False)
+    desc = models.EmbeddedField(model_container=MLGlossDesc, blank=False, null=False)
 
     def set_all(self, ml_gloss_id: str,
                 word: str, ref: str,
