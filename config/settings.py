@@ -9,12 +9,14 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-
+from django.conf import settings
 from pathlib import Path
+# start building the index
+
+settings.configure()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
@@ -38,9 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'youtora.home',
-    'youtora.index.idx_general',  # for indexing data to elasticsearch index.
-    'youtora.scrape.scrp_youtube',  # for scraping data from youtube
-    'youtora.search.srch_general',  # app for general search
+    'youtora.index',  # for indexing data to elasticsearch index.
+    'youtora.scrape',  # for scraping data from youtube
+    'youtora.search',  # app for general search
 ]
 
 MIDDLEWARE = [

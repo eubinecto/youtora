@@ -15,14 +15,13 @@ import requests
 import html
 import logging
 from selenium import webdriver
-import json
 
 
 class Scraper:
     # chrome drivers are stored in bin
     CHROME_DRIVER_PATH: dict = {
-        "mac": "./be/bin/chromedriver_mac64",
-        "linux": "./be/bin/chromedriver_linux64"
+        "mac": "./bin/chromedriver_mac64",
+        "linux": "./bin/chromedriver_linux64"
     }
     # I'm using this for now..
     MOBILE_OPT: dict = {"deviceName": "Nexus 5"}
@@ -92,9 +91,8 @@ class TracksRawScraper(Scraper):
         response = requests.get(caption.url)  # first, get the response (download)
         response.raise_for_status()  # check if the response was erroneous
         tracks_xml = html.unescape(response.text)  # get the xml. escape the character reference entities
-        tracks_raw = TracksRaw()
-        tracks_raw.id = "|".join([caption.id, "tracks"])
-        tracks_raw.xml = tracks_xml
+        tracks_raw = TracksRaw(_id="|".join([caption.id, "tracks"]),
+                               xml=tracks_xml)
         # should be saved later
         return tracks_raw
 
@@ -114,15 +112,13 @@ class CaptionsRawScraper:
         :param video_raw:
         :return:
         """
-        video_info = json.loads(video_raw.video_info_json)
-        video_id = video_raw.id
+        video_info = video_raw.video_info
         manual_captions_info: dict = video_info.pop('subtitles')
         auto_captions_info: dict = video_info.pop('automatic_captions')
         # assign and return
-        captions_raw = CaptionsRaw()
-        captions_raw.video_id = video_id
-        captions_raw.manual_captions_json = json.dumps(manual_captions_info)
-        captions_raw.auto_captions_json = json.dumps(auto_captions_info)
+        captions_raw = CaptionsRaw(video_id=video_raw.id,
+                                   manual_captions_info=manual_captions_info,
+                                   auto_captions_info=auto_captions_info)
         return captions_raw
 
     @classmethod
@@ -147,52 +143,51 @@ class VideoRawScraper:
     }  # VIDEO_DL_OPTIONS
 
     @classmethod
-    def scrape(cls, vid_id: str, channel_id: str) -> VideoRaw:
+    def scrape(cls, vid_id: str, channel_raw: ChannelRaw) -> VideoRaw:
         """
-        given youtube video url, returns the meta data of the channel
+        given youtube video url, returns the meta data of the channel_raw
         """
         # get the info.
         with youtube_dl.YoutubeDL(cls.VIDEO_DL_OPTS) as ydl:
             video_info: dict = ydl.extract_info(url=vid_id, download=False)
         # assign and return. make sure to save them later.
-        video_raw = VideoRaw()
-        video_raw.id = vid_id
-        video_raw.channel_id = channel_id
-        video_raw.video_info_json = json.dumps(video_info)
+        video_raw = VideoRaw(_id=vid_id, channel_raw=channel_raw,
+                             video_info=video_info)
+        cls.scrape_and_set_captions_raw(video_raw)
         return video_raw
 
     @classmethod
-    def scrape_multi(cls, vid_id_list: List[str], channel_id: str) -> Generator[VideoRaw, None, None]:
+    def scrape_multi(cls, vid_id_list: List[str], channel_raw: ChannelRaw) -> Generator[VideoRaw, None, None]:
         """
         returns a generator.
         :param vid_id_list:
-        :param channel_id:
+        :param channel_raw:
         :return: a generator of video_raw objects
         """
         logger = logging.getLogger("scrape_multi")
-        total_cnt = len(vid_id_list)
-        for idx, vid_id in enumerate(vid_id_list):
+        for vid_id in vid_id_list:
             try:
                 # try scraping video for this
-                video_raw = cls.scrape(vid_id, channel_id)
+                video_raw = cls.scrape(vid_id, channel_raw)
             except youtube_dl.utils.DownloadError as de:
                 # if downloading the video fails, log and just skip this one
                 logger.warning(de)
                 continue
             else:
-                logger.info("dl vid objects done: {}/{}".format(idx + 1, total_cnt,))
                 # yield the video
                 yield video_raw
 
     @classmethod
-    def scrape_and_set_captions_raw(cls):
-        pass
+    def scrape_and_set_captions_raw(cls, video_raw: VideoRaw):
+        captions_raw = CaptionsRawScraper.scrape(video_raw)
+        # using the setter
+        video_raw.captions_raw = captions_raw
 
 
 class ChannelRawScraper(Scraper):
     # the url to the playlist for getting all uploaded videos
     CHAN_UPLOADS_URL = "https://m.youtube.com/channel/{}/videos?view=0&flow=list"
-    # the main landing page of the channel
+    # the main landing page of the channel_raw
     CHAN_URL = "http://www.youtube.com/channel/{}"
     # the show more button changes its position. find it by its class name
     SHOW_MORE_CLASS = "nextcontinuation-button"
@@ -206,39 +201,39 @@ class ChannelRawScraper(Scraper):
                is_silent: bool = True,
                is_mobile: bool = True) -> ChannelRaw:
         """
-        :return: an unparsed channel object
+        :return: an unparsed channel_raw object
         """
         logger = logging.getLogger("scrape")
         driver = super().get_driver(is_silent, is_mobile, os)
         # get the driver
         try:
             # scrape the two html's
-            main_html = cls._scrape_main(driver, channel_id)
-            uploads_html = cls._scrape_uploads(driver, channel_id)
+            chan_url = cls.CHAN_URL.format(channel_id)
+            main_html = cls._scrape_main(driver, chan_url)
+            uploads_url = cls.CHAN_UPLOADS_URL.format(channel_id)
+            uploads_html = cls._scrape_uploads(driver, uploads_url)
         except Exception as e:
             raise e
         else:
             # assign and return
-            channel_raw = ChannelRaw()
-            channel_raw.main_html = main_html
-            channel_raw.uploads_html = uploads_html
+            channel_raw = ChannelRaw(_id=channel_id, url=chan_url,
+                                     lang_code=lang_code, main_html=main_html,
+                                     uploads_html=uploads_html)
             return channel_raw
         finally:
             logger.info("quitting the driver...")
             driver.quit()
 
     @classmethod
-    def _scrape_main(cls, driver: webdriver.Chrome, channel_id: str) -> str:
+    def _scrape_main(cls, driver: webdriver.Chrome, chan_url: str) -> str:
         logger = logging.getLogger("_scrape_main")
-        chan_url = cls.CHAN_URL.format(channel_id)
         logger.info("loading main page...: " + chan_url)
         main_html = super().scrape_page_src(driver, chan_url)
         return main_html
 
     @classmethod
-    def _scrape_uploads(cls, driver: webdriver.Chrome, channel_id: str) -> str:
+    def _scrape_uploads(cls, driver: webdriver.Chrome, uploads_url: str) -> str:
         logger = logging.getLogger("_scrape_uploads")
-        uploads_url = cls.CHAN_UPLOADS_URL.format(channel_id)
         logger.info("loading uploads page...: " + uploads_url)
         driver.get(uploads_url)
         # now we have to load all the videos, by repeatedly clicking the "show more" button.
@@ -286,5 +281,3 @@ class MLGlossHTMLScraper(Scraper):
         finally:
             logger.info("quitting the driver...")
             driver.quit()
-
-

@@ -1,4 +1,4 @@
-from ..index import (
+from youtora.index.indices import (
     ChannelInnerDoc,
     VideoInnerDoc,
     CaptionInnerDoc,
@@ -14,7 +14,6 @@ from youtora.scrape.parsers import (
     VideoRawParser
 
 )
-
 from typing import Generator
 
 
@@ -55,7 +54,7 @@ class GeneralIdxBuilder:
         """
         returns a generator of generator of video data
         """
-        # get all video raws for channel
+        # get all video raws for channel_raw
         channels_video_raws = (
             VideoRaw.objects.all().filter(channel_id=channel.id)
             for channel in channels
@@ -87,9 +86,3 @@ class GeneralIdxBuilder:
         caption_doc = CaptionInnerDoc(id=caption.id, is_auto=caption.is_auto,
                                       lang_code=caption.lang_code, video=video_doc)
         return caption_doc
-
-
-if __name__ == '__main__':
-    # start building the index
-    GeneralIdxBuilder.build()
-

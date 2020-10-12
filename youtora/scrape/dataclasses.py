@@ -8,7 +8,7 @@ class ChannelData:
     """
     define the parsed version here.
     """
-    id: str  # id must be the same as channel Raw.
+    id: str  # id must be the same as channel_raw Raw.
     url: str
     title: str
     subs: int
