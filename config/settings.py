@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'youtora.index',  # for indexing data to elasticsearch index.
     'youtora.scrape',  # for scraping data from youtube
     'youtora.search',  # app for general search
+    'youtora.parse'  # app for parsing
 ]
 
 MIDDLEWARE = [
