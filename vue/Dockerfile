@@ -10,7 +10,7 @@ RUN npm run build --quiet
 FROM nginx as production-stage
 RUN mkdir /youtora_fe
 COPY --from=build-stage ./youtora_fe/dist /youtora_fe
-COPY ./conf/nginx.conf /etc/nginx/nginx.conf
+COPY conf/nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 3000
 CMD ["nginx", "-g", "daemon off;"]
