@@ -43,7 +43,7 @@ class ScrapeYouTubeRawsRunner(Runner):
         for vid_idx, vid_raw in enumerate(vid_raw_gen):
             # save video_raw
             vid_raw.save()
-            logger.info("video_raw saved: #{}".format(vid_idx))
+            logger.info("video_raw saved: #{}".format(vid_idx + 1))
             # scrape and store tracks raws
             captions = CaptionExtractor.parse(vid_raw)
             tracks_raw_gen = TracksRawScraper.scrape_multi(captions)
