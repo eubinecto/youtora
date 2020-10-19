@@ -114,12 +114,12 @@
 #                 }
 #             )
 #
-#         # if the channel_raw language is given
+#         # if the channel_id language is given
 #         if chan_lang_code:
 #             filter_list.append(
 #                 {
 #                     "term": {
-#                         "caption.video.channel_raw.lang_code": chan_lang_code
+#                         "caption.video.channel_id.lang_code": chan_lang_code
 #                     }
 #                 }
 #             )
@@ -153,7 +153,7 @@
 #                     },
 #                     {
 #                         "rank_feature": {
-#                             "field": "caption.video.channel_raw.subs",
+#                             "field": "caption.video.channel_id.subs",
 #                             "boost": subs_boost
 #                         }
 #                     }
@@ -181,12 +181,12 @@
 #
 #     @classmethod
 #     def index_tracks(cls,
-#                      channel_raw: Channel,
+#                      channel_id: Channel,
 #                      videos: List[Video]):
 #         # init a client
 #         cls.es_client = Elasticsearch(hosts=HOSTS)
 #
-#         for request_body in cls._gen_youtora_tracks(channel_raw, videos):
+#         for request_body in cls._gen_youtora_tracks(channel_id, videos):
 #             cls.es_client.bulk(body=request_body,
 #                                index=YOUTORA_IDX_NAME,
 #                                # immediately searchable
@@ -194,7 +194,7 @@
 #
 #     @classmethod
 #     def _gen_youtora_tracks(cls,
-#                             channel_raw: Channel,
+#                             channel_id: Channel,
 #                             videos: List[Video]) -> Generator[list, None, None]:
 #         # list of requests
 #         request_body = list()
@@ -227,11 +227,11 @@
 #                                 "views": video.views,
 #                                 "publish_date_int": int("".join(video.publish_date.split("-"))),
 #                                 "category": video.category,
-#                                 "channel_raw": {
-#                                     "_id": channel_raw.id,
-#                                     "subs": channel_raw.subs,
-#                                     "lang_code": channel_raw.lang_code
-#                                 }  # channel_raw
+#                                 "channel_id": {
+#                                     "_id": channel_id.id,
+#                                     "subs": channel_id.subs,
+#                                     "lang_code": channel_id.lang_code
+#                                 }  # channel_id
 #                             }  # video
 #                         }  # caption
 #                     }  # doc_body

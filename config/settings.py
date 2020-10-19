@@ -41,9 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'youtora.home',
     'youtora.index',  # for indexing data to elasticsearch index.
-    'youtora.scrape',  # for scraping data from youtube
+    'youtora.collect',  # for scraping data from youtube
     'youtora.search',  # app for general search
-    'youtora.parse'  # app for parsing
+    'youtora.refine'  # app for parsing
 ]
 
 MIDDLEWARE = [
