@@ -4,6 +4,7 @@ from .scrapers import (
     ChannelRawScraper,
     VideoRawScraper,
     TracksRawScraper,
+    IdiomRawScraper
 )
 import logging
 import sys
@@ -55,13 +56,10 @@ class ScrapeYouTubeRawsRunner(Runner):
         logger.info("channel_raw saved:{}".format(str(channel_raw)))
 
 
-class ScrapeMLGlossRunner(Runner):
+class ScrapeIdiomRawsRunner(Runner):
     @classmethod
     def run(cls):
-        pass
-
-
-class ScrapeIdiomsRunner(Runner):
-    @classmethod
-    def run(cls):
-        pass
+        logger = logging.getLogger("run")
+        for idiom_raw in IdiomRawScraper.scrape_multi():
+            idiom_raw.save()
+            logger.info("idiom_raw saved:[{}]".format(str(idiom_raw)))

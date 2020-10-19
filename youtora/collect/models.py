@@ -47,3 +47,17 @@ class VideoRaw(models.Model):
     def id(self):
         return self._id
 
+
+class IdiomRaw(models.Model):
+    objects = models.Manager()
+    _id = models.CharField(primary_key=True, max_length=100, verbose_name="idiom_id")
+    idiom = models.CharField(max_length=100, blank=False, null=False)
+    wiktionary_url = models.CharField(max_length=100, blank=False, null=False)
+    main_html = models.TextField(blank=False, null=False)
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    def __str__(self) -> str:
+        return self.idiom

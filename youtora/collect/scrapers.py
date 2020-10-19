@@ -5,13 +5,15 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as e_c
 from selenium.webdriver.common.by import By
-from .models import TracksRaw, ChannelRaw, VideoRaw
+from .models import TracksRaw, ChannelRaw, VideoRaw, IdiomRaw
 from youtora.refine.dataclasses import Caption
 import youtube_dl
 import requests
 import logging
 from selenium import webdriver
-
+from os import path
+from config.settings import DATA_DIR
+import pandas as pd
 
 class Scraper:
     # chrome drivers are stored in bin
@@ -257,23 +259,83 @@ class ChannelRawScraper(Scraper):
         return uploads_html
 
 
-class MLGlossHTMLScraper(Scraper):
-    # get all the definitions from here
-    ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary"
+class IdiomRawScraper(Scraper):
+    SLIDE_DIR = path.join(DATA_DIR, "slide")
+    SLIDE_TSV_PATH = path.join(SLIDE_DIR, "slide.tsv")
 
     @classmethod
-    def scrape(cls) -> str:
+    def scrape(cls, idiom_id: str, idiom: str, wiktionary_url: str) -> IdiomRaw:
+        """
+        :param idiom_id
+        :param idiom: e.g. Catch-22
+        :param wiktionary_url: e.g. https://en.wiktionary.org/wiki/American_Dream
+        :return: an IdiomRaw object
+        """
         logger = logging.getLogger("scrape")
-        driver = super().get_driver(is_silent=True,
-                                    is_mobile=True)
-        try:
-            logger.info("loading ml glossary page...: " + cls.ML_GLOSS_URL)
-            super(MLGlossHTMLScraper, cls).scrape_page_src(driver, cls.ML_GLOSS_URL)
-        except Exception as e:
-            raise e
-        else:
-            mlgloss_html = driver.page_source
-            return mlgloss_html
-        finally:
-            logger.info("quitting the driver...")
-            driver.quit()
+        logger.info("loading main html for:[{}]...".format(idiom))
+        main_html = cls._scrape_main_html(wiktionary_url)
+        return IdiomRaw(_id=idiom_id, idiom=idiom,
+                        wiktionary_url=wiktionary_url, main_html=main_html)
+
+    @classmethod
+    def scrape_multi(cls) -> Generator[IdiomRaw, None, None]:
+        # load slide dataset, and iterate over the dataframe
+        logger = logging.getLogger("scrape_multi")
+        slide_df = cls._load_slide()
+        total_cnt = len(slide_df)
+        for idx, row in slide_df.iterrows():
+            idx: int
+            # get the idiom and wiktionary
+            idiom = row['Idiom']
+            wiktionary_url = row['WiktionaryURL']
+            # use the same id
+            idiom_id = wiktionary_url.split("/")[-1]
+            logger.info("scraping idiomRaw... ({}/{})".format(idx + 1, total_cnt))
+            try:
+                idiom_raw = cls.scrape(idiom_id, idiom, wiktionary_url)
+            except requests.exceptions.HTTPError as he:
+                logger.warning(str(he))
+                logger.warning("SKIPPED:" + wiktionary_url)
+                # skipping this one
+                continue
+            else:
+                # yield this if scraping was successful
+                yield idiom_raw
+
+    @classmethod
+    def _scrape_main_html(cls, wiktionary_url: str) -> str:
+        response = requests.get(url=wiktionary_url)
+        response.raise_for_status()
+        main_html = response.text
+        return main_html
+
+    @classmethod
+    def _load_slide(cls) -> pd.DataFrame:
+        """
+        load the slide.tsv into a pandas dataframe.
+        :return:
+        """
+        slide_df = pd.read_csv(cls.SLIDE_TSV_PATH, sep="\t")
+        return slide_df
+
+
+# class MLGlossHTMLScraper(Scraper):
+#     # get all the definitions from here
+#     ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary"
+#
+#     @classmethod
+#     def scrape(cls) -> str:
+#         logger = logging.getLogger("scrape")
+#         driver = super().get_driver(is_silent=True,
+#                                     is_mobile=True)
+#         try:
+#             logger.info("loading ml glossary page...: " + cls.ML_GLOSS_URL)
+#             super(MLGlossHTMLScraper, cls).scrape_page_src(driver, cls.ML_GLOSS_URL)
+#         except Exception as e:
+#             raise e
+#         else:
+#             mlgloss_html = driver.page_source
+#             return mlgloss_html
+#         finally:
+#             logger.info("quitting the driver...")
+#             driver.quit()
