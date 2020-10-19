@@ -257,23 +257,23 @@ class ChannelRawScraper(Scraper):
         return uploads_html
 
 
-class MLGlossHTMLScraper(Scraper):
-    # get all the definitions from here
-    ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary"
-
-    @classmethod
-    def scrape(cls) -> str:
-        logger = logging.getLogger("scrape")
-        driver = super().get_driver(is_silent=True,
-                                    is_mobile=True)
-        try:
-            logger.info("loading ml glossary page...: " + cls.ML_GLOSS_URL)
-            super(MLGlossHTMLScraper, cls).scrape_page_src(driver, cls.ML_GLOSS_URL)
-        except Exception as e:
-            raise e
-        else:
-            mlgloss_html = driver.page_source
-            return mlgloss_html
-        finally:
-            logger.info("quitting the driver...")
-            driver.quit()
+# class MLGlossHTMLScraper(Scraper):
+#     # get all the definitions from here
+#     ML_GLOSS_URL = "https://developers.google.com/machine-learning/glossary"
+#
+#     @classmethod
+#     def scrape(cls) -> str:
+#         logger = logging.getLogger("scrape")
+#         driver = super().get_driver(is_silent=True,
+#                                     is_mobile=True)
+#         try:
+#             logger.info("loading ml glossary page...: " + cls.ML_GLOSS_URL)
+#             super(MLGlossHTMLScraper, cls).scrape_page_src(driver, cls.ML_GLOSS_URL)
+#         except Exception as e:
+#             raise e
+#         else:
+#             mlgloss_html = driver.page_source
+#             return mlgloss_html
+#         finally:
+#             logger.info("quitting the driver...")
+#             driver.quit()
