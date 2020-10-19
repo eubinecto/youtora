@@ -4,14 +4,14 @@ from youtora.index.indices import (
     CaptionInnerDoc,
     GeneralIndex
 )
-from youtora.scrape.dataclasses import VideoData, ChannelData, CaptionData
+from youtora.refine.dataclasses import Video, Channel, Caption
 from youtora.scrape.models import (
     ChannelRaw,
     VideoRaw
 )
-from youtora.scrape.parsers import (
-    ChannelRawParser,
-    VideoRawParser
+from youtora.refine.extractors import (
+    ChannelExtractor,
+    VideoExtractor
 
 )
 from typing import Generator
@@ -38,42 +38,42 @@ class GeneralIdxBuilder:
                         general_idx.save()
 
     @classmethod
-    def _get_all_channels(cls) -> Generator[ChannelData, None, None]:
+    def _get_all_channels(cls) -> Generator[Channel, None, None]:
         # get all the channel_raws
         channel_raws = ChannelRaw.objects.all()
         # get the channels
         channels = (
-            ChannelRawParser.parse(channel_raw=channel_raw)
+            ChannelExtractor.parse(channel_raw=channel_raw)
             for channel_raw in channel_raws
         )
         return channels
 
     @classmethod
-    def _get_channels_videos(cls, channels: Generator[ChannelData, None, None]) \
-            -> Generator[Generator[VideoData, None, None], None, None]:
+    def _get_channels_videos(cls, channels: Generator[Channel, None, None]) \
+            -> Generator[Generator[Video, None, None], None, None]:
         """
         returns a generator of generator of video data
         """
-        # get all video raws for channel_raw
+        # get all video raws for channel_id
         channels_video_raws = (
             VideoRaw.objects.all().filter(channel_id=channel.id)
             for channel in channels
         )
         # parse all of them - this shouldn't take too much time.
         channels_videos = (
-            VideoRawParser.parse_multi(video_raw_coll=channel_video_raws)
+            VideoExtractor.parse_multi(video_raw_coll=channel_video_raws)
             for channel_video_raws in channels_video_raws
         )
         return channels_videos
 
     @classmethod
-    def _build_channel_doc(cls, channel: ChannelData) -> ChannelInnerDoc:
+    def _build_channel_doc(cls, channel: Channel) -> ChannelInnerDoc:
         return ChannelInnerDoc(id=channel.id,
                                subs=channel.subs,
                                lang_code=channel.lang_code)
 
     @classmethod
-    def _build_video_doc(cls, video: VideoData, channel_doc: ChannelInnerDoc) -> VideoInnerDoc:
+    def _build_video_doc(cls, video: Video, channel_doc: ChannelInnerDoc) -> VideoInnerDoc:
         video_doc = VideoInnerDoc(id=video.id, views=video.views,
                                   likes=video.likes, dislikes=video.dislikes,
                                   category=video.category, channel=channel_doc)
@@ -82,7 +82,7 @@ class GeneralIdxBuilder:
         return video_doc
 
     @classmethod
-    def _build_caption_doc(cls, caption: CaptionData, video_doc: VideoInnerDoc) -> CaptionInnerDoc:
+    def _build_caption_doc(cls, caption: Caption, video_doc: VideoInnerDoc) -> CaptionInnerDoc:
         caption_doc = CaptionInnerDoc(id=caption.id, is_auto=caption.is_auto,
                                       lang_code=caption.lang_code, video=video_doc)
         return caption_doc
