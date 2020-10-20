@@ -3,8 +3,10 @@
 from youtora.collect.models import (
     ChannelRaw,
     TracksRaw,
-    VideoRaw
+    VideoRaw,
+    IdiomRaw
 )
+from youtora.refine.models import Idiom, IdiomDef
 from youtora.refine.dataclasses import (
     Channel,
     Video,
@@ -331,6 +333,14 @@ class VideoExtractor:
                 dislike_cnt = int(dislike_cnt_info.replace(",", ""))
                 logging.info("dislike_cnt:{}:video:{}".format(dislike_cnt, main_html))
         return like_cnt, dislike_cnt
+
+
+class IdiomExtractor:
+
+    @classmethod
+    def parse(cls, idiom_raw: IdiomRaw) -> Idiom:
+        pass
+
 
 
 # don't think about this for now.
