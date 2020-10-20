@@ -342,7 +342,6 @@ class IdiomExtractor:
         pass
 
 
-
 # don't think about this for now.
 # class MLGlossHTMLParser:
 #     """

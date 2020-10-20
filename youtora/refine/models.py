@@ -31,8 +31,9 @@ class MLGloss(models.Model):
 class IdiomDef(models.Model):
     class Meta:
         abstract = True
-    def_text = models.TextField(blank=False, null=False)  # only contains the pure text
-    def_raw = models.TextField(blank=False, null=False)  # contains the hyperlink as well
+    pure_text = models.TextField(blank=False, null=False)  # only contains the pure text
+    # add raw text later, when you really need it
+    # raw_text = models.TextField(blank=False, null=False)  # contains the hyperlink as well
     context = models.TextField(blank=False, null=False)  # e.g. (rail transport) , (slang). etc
 
 
