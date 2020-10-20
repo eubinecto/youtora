@@ -6,7 +6,7 @@ from youtora.collect.models import (
     VideoRaw,
     IdiomRaw
 )
-from youtora.refine.models import Idiom, IdiomDef
+from youtora.refine.models import Idiom
 from youtora.refine.dataclasses import (
     Channel,
     Video,
@@ -336,10 +336,76 @@ class VideoExtractor:
 
 
 class IdiomExtractor:
+    # e.g. <strong class="Latn headword" lang="en">...</strong>
+    STRONG_CLASS = "Latn headword"
+    PURE_TEXT_REGEXP = re.compile(r"(^\([\S ]+\) |^)([\S ]+)\n")  # ends with \n
+    CONTEXT_REGEXP = re.compile(r"^\(([\S ]+)\) ")
 
     @classmethod
     def parse(cls, idiom_raw: IdiomRaw) -> Idiom:
-        pass
+        ol_defs = cls._ext_ol_defs(idiom_raw.main_html)  # extract the ordered list of definitions
+        pure_texts = cls._ext_pure_texts(ol_defs)
+        contexts = cls._ext_contexts(ol_defs)
+        defs = cls._build_defs(pure_texts, contexts)
+        return Idiom(_id=idiom_raw.id, idiom=idiom_raw.idiom,
+                     wiktionary_url=idiom_raw.wiktionary_url, defs=defs)
+
+    @classmethod
+    def _build_defs(cls, pure_texts, contexts) -> List[dict]:
+        assert len(pure_texts) == len(contexts), "length mismatch"
+        # build a list of defs and return
+        return [
+            {"pure_text": pure_text, "context": context}
+            for pure_text, context in zip(pure_texts, contexts)
+        ]
+
+    @classmethod
+    def _ext_ol_defs(cls, main_html: str) -> BeautifulSoup:
+        """
+        from the main html, extract the ordered list tag which contains
+        the list of defs
+        :param main_html:
+        :return:
+        """
+        # build a soup
+        soup = BeautifulSoup(main_html, 'html.parser')
+        # first, find the strong tag
+        strong = soup.find('strong', attrs={'class': cls.STRONG_CLASS})
+        # the next sibling of the parent of strong is ol_defs = /n
+        # the next sibling of /n = ol_defs
+        ol_defs = strong.parent.next_sibling.next_sibling
+        return ol_defs
+
+    @classmethod
+    def _ext_pure_texts(cls, ol_defs: BeautifulSoup) -> List[str]:
+        """
+        given the ordered list tag, extract a list of pure texts
+        :param ol_defs:
+        :return:
+        """
+        # need to use a deep copy as we will try decomposing stuff
+        list_tags = ol_defs.find_all('li')
+        list_texts = [list_tag.get_text().strip() for list_tag in list_tags]
+        # extract only the definition.
+        pure_texts = [cls.PURE_TEXT_REGEXP.findall(list_text)[0] for list_text in list_texts]
+        # now return the pure texts
+        return pure_texts
+
+    @classmethod
+    def _ext_contexts(cls, ol_defs: BeautifulSoup) -> List[str]:
+        """
+        given the ordered list tag, extract a list of contexts
+        :param ol_defs:
+        :return:
+        """
+        list_tags = ol_defs.find_all('li')
+        list_texts = [list_tag.get_text().strip() for list_tag in list_tags]
+        contexts = [
+            cls.CONTEXT_REGEXP.findall(list_text)[0]
+            if cls.CONTEXT_REGEXP.findall(list_text) else None  # if the list is empty, then context should be None
+            for list_text in list_texts
+        ]
+        return contexts
 
 
 # don't think about this for now.
