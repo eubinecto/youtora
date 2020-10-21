@@ -1,4 +1,7 @@
 # the runners. to be accessed by django console.
+import logging
+import sys
+
 from youtora.refine.extractors import CaptionExtractor, ChannelExtractor
 from .scrapers import (
     ChannelRawScraper,
@@ -6,8 +9,7 @@ from .scrapers import (
     TracksRawScraper,
     IdiomRawScraper
 )
-import logging
-import sys
+
 # logs to standard out, logging level is at info
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -38,9 +40,11 @@ class ScrapeYouTubeRawsRunner(Runner):
         logger = logging.getLogger("run")
         # scrape and store channel_id raw
         channel_raw = ChannelRawScraper.scrape(channel_id, lang_code, os)
+        channel_raw.save()  # channel should be saved first
+        logger.info("channel_raw saved:{}".format(str(channel_raw)))
         # scrape and store video raws (which will save caption raws)
         vid_id_list = ChannelExtractor.parse(channel_raw).vid_id_list
-        vid_raw_gen = VideoRawScraper.scrape_multi(vid_id_list, channel_id)
+        vid_raw_gen = VideoRawScraper.scrape_multi(vid_id_list, channel_raw)
         for vid_idx, vid_raw in enumerate(vid_raw_gen):
             # save video_raw
             vid_raw.save()
@@ -51,9 +55,6 @@ class ScrapeYouTubeRawsRunner(Runner):
             for track_idx, tracks_raw in enumerate(tracks_raw_gen):
                 tracks_raw.save()
                 logger.info("tracks_raw saved #{}".format(track_idx + 1))
-        # channel is saved at the end
-        channel_raw.save()
-        logger.info("channel_raw saved:{}".format(str(channel_raw)))
 
 
 class ScrapeIdiomRawsRunner(Runner):

@@ -32,10 +32,10 @@ class IdiomExtractorTestCase(TestCase):
         catch_22.save()  # have to save this in order to access defs
         # assert equals meta data
         self.assertEqual(self.catch_22_raw.id, catch_22.id)
-        self.assertEqual(self.catch_22_raw.idiom, catch_22.idiom)
+        self.assertEqual(self.catch_22_raw.text, catch_22.text)
         self.assertEqual(self.catch_22_raw.wiktionary_url, catch_22.wiktionary_url)
         # assert equals definition (there is only one for this case)
-        self.assertEqual(def_text, catch_22.defs[0]['pure_text'])
+        self.assertEqual(def_text, catch_22.defs[0]['text'])
         self.assertEqual(def_context, catch_22.defs[0]['context'])
 
     def test_parse_when_def_2(self):
@@ -48,12 +48,12 @@ class IdiomExtractorTestCase(TestCase):
         downing_street.save()  # have to save this in order to access defs
         # assert equals meta data
         self.assertEqual(self.downing_street_raw.id, downing_street.id)
-        self.assertEqual(self.downing_street_raw.idiom, downing_street.idiom)
+        self.assertEqual(self.downing_street_raw.text, downing_street.text)
         self.assertEqual(self.downing_street_raw.wiktionary_url, downing_street.wiktionary_url)
         # assert equals definition (two definitions for this case)
-        self.assertEqual(pure_text_1, downing_street.defs[0]['pure_text'])
+        self.assertEqual(pure_text_1, downing_street.defs[0]['text'])
         self.assertEqual(context_1, downing_street.defs[0]['context'])
-        self.assertEqual(pure_text_2, downing_street.defs[1]['pure_text'])
+        self.assertEqual(pure_text_2, downing_street.defs[1]['text'])
         self.assertEqual(context_2, downing_street.defs[1]['context'])
 
     def test_parse_when_def_6(self):
@@ -76,15 +76,15 @@ class IdiomExtractorTestCase(TestCase):
         dutch_oven.save()
         # assert equals meta info
         self.assertEqual(self.dutch_oven_raw.id, dutch_oven.id)
-        self.assertEqual(self.dutch_oven_raw.idiom, dutch_oven.idiom)
+        self.assertEqual(self.dutch_oven_raw.text, dutch_oven.text)
         self.assertEqual(self.dutch_oven_raw.wiktionary_url, dutch_oven.wiktionary_url)
         # assert equals definitions
-        self.assertEqual(pure_text_1, dutch_oven.defs[0]['pure_text'])
-        self.assertEqual(pure_text_2, dutch_oven.defs[1]['pure_text'])
-        self.assertEqual(pure_text_3, dutch_oven.defs[2]['pure_text'])
-        self.assertEqual(pure_text_4, dutch_oven.defs[3]['pure_text'])
-        self.assertEqual(pure_text_5, dutch_oven.defs[4]['pure_text'])
-        self.assertEqual(pure_text_6, dutch_oven.defs[5]['pure_text'])
+        self.assertEqual(pure_text_1, dutch_oven.defs[0]['text'])
+        self.assertEqual(pure_text_2, dutch_oven.defs[1]['text'])
+        self.assertEqual(pure_text_3, dutch_oven.defs[2]['text'])
+        self.assertEqual(pure_text_4, dutch_oven.defs[3]['text'])
+        self.assertEqual(pure_text_5, dutch_oven.defs[4]['text'])
+        self.assertEqual(pure_text_6, dutch_oven.defs[5]['text'])
         # assert equals contexts
         self.assertEqual(context_1, dutch_oven.defs[0]['context'])
         self.assertEqual(context_2, dutch_oven.defs[1]['context'])

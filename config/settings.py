@@ -9,8 +9,9 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-from pathlib import Path
 from os import path
+from pathlib import Path
+
 # start building the index
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent  # the base directory of this project
@@ -80,9 +81,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # djongo connector setup tutorial: https://www.youtube.com/watch?v=iKB_4HWKMCc
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'youtora_db',
-        'HOST': "mongodb://localhost:27017",  # experiment with the local one
+        'HOST': "localhost",  # experiment with the local one
         # you may or may need username or password
         # experiment with the localhost first
         # MONGO_URI = "mongodb://localhost:27017"
