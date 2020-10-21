@@ -20,8 +20,8 @@ from youtora.refine.dataclasses import (
     Track,
     Caption
 )
+from youtora.refine.errors import CaptionNotFoundError
 from youtora.refine.models import Idiom
-from .errors import CaptionNotFoundError
 
 
 class ChannelExtractor:
@@ -282,7 +282,7 @@ class VideoExtractor:
         views = info['view_count']
         # the length is always greater than zero;  use the first one as the category of this video
         category = info['categories'][0]
-        channel_id = video_raw.channel_id
+        channel_id = video_raw.channel_raw.id
         vid_url = video_raw.url
         # better collect these info separately
         likes, dislikes = cls._ext_likes_dislikes(video_raw.main_html)
@@ -351,15 +351,21 @@ class IdiomExtractor:
         pure_texts = cls._ext_pure_texts(list_texts)
         contexts = cls._ext_contexts(list_texts)
         defs = cls._build_defs(pure_texts, contexts)
-        return Idiom(_id=idiom_raw.id, idiom=idiom_raw.idiom,
+        return Idiom(_id=idiom_raw.id, text=idiom_raw.text,
                      wiktionary_url=idiom_raw.wiktionary_url, defs=defs)
 
     @classmethod
     def _build_defs(cls, pure_texts, contexts) -> List[dict]:
+        """
+        change this if you want to change the format of the definitions
+        :param pure_texts:
+        :param contexts:
+        :return:
+        """
         assert len(pure_texts) == len(contexts), "length mismatch"
         # build a list of defs and return
         return [
-            {"pure_text": pure_text, "context": context}
+            {"text": pure_text, "context": context}
             for pure_text, context in zip(pure_texts, contexts)
         ]
 
@@ -486,8 +492,8 @@ class IdiomExtractor:
 #         pure_texts = cls._ext_pure_texts(gloss_div)
 #         topic_sents = cls._ext_topic_sents(gloss_div)
 #         return (
-#             MLGlossDesc().set_all(desc_raw, pure_text, topic_sent)
-#             for desc_raw, pure_text, topic_sent
+#             MLGlossDesc().set_all(desc_raw, text, topic_sent)
+#             for desc_raw, text, topic_sent
 #             in zip(desc_raws, pure_texts, topic_sents)
 #         )
 #
@@ -569,8 +575,8 @@ class IdiomExtractor:
 #     @classmethod
 #     def _ext_topic_sents(cls, gloss_div: BeautifulSoup) -> Generator[str, None, None]:
 #         return (
-#             cls.TOPIC_SENT_REGEXP.findall(string=pure_text)[0]
-#             for pure_text in cls._ext_pure_texts(gloss_div)
+#             cls.TOPIC_SENT_REGEXP.findall(string=text)[0]
+#             for text in cls._ext_pure_texts(gloss_div)
 #         )
 #
 #     @classmethod
