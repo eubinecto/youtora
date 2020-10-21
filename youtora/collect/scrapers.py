@@ -1,19 +1,22 @@
 # for type hinting
+import logging
+from os import path
 from typing import List, Generator
+
+import pandas as pd  # for reading in the list of idioms
+import requests
+import youtube_dl
+from selenium import webdriver
 # for checking when to stop loading uploads
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as e_c
 from selenium.webdriver.common.by import By
-from .models import TracksRaw, ChannelRaw, VideoRaw, IdiomRaw
-from youtora.refine.dataclasses import Caption
-import youtube_dl
-import requests
-import logging
-from selenium import webdriver
-from os import path
+from selenium.webdriver.support import expected_conditions as e_c
+from selenium.webdriver.support.ui import WebDriverWait
+
 from config.settings import DATA_DIR
-import pandas as pd
+from youtora.refine.dataclasses import Caption
+from .models import TracksRaw, ChannelRaw, VideoRaw, IdiomRaw
+
 
 class Scraper:
     # chrome drivers are stored in bin
@@ -90,7 +93,7 @@ class TracksRawScraper(Scraper):
         logger.info("loading tracks...:" + caption.url)
         response = requests.get(caption.url)  # first, get the response (download)
         response.raise_for_status()  # check if the response was erroneous
-        tracks_raw = TracksRaw(_id="|".join([caption.id, "tracks"]),
+        tracks_raw = TracksRaw(id="|".join([caption.id, "tracks"]),
                                caption_id=caption.id,
                                raw_xml=response.text)
         # should be saved later. scrape does scraping only.
@@ -122,7 +125,7 @@ class VideoRawScraper:
     }
 
     @classmethod
-    def scrape(cls, vid_id: str, channel_id: str) -> VideoRaw:
+    def scrape(cls, vid_id: str, channel_raw: ChannelRaw) -> VideoRaw:
         """
         given youtube video url, returns the meta data of the channel_id
         """
@@ -131,16 +134,16 @@ class VideoRawScraper:
         video_info = cls._scrape_video_info(vid_url)
         main_html = cls._scrape_main_html(vid_url)
         # assign and return. make sure to save them later.
-        video_raw = VideoRaw(_id=vid_id, channel_id=channel_id,
+        video_raw = VideoRaw(id=vid_id, url=vid_url, channel_raw=channel_raw,
                              main_html=main_html, video_info=video_info)
         return video_raw
 
     @classmethod
-    def scrape_multi(cls, vid_id_list: List[str], channel_id: str) -> Generator[VideoRaw, None, None]:
+    def scrape_multi(cls, vid_id_list: List[str], channel_raw: ChannelRaw) -> Generator[VideoRaw, None, None]:
         """
         returns a generator.
         :param vid_id_list:
-        :param channel_id:
+        :param channel_raw:
         :return: a generator of video_raw objects
         """
         logger = logging.getLogger("scrape_multi")
@@ -150,7 +153,7 @@ class VideoRawScraper:
         for vid_id in vid_id_list:
             try:
                 # try scraping video for this
-                video_raw = cls.scrape(vid_id, channel_id)
+                video_raw = cls.scrape(vid_id, channel_raw)
             except youtube_dl.utils.DownloadError as de:
                 # if downloading the video fails, log and just skip this one
                 logger.warning(de)
@@ -192,12 +195,8 @@ class ChannelRawScraper(Scraper):
     TIME_OUT = 5
 
     @classmethod
-    def scrape(cls,
-               channel_id: str,
-               lang_code: str,
-               os: str,
-               is_silent: bool = True,
-               is_mobile: bool = True) -> ChannelRaw:
+    def scrape(cls, channel_id: str, lang_code: str, os: str,
+               is_silent: bool = True, is_mobile: bool = True) -> ChannelRaw:
         """
         :return: an unparsed channel_id object
         """
@@ -214,7 +213,7 @@ class ChannelRawScraper(Scraper):
             raise e
         else:
             # assign and return
-            channel_raw = ChannelRaw(_id=channel_id, url=chan_url,
+            channel_raw = ChannelRaw(id=channel_id, url=chan_url,
                                      lang_code=lang_code, main_html=main_html,
                                      uploads_html=uploads_html)
             return channel_raw
@@ -264,17 +263,17 @@ class IdiomRawScraper(Scraper):
     SLIDE_TSV_PATH = path.join(SLIDE_DIR, "slide.tsv")
 
     @classmethod
-    def scrape(cls, idiom_id: str, idiom: str, wiktionary_url: str) -> IdiomRaw:
+    def scrape(cls, idiom_id: str, idiom_text: str, wiktionary_url: str) -> IdiomRaw:
         """
         :param idiom_id
-        :param idiom: e.g. Catch-22
+        :param idiom_text: e.g. Catch-22
         :param wiktionary_url: e.g. https://en.wiktionary.org/wiki/American_Dream
         :return: an IdiomRaw object
         """
         logger = logging.getLogger("scrape")
-        logger.info("loading main html for:[{}]...".format(idiom))
+        logger.info("loading main html for:[{}]...".format(idiom_text))
         main_html = cls._scrape_main_html(wiktionary_url)
-        return IdiomRaw(_id=idiom_id, idiom=idiom,
+        return IdiomRaw(id=idiom_id, text=idiom_text,
                         wiktionary_url=wiktionary_url, main_html=main_html)
 
     @classmethod
@@ -285,7 +284,7 @@ class IdiomRawScraper(Scraper):
         total_cnt = len(slide_df)
         for idx, row in slide_df.iterrows():
             idx: int
-            # get the idiom and wiktionary
+            # get the text and wiktionary
             idiom = row['Idiom']
             wiktionary_url = row['WiktionaryURL']
             # use the same id

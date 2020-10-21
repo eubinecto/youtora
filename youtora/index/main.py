@@ -41,7 +41,7 @@
 #         for hit in srch_res_json['hits']['hits']:
 #             # gather this up
 #             tracks = list()
-#             vid_id = hit['_source']['caption']['video']['_id']
+#             vid_id = hit['_source']['caption']['video']['id']
 #             curr_start = int(hit['_source']['start'])
 #             curr_track = {
 #                     'content': hit['_source']['content'],
@@ -205,7 +205,7 @@
 #                     query = {
 #                         "index": {
 #                             "_index": YOUTORA_IDX_NAME,
-#                             "_id": track.get_id(),
+#                             "id": track.get_id(),
 #                         }  # index
 #                     }  # query
 #                     # build the doc_body
@@ -219,16 +219,16 @@
 #                         # "text_area_rel_img": track.text_area_rel_img,
 #                         # "non_text_area_rel_img": 1 - track.text_area_rel_img,
 #                         "caption": {
-#                             "_id": caption.id,
+#                             "id": caption.id,
 #                             "is_auto": caption.is_auto,
 #                             "lang_code": caption.lang_code,
 #                             "video": {
-#                                 "_id": video.id,
+#                                 "id": video.id,
 #                                 "views": video.views,
 #                                 "publish_date_int": int("".join(video.publish_date.split("-"))),
 #                                 "category": video.category,
 #                                 "channel_id": {
-#                                     "_id": channel_id.id,
+#                                     "id": channel_id.id,
 #                                     "subs": channel_id.subs,
 #                                     "lang_code": channel_id.lang_code
 #                                 }  # channel_id
