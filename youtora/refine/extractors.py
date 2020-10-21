@@ -1,9 +1,18 @@
-
 # import all the models needed
+import html
+import logging
+import re
+from typing import List, Tuple, Generator, Collection
+
+import xmltodict
+# for parsing
+from bs4 import BeautifulSoup
+
 from youtora.collect.models import (
     ChannelRaw,
     TracksRaw,
-    VideoRaw
+    VideoRaw,
+    IdiomRaw
 )
 from youtora.refine.dataclasses import (
     Channel,
@@ -11,13 +20,7 @@ from youtora.refine.dataclasses import (
     Track,
     Caption
 )
-from typing import List, Tuple, Generator, Collection
-import logging
-import re
-import html
-import xmltodict
-# for parsing
-from bs4 import BeautifulSoup
+from youtora.refine.models import Idiom
 from .errors import CaptionNotFoundError
 
 
@@ -331,6 +334,95 @@ class VideoExtractor:
                 dislike_cnt = int(dislike_cnt_info.replace(",", ""))
                 logging.info("dislike_cnt:{}:video:{}".format(dislike_cnt, main_html))
         return like_cnt, dislike_cnt
+
+
+class IdiomExtractor:
+    # e.g. <strong class="Latn headword" lang="en">...</strong>
+    STRONG_CLASS = "Latn headword"
+    # e.g. (idiomatic)
+    CONTEXT_RE = re.compile(r"^\([\S ]+\)")
+    PURE_TEXT_WITH_CONTEXT_RE = re.compile(CONTEXT_RE.pattern + r"([\S ]+)")
+    PURE_TEXT_NO_CONTEXT_RE = re.compile(r"^([\S ]+)")
+
+    @classmethod
+    def parse(cls, idiom_raw: IdiomRaw) -> Idiom:
+        ol_defs = cls._ext_ol_defs(idiom_raw.main_html)  # extract the ordered list of definitions
+        list_texts = cls._ext_list_texts(ol_defs)
+        pure_texts = cls._ext_pure_texts(list_texts)
+        contexts = cls._ext_contexts(list_texts)
+        defs = cls._build_defs(pure_texts, contexts)
+        return Idiom(_id=idiom_raw.id, idiom=idiom_raw.idiom,
+                     wiktionary_url=idiom_raw.wiktionary_url, defs=defs)
+
+    @classmethod
+    def _build_defs(cls, pure_texts, contexts) -> List[dict]:
+        assert len(pure_texts) == len(contexts), "length mismatch"
+        # build a list of defs and return
+        return [
+            {"pure_text": pure_text, "context": context}
+            for pure_text, context in zip(pure_texts, contexts)
+        ]
+
+    @classmethod
+    def _ext_ol_defs(cls, main_html: str) -> BeautifulSoup:
+        """
+        from the main html, extract the ordered list tag which contains
+        the list of defs
+        :param main_html:
+        :return:
+        """
+        # build a soup
+        soup = BeautifulSoup(main_html, 'html.parser')
+        # first, find the strong tag
+        strong = soup.find('strong', attrs={'class': cls.STRONG_CLASS})
+        # the next sibling of the parent of strong is ol_defs = /n
+        # the next sibling of /n = ol_defs
+        ol_defs = strong.parent.next_sibling.next_sibling
+        return ol_defs
+
+    @classmethod
+    def _ext_list_texts(cls, ol_defs: BeautifulSoup) -> List[str]:
+        list_tags = ol_defs.find_all('li', recursive=False)
+        list_texts = [
+            list_tag.get_text()
+            for list_tag in list_tags
+            # filtering out: e.g. Used other than with a figurative or idiomatic meaning: see Dutch, oven.
+            if not list_tag.find_all('span', attrs={'class': "use-with-mention"})
+        ]
+        return list_texts
+
+    @classmethod
+    def _ext_pure_texts(cls, list_texts: List[str]) -> List[str]:
+        """
+        given the ordered list tag, extract a list of pure texts
+        :return:
+        """
+        pure_texts = list()
+        # extract only the definitions
+        for list_text in list_texts:
+            if list_text.startswith("("):
+                # it has a context
+                pure_text = cls.PURE_TEXT_WITH_CONTEXT_RE.findall(list_text)[0]
+            else:
+                # it doesn't has a context
+                pure_text = cls.PURE_TEXT_NO_CONTEXT_RE.findall(list_text)[0]
+            # strip white spaces and append
+            pure_texts.append(pure_text.strip())
+        return pure_texts
+
+    @classmethod
+    def _ext_contexts(cls, list_texts: List[str]) -> List[str]:
+        """
+        given the ordered list tag, extract a list of contexts
+        :return:
+        """
+        contexts = [
+            # don't get the parenthesis
+            cls.CONTEXT_RE.findall(list_text)[0][1:-1]
+            if cls.CONTEXT_RE.findall(list_text) else None  # if the list is empty, then context should be None
+            for list_text in list_texts
+        ]
+        return contexts
 
 
 # don't think about this for now.

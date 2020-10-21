@@ -10,14 +10,9 @@ class MLGlossDesc(models.Model):
     class Meta:
         abstract = True
     # have to parse this.
-    desc_raw = models.CharField(name='desc_raw', blank=False, null=False)
-    pure_text = models.CharField(name='pure_text', blank=False, null=False)
-    topic_sent = models.CharField(max_length=500, blank=False, name='topic_sent', null=False)
-
-    def set_all(self, desc_raw, pure_text, topic_sent):
-        self.desc_raw = desc_raw
-        self.pure_text = pure_text
-        self.topic_sent = topic_sent
+    desc_raw = models.CharField(blank=False, null=False)
+    pure_text = models.CharField(blank=False, null=False)
+    topic_sent = models.CharField(max_length=500, blank=False, null=False)
 
 
 class MLGloss(models.Model):
@@ -25,19 +20,34 @@ class MLGloss(models.Model):
     parsed MLGloss. the definition may vary
     """
     objects = models.Manager()
-    _id = models.CharField(max_length=100, name='id', primary_key=True)
-    word = models.CharField(max_length=100, name='word', blank=False, null=False)
-    ref = models.URLField(validators=[URLValidator], name='ref', blank=False, null=False)
-    category = models.CharField(max_length=100, name='category')
+    _id = models.CharField(max_length=100, primary_key=True)
+    word = models.CharField(max_length=100, blank=False, null=False)
+    ref = models.URLField(validators=[URLValidator], blank=False, null=False)
+    category = models.CharField(max_length=100)
     desc = models.EmbeddedField(model_container=MLGlossDesc, blank=False, null=False)
 
-    def set_all(self, ml_gloss_id: str,
-                word: str, ref: str,
-                category: str, desc: MLGlossDesc):
-        self._id = ml_gloss_id
-        self.word = word
-        self.ref = ref
-        self.category = category
-        self.desc = desc
+    @property
+    def id(self) -> str:
+        return self._id
+
 
 # --- parsed models (idioms from Wiktionary) --- #
+class IdiomDef(models.Model):
+    class Meta:
+        abstract = True
+    pure_text = models.TextField(blank=False, null=False)  # only contains the pure text
+    # add raw text later, when you really need it
+    # raw_text = models.TextField(blank=False, null=False)  # contains the hyperlink as well
+    context = models.TextField(blank=False, null=False)  # e.g. (rail transport) , (slang). etc
+
+
+class Idiom(models.Model):
+    objects = models.Manager()
+    _id = models.CharField(primary_key=True, max_length=100)  # same as idiom raw
+    idiom = models.CharField(max_length=100, blank=False, null=False)  # same as idiom raw
+    wiktionary_url = models.URLField(validators=[URLValidator], blank=False, null=False)  # same as idiom raw
+    defs = models.ArrayField(model_container=IdiomDef, blank=False, null=False)  # a list of definitions
+
+    @property
+    def id(self) -> str:
+        return self._id
