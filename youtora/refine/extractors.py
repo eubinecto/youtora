@@ -2,7 +2,7 @@
 import html
 import logging
 import re
-from typing import List, Tuple, Generator, Collection
+from typing import List, Tuple, Generator, Collection, Optional
 
 import xmltodict
 # for parsing
@@ -18,7 +18,7 @@ from youtora.refine.dataclasses import (
     Channel,
     Video,
     Track,
-    Caption
+    Caption, DefSet, Definition
 )
 from youtora.refine.errors import CaptionNotFoundError
 from youtora.refine.models import Idiom
@@ -341,87 +341,96 @@ class IdiomExtractor:
     STRONG_CLASS = "Latn headword"
     # e.g. (idiomatic)
     CONTEXT_RE = re.compile(r"^\([\S ]+\)")
-    PURE_TEXT_WITH_CONTEXT_RE = re.compile(CONTEXT_RE.pattern + r"([\S ]+)")
-    PURE_TEXT_NO_CONTEXT_RE = re.compile(r"^([\S ]+)")
+    TEXT_WITH_CONTEXT_RE = re.compile(CONTEXT_RE.pattern + r"([\S ]+)")
+    TEXT_NO_CONTEXT_RE = re.compile(r"^([\S ]+)")
 
     @classmethod
     def parse(cls, idiom_raw: IdiomRaw) -> Idiom:
-        ol_defs = cls._ext_ol_defs(idiom_raw.main_html)  # extract the ordered list of definitions
-        list_texts = cls._ext_list_texts(ol_defs)
-        pure_texts = cls._ext_pure_texts(list_texts)
-        contexts = cls._ext_contexts(list_texts)
-        defs = cls._build_defs(pure_texts, contexts)
-        return Idiom(_id=idiom_raw.id, text=idiom_raw.text,
-                     wiktionary_url=idiom_raw.wiktionary_url, defs=defs)
+        logger = logging.getLogger("parse")
+        logger.info("parsing...:" + idiom_raw.text)
+        def_sets = cls._ext_def_sets(idiom_raw.main_html)
+        def_sets_dict = [def_set.to_dict() for def_set in def_sets]
+        return Idiom(id=idiom_raw.id, text=idiom_raw.text,
+                     wiktionary_url=idiom_raw.wiktionary_url,
+                     def_sets=def_sets_dict)
 
     @classmethod
-    def _build_defs(cls, pure_texts, contexts) -> List[dict]:
-        """
-        change this if you want to change the format of the definitions
-        :param pure_texts:
-        :param contexts:
-        :return:
-        """
-        assert len(pure_texts) == len(contexts), "length mismatch"
-        # build a list of defs and return
+    def _ext_def_sets(cls, main_html) -> List[DefSet]:
+        ol_def_all = cls._ext_ol_defs(main_html)
+        pos_all = [cls._ext_pos(ol_def) for ol_def in ol_def_all]
+        defs_all = [cls._ext_defs(ol_def) for ol_def in ol_def_all]
         return [
-            {"text": pure_text, "context": context}
-            for pure_text, context in zip(pure_texts, contexts)
+            DefSet(pos, defs)
+            for pos, defs in zip(pos_all, defs_all)
         ]
 
     @classmethod
-    def _ext_ol_defs(cls, main_html: str) -> BeautifulSoup:
+    def _ext_ol_defs(cls, main_html: str) -> List[BeautifulSoup]:
         """
-        from the main html, extract the ordered list tag which contains
-        the list of defs
+        extract ordered list of definitions.
         :param main_html:
         :return:
         """
         # build a soup
         soup = BeautifulSoup(main_html, 'html.parser')
-        # first, find the strong tag
-        strong = soup.find('strong', attrs={'class': cls.STRONG_CLASS})
-        # the next sibling of the parent of strong is ol_defs = /n
-        # the next sibling of /n = ol_defs
-        ol_defs = strong.parent.next_sibling.next_sibling
+        # first, find the div tag with mw-parser-output
+        div_parser_out = soup.find('div', attrs={'class': 'mw-parser-output'})
+        # then find all ul of defs. (make sure to not go recursive on this)
+        ol_defs = div_parser_out.find_all("ol", recursive=False)
         return ol_defs
 
     @classmethod
-    def _ext_list_texts(cls, ol_defs: BeautifulSoup) -> List[str]:
-        list_tags = ol_defs.find_all('li', recursive=False)
-        list_texts = [
-            list_tag.get_text()
-            for list_tag in list_tags
-            # filtering out: e.g. Used other than with a figurative or idiomatic meaning: see Dutch, oven.
-            if not list_tag.find_all('span', attrs={'class': "use-with-mention"})
-        ]
-        return list_texts
+    def _ext_pos(cls, ol_def: BeautifulSoup) -> Optional[str]:
+        logger = logging.getLogger("_ext_pos")
+        pos_h: BeautifulSoup = ol_def.previous_sibling.previous_sibling \
+            .previous_sibling.previous_sibling
+        pos_span = pos_h.find('span', attrs={'class': 'mw-headline'})
+        if pos_span:
+            return pos_span.get_text()
+        else:
+            logger.warning("failed to find pos_span from:" + str(pos_h))
+            return None
 
     @classmethod
-    def _ext_pure_texts(cls, list_texts: List[str]) -> List[str]:
-        """
-        given the ordered list tag, extract a list of pure texts
-        :return:
-        """
-        pure_texts = list()
+    def _ext_defs(cls, ol_def: BeautifulSoup) -> List[Definition]:
+        # get the list tags from the first layer
+        li_tags = ol_def.find_all("li", recursive=False)
+        # texts, raw_htmls, contexts
+        texts = cls._ext_texts(li_tags)
+        raw_htmls = cls._ext_raw_htmls(li_tags)
+        contexts = cls._ext_contexts(li_tags)
+        # they must be of the same length
+        assert len(texts) == len(raw_htmls) == len(contexts), "length mismatch"
+        return [
+            Definition(text, raw_html, context)
+            for text, raw_html, context in zip(texts, raw_htmls, contexts)
+        ]
+
+    @classmethod
+    def _ext_texts(cls, li_tags: List[BeautifulSoup]) -> List[str]:
+        # get the pure texts only from the list tags
+        list_texts = [li.get_text() for li in li_tags]
+        texts = list()
         # extract only the definitions
         for list_text in list_texts:
             if list_text.startswith("("):
                 # it has a context
-                pure_text = cls.PURE_TEXT_WITH_CONTEXT_RE.findall(list_text)[0]
+                text = cls.TEXT_WITH_CONTEXT_RE.findall(list_text)[0]
             else:
-                # it doesn't has a context
-                pure_text = cls.PURE_TEXT_NO_CONTEXT_RE.findall(list_text)[0]
+                # it doesn't have a context
+                text = cls.TEXT_NO_CONTEXT_RE.findall(list_text)[0]
             # strip white spaces and append
-            pure_texts.append(pure_text.strip())
-        return pure_texts
+            texts.append(text.strip())
+        return texts
 
     @classmethod
-    def _ext_contexts(cls, list_texts: List[str]) -> List[str]:
-        """
-        given the ordered list tag, extract a list of contexts
-        :return:
-        """
+    def _ext_raw_htmls(cls, li_tags: List[BeautifulSoup]) -> List[str]:
+        return [str(li) for li in li_tags]
+
+    @classmethod
+    def _ext_contexts(cls, li_tags: List[BeautifulSoup]) -> List[str]:
+        # get the pure texts only from the list tags
+        list_texts = [li.get_text() for li in li_tags]
         contexts = [
             # don't get the parenthesis
             cls.CONTEXT_RE.findall(list_text)[0][1:-1]
@@ -429,7 +438,6 @@ class IdiomExtractor:
             for list_text in list_texts
         ]
         return contexts
-
 
 # don't think about this for now.
 # class MLGlossHTMLParser:

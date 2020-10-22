@@ -1,7 +1,10 @@
 import logging
+import sys
 
 from youtora.collect.models import IdiomRaw
 from youtora.refine.extractors import IdiomExtractor
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 class ExtractIdiomsRunner:
@@ -16,5 +19,5 @@ class ExtractIdiomsRunner:
         )
         # save each idiom
         for idx, idiom in enumerate(idiom_gen):
-            logger.info("idiom saved: #{}".format(idx + 1))
             idiom.save()
+            logger.info("idiom saved: #{}".format(idx + 1))

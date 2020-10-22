@@ -1,5 +1,5 @@
-from typing import List
 from dataclasses import dataclass
+from typing import List, Optional
 
 
 # --- YouTube --- #
@@ -88,9 +88,37 @@ class Video:
     dislikes: int
     views: int
     category: str
+
     # manual_captions_info: dict
     # auto_captions_info: dict
 
     # overrides the dunder string method
     def __str__(self) -> str:
         return self.title
+
+
+# -- to be used for extracting Idiom
+@dataclass
+class Definition:
+    text: str
+    raw_html: str
+    context: str
+
+    def to_dict(self) -> dict:
+        return {
+            'text': self.text,
+            'raw_html': self.raw_html,
+            'context': self.context
+        }
+
+
+@dataclass
+class DefSet:
+    pos: Optional[str]  # could be null
+    defs: List[Definition]
+
+    def to_dict(self) -> dict:
+        return {
+            'pos': self.pos,
+            'defs': [definition.to_dict() for definition in self.defs]
+        }
