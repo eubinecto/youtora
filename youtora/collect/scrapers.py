@@ -12,6 +12,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as e_c
 from selenium.webdriver.support.ui import WebDriverWait
+from wiktionaryparser import WiktionaryParser
 
 from config.settings import DATA_DIR
 from youtora.refine.dataclasses import Caption
@@ -271,10 +272,10 @@ class IdiomRawScraper(Scraper):
         :return: an IdiomRaw object
         """
         logger = logging.getLogger("scrape")
-        logger.info("loading main html for:[{}]...".format(idiom_text))
-        main_html = cls._scrape_main_html(wiktionary_url)
+        logger.info("loading idiom info for:[{}]...".format(idiom_text))
+        idiom_info = cls._scrape_idiom_info(idiom_id)
         return IdiomRaw(id=idiom_id, text=idiom_text,
-                        wiktionary_url=wiktionary_url, main_html=main_html)
+                        wiktionary_url=wiktionary_url, idiom_info=idiom_info)
 
     @classmethod
     def scrape_multi(cls) -> Generator[IdiomRaw, None, None]:
@@ -302,11 +303,10 @@ class IdiomRawScraper(Scraper):
                 yield idiom_raw
 
     @classmethod
-    def _scrape_main_html(cls, wiktionary_url: str) -> str:
-        response = requests.get(url=wiktionary_url)
-        response.raise_for_status()
-        main_html = response.text
-        return main_html
+    def _scrape_idiom_info(cls, idiom_id: str) -> str:
+        parser = WiktionaryParser()
+        idiom_info = parser.fetch(idiom_id)
+        return idiom_info
 
     @classmethod
     def _load_slide(cls) -> pd.DataFrame:
