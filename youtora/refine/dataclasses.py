@@ -101,24 +101,26 @@ class Video:
 @dataclass
 class Definition:
     text: str
-    raw_html: str
+    examples: List[str]  # could be empty. example sentences.
+    pos: str
     context: str
 
     def to_dict(self) -> dict:
         return {
             'text': self.text,
-            'raw_html': self.raw_html,
+            'pos': self.pos,
+            'examples': self.examples,
             'context': self.context
         }
 
 
 @dataclass
-class DefSet:
-    pos: Optional[str]  # could be null
+class Meaning:
+    etymology: Optional[str]  # could be null
     defs: List[Definition]
 
     def to_dict(self) -> dict:
         return {
-            'pos': self.pos,
+            'etymology': self.etymology,
             'defs': [definition.to_dict() for definition in self.defs]
         }

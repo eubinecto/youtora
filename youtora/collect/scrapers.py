@@ -1,7 +1,7 @@
 # for type hinting
 import logging
 from os import path
-from typing import List, Generator
+from typing import List, Generator, Optional
 
 import pandas as pd  # for reading in the list of idioms
 import requests
@@ -303,10 +303,20 @@ class IdiomRawScraper(Scraper):
                 yield idiom_raw
 
     @classmethod
-    def _scrape_idiom_info(cls, idiom_id: str) -> str:
+    def _scrape_idiom_info(cls, idiom_id: str) -> Optional[str]:
+        logger = logging.getLogger("_scrape_idiom_info")
         parser = WiktionaryParser()
-        idiom_info = parser.fetch(idiom_id)
-        return idiom_info
+        try:
+            idiom_info = parser.fetch(idiom_id)
+        except AttributeError as ae:
+            logger.warning(str(ae))
+            return None
+        else:
+            return idiom_info
+
+    @classmethod
+    def _scrape_main_html(cls, main_html: str) -> str:
+        pass
 
     @classmethod
     def _load_slide(cls) -> pd.DataFrame:

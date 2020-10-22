@@ -69,7 +69,9 @@ class IdiomRaw(models.Model):
     id = models.CharField(primary_key=True, max_length=100)
     text = models.CharField(max_length=100, blank=False, null=False)
     wiktionary_url = models.CharField(max_length=100, blank=False, null=False)
-    idiom_info = JSONField(blank=False, null=False, default=None)  # get this from wiktionary parser
+    # could be null
+    idiom_info = JSONField(blank=False, null=True, default=None)  # get this from wiktionary parser
+    main_html = models.TextField(blank=False, null=True, default="")
 
     def __str__(self) -> str:
         return self.text
