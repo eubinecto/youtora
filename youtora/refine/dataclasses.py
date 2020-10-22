@@ -115,7 +115,7 @@ class Definition:
 
 
 @dataclass
-class Meaning:
+class Sense:
     etymology: Optional[str]  # could be null
     defs: List[Definition]
 

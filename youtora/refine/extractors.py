@@ -18,7 +18,7 @@ from youtora.refine.dataclasses import (
     Channel,
     Video,
     Track,
-    Caption, Meaning, Definition
+    Caption, Sense, Definition
 )
 from youtora.refine.errors import CaptionNotFoundError
 from youtora.refine.models import Idiom
@@ -348,17 +348,17 @@ class IdiomExtractor:
     def parse(cls, idiom_raw: IdiomRaw) -> Idiom:
         logger = logging.getLogger("parse")
         logger.info("parsing...:" + idiom_raw.text)
-        def_sets = cls._ext_meanings(idiom_raw.idiom_info)
+        def_sets = cls._ext_meanings(idiom_raw.parser_1_info)
         def_sets_dict = [def_set.to_dict() for def_set in def_sets]
         return Idiom(id=idiom_raw.id, text=idiom_raw.text,
                      wiktionary_url=idiom_raw.wiktionary_url,
                      def_sets=def_sets_dict)
 
     @classmethod
-    def _ext_meanings(cls, idiom_info: dict) -> List[Meaning]:
+    def _ext_meanings(cls, idiom_info: dict) -> List[Sense]:
         meanings = [
-            Meaning(etymology=meaning_dict['etymology'],
-                    defs=cls._ext_defs(defs_json=meaning_dict['definitions']))
+            Sense(etymology=meaning_dict['etymology'],
+                  defs=cls._ext_defs(defs_json=meaning_dict['definitions']))
             for meaning_dict in idiom_info
         ]
         return meanings

@@ -23,7 +23,7 @@ class IdiomExtractorTestCase(TestCase):
                                             "Dutch oven",
                                             "https://en.wiktionary.org/wiki/Dutch_oven")
 
-    # has 0 defs
+    # with two different etymologies
     chr_pres_raw = IdiomRawScraper.scrape("Christmas_present",
                                           "Christmas present",
                                           "https://en.wiktionary.org/wiki/Christmas_present")
@@ -35,6 +35,21 @@ class IdiomExtractorTestCase(TestCase):
                                              "big picture",
                                              "https://en.wiktionary.org/wiki/big_picture")
 
+    # with two different pos.
+    promised_land_raw = IdiomRawScraper.scrape("Promised_Land",
+                                               "promised land",
+                                               "https://en.wiktionary.org/wiki/Promised_Land")
+
+    # the entry is broken
+    all_nations_raw = IdiomRawScraper.scrape("all_nations",
+                                             "all nations",
+                                             "https://en.wiktionary.org/wiki/all_nations")
+
+    # examples exist for both two defs
+    ala_raw = IdiomRawScraper.scrape("as_long_as",
+                                     "as long as",
+                                     "https://en.wiktionary.org/wiki/as_long_as")
+
     def test_parse_when_meaning_1_def_1(self):
         def_text = "A difficult situation from which there is no escape" \
                    " because it involves mutually conflicting or dependent conditions."
@@ -43,8 +58,8 @@ class IdiomExtractorTestCase(TestCase):
         catch_22 = IdiomExtractor.parse(self.catch_22_raw)
         catch_22.save()  # have to save this in order to access defs
         # assert equals definition (there is only one for this case)
-        self.assertEqual(def_text, catch_22.meanings[0]['defs'][0]['text'])
-        self.assertEqual(def_context, catch_22.meanings[0]['defs'][0]['context'])
+        self.assertEqual(def_text, catch_22.senses[0]['defs'][0]['text'])
+        self.assertEqual(def_context, catch_22.senses[0]['defs'][0]['context'])
 
     def test_parse_when_meaning_1_def_2(self):
         def_text_1 = "a street leading off Whitehall in Westminster, London containing the residences of" \
@@ -55,10 +70,10 @@ class IdiomExtractorTestCase(TestCase):
         downing_street = IdiomExtractor.parse(self.downing_street_raw)
         downing_street.save()  # have to save this in order to access defs
         # assert equals definition (two definitions for this case)
-        self.assertEqual(def_text_1, downing_street.meanings[0]['defs'][0]['text'])
-        self.assertEqual(def_context_1, downing_street.meanings[0]['defs'][0]['context'])
-        self.assertEqual(def_text_2, downing_street.meanings[0]['defs'][1]['text'])
-        self.assertEqual(def_context_2, downing_street.meanings[0]['defs'][1]['context'])
+        self.assertEqual(def_text_1, downing_street.senses[0]['defs'][0]['text'])
+        self.assertEqual(def_context_1, downing_street.senses[0]['defs'][0]['context'])
+        self.assertEqual(def_text_2, downing_street.senses[0]['defs'][1]['text'])
+        self.assertEqual(def_context_2, downing_street.senses[0]['defs'][1]['context'])
 
     def test_parse_when_meaning_1_def_6(self):
         def_text_1 = "A large metal cooking pot with a tight-fitting lid."
@@ -85,25 +100,25 @@ class IdiomExtractorTestCase(TestCase):
         self.assertEqual(self.dutch_oven_raw.text, dutch_oven.text)
         self.assertEqual(self.dutch_oven_raw.wiktionary_url, dutch_oven.wiktionary_url)
         # assert equals definitions
-        self.assertEqual(def_text_1, dutch_oven.meanings[0]['defs'][0]['text'])
-        self.assertEqual(def_text_2, dutch_oven.meanings[0]['defs'][1]['text'])
-        self.assertEqual(def_text_3, dutch_oven.meanings[0]['defs'][2]['text'])
-        self.assertEqual(def_text_4, dutch_oven.meanings[0]['defs'][3]['text'])
-        self.assertEqual(def_text_5, dutch_oven.meanings[0]['defs'][4]['text'])
-        self.assertEqual(def_text_6, dutch_oven.meanings[0]['defs'][5]['text'])
-        self.assertEqual(def_text_7, dutch_oven.meanings[0]['defs'][6]['text'])
+        self.assertEqual(def_text_1, dutch_oven.senses[0]['defs'][0]['text'])
+        self.assertEqual(def_text_2, dutch_oven.senses[0]['defs'][1]['text'])
+        self.assertEqual(def_text_3, dutch_oven.senses[0]['defs'][2]['text'])
+        self.assertEqual(def_text_4, dutch_oven.senses[0]['defs'][3]['text'])
+        self.assertEqual(def_text_5, dutch_oven.senses[0]['defs'][4]['text'])
+        self.assertEqual(def_text_6, dutch_oven.senses[0]['defs'][5]['text'])
+        self.assertEqual(def_text_7, dutch_oven.senses[0]['defs'][6]['text'])
 
         # assert equals contexts
-        self.assertEqual(context_1, dutch_oven.meanings[0]['defs'][0]['context'])
-        self.assertEqual(context_2, dutch_oven.meanings[0]['defs'][1]['context'])
-        self.assertEqual(context_3, dutch_oven.meanings[0]['defs'][2]['context'])
-        self.assertEqual(context_4, dutch_oven.meanings[0]['defs'][3]['context'])
-        self.assertEqual(context_5, dutch_oven.meanings[0]['defs'][4]['context'])
-        self.assertEqual(context_6, dutch_oven.meanings[0]['defs'][5]['context'])
-        self.assertEqual(context_7, dutch_oven.meanings[0]['defs'][6]['context'])
+        self.assertEqual(context_1, dutch_oven.senses[0]['defs'][0]['context'])
+        self.assertEqual(context_2, dutch_oven.senses[0]['defs'][1]['context'])
+        self.assertEqual(context_3, dutch_oven.senses[0]['defs'][2]['context'])
+        self.assertEqual(context_4, dutch_oven.senses[0]['defs'][3]['context'])
+        self.assertEqual(context_5, dutch_oven.senses[0]['defs'][4]['context'])
+        self.assertEqual(context_6, dutch_oven.senses[0]['defs'][5]['context'])
+        self.assertEqual(context_7, dutch_oven.senses[0]['defs'][6]['context'])
 
         # check if filter works properly
-        self.assertEqual(7, len(dutch_oven.meanings[0]['defs']))
+        self.assertEqual(7, len(dutch_oven.senses[0]['defs']))
 
     def test_parse_when_meaning_2(self):
         pass
@@ -120,10 +135,10 @@ class IdiomExtractorTestCase(TestCase):
         big_picture = IdiomExtractor.parse(self.big_picture_raw)
         big_picture.save()
 
-        self.assertEqual(def_text_1, big_picture.meanings[0]['text'])
-        self.assertEqual(def_context_1, big_picture.meanings[0]['context'])
-        self.assertEqual(def_text_2, big_picture.meanings[1]['text'])
-        self.assertEqual(def_context_2, big_picture.meanings[1]['context'])
+        self.assertEqual(def_text_1, big_picture.senses[0]['text'])
+        self.assertEqual(def_context_1, big_picture.senses[0]['context'])
+        self.assertEqual(def_text_2, big_picture.senses[1]['text'])
+        self.assertEqual(def_context_2, big_picture.senses[1]['context'])
 
     def test_ext_ol_def_list(self):
         ol_def_list = IdiomExtractor._ext_ol_defs(self.chr_pres_raw.main_html)

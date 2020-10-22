@@ -70,8 +70,9 @@ class IdiomRaw(models.Model):
     text = models.CharField(max_length=100, blank=False, null=False)
     wiktionary_url = models.CharField(max_length=100, blank=False, null=False)
     # could be null
-    idiom_info = JSONField(blank=False, null=True, default=None)  # get this from wiktionary parser
-    main_html = models.TextField(blank=False, null=True, default="")
+    parser_info = JSONField(blank=True, null=True)  # get this from wiktionary parser (python)
+    # could be null (if request was erroneous)
+    main_html = models.TextField(blank=True, null=True)
 
     def __str__(self) -> str:
         return self.text
