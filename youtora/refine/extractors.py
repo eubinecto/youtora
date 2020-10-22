@@ -342,50 +342,52 @@ class IdiomExtractor:
     # e.g. (idiomatic)
     CONTEXT_RE = re.compile(r"^\([\S ]+\)")
     TEXT_WITH_CONTEXT_RE = re.compile(CONTEXT_RE.pattern + r"([\S ]+)")
-    TEXT_NO_CONTEXT_RE = re.compile(r"^([\S ]+)")
+    # TEXT_NO_CONTEXT_RE = re.compile(r"^([\S ]+)")
 
     @classmethod
     def parse(cls, idiom_raw: IdiomRaw) -> Idiom:
         logger = logging.getLogger("parse")
         logger.info("parsing...:" + idiom_raw.text)
-        def_sets = cls._ext_meanings(idiom_raw.parser_1_info)
-        def_sets_dict = [def_set.to_dict() for def_set in def_sets]
+        senses = cls._ext_senses(idiom_raw.parser_info)
         return Idiom(id=idiom_raw.id, text=idiom_raw.text,
                      wiktionary_url=idiom_raw.wiktionary_url,
-                     def_sets=def_sets_dict)
+                     # insert the dictionary representation
+                     senses=[sense.to_dict() for sense in senses])
 
     @classmethod
-    def _ext_meanings(cls, idiom_info: dict) -> List[Sense]:
+    def _ext_senses(cls, parser_info: dict) -> List[Sense]:
         meanings = [
-            Sense(etymology=meaning_dict['etymology'],
-                  defs=cls._ext_defs(defs_json=meaning_dict['definitions']))
-            for meaning_dict in idiom_info
+            Sense(etymology=sense_json['etymology'] if sense_json['etymology'] else None,
+                  defs=cls._ext_defs(sense_json['definitions']))
+            for sense_json in parser_info
         ]
         return meanings
 
     @classmethod
-    def _ext_defs(cls, defs_json: list) -> List[Definition]:
-        return [
-            cls._ext_def(def_json)
-            for def_json in defs_json
-        ]
-
-    @classmethod
-    def _ext_def(cls, def_json: dict) -> Definition:
-        text = cls._ext_text(text_json=def_json['text'])
-        context = cls._ext_context(text_json=def_json['text'])
-        examples = def_json['examples']
-        pos = def_json['partOfSpeech']
-        return Definition(text, examples, pos, context)
+    def _ext_defs(cls, defs_json: List[dict]) -> List[Definition]:
+        defs = list()
+        for def_json in defs_json:
+            # list concatenation
+            pos = def_json['partOfSpeech'] if def_json['partOfSpeech'] else None
+            text_jsons = def_json['text'][1:]  # exclude the first entry
+            texts = [cls._ext_text(text_json) for text_json in text_jsons]
+            contexts = [cls._ext_context(text_json) for text_json in text_jsons]
+            defs += [
+                # set the examples later
+                Definition(text=text, pos=pos, context=context)
+                for text, context in zip(texts, contexts)
+            ]
+        return defs
 
     @classmethod
     def _ext_text(cls, text_json: str) -> str:
         if text_json.startswith("("):
-            # it has a context
+            # it has a context, omit the context
             return cls.TEXT_WITH_CONTEXT_RE.findall(text_json)[0].strip()
         else:
             # it doesn't have a context
-            return cls.TEXT_NO_CONTEXT_RE.findall(text_json)[0].strip()
+            # just return itself.
+            return text_json
 
     @classmethod
     def _ext_context(cls, text_json: str) -> Optional[str]:

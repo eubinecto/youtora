@@ -101,9 +101,9 @@ class Video:
 @dataclass
 class Definition:
     text: str
-    examples: List[str]  # could be empty. example sentences.
     pos: str
     context: str
+    examples: Optional[List[str]] = None  # could be empty. example sentences.
 
     def to_dict(self) -> dict:
         return {

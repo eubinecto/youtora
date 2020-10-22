@@ -35,22 +35,24 @@ class IdiomExtractorTestCase(TestCase):
                                              "big picture",
                                              "https://en.wiktionary.org/wiki/big_picture")
 
-    # with two different pos.
-    promised_land_raw = IdiomRawScraper.scrape("Promised_Land",
-                                               "promised land",
-                                               "https://en.wiktionary.org/wiki/Promised_Land")
+    # # with two different pos.
+    # promised_land_raw = IdiomRawScraper.scrape("Promised_Land",
+    #                                            "promised land",
+    #                                            "https://en.wiktionary.org/wiki/Promised_Land")
+    #
+    # # the entry is broken
+    # all_nations_raw = IdiomRawScraper.scrape("all_nations",
+    #                                          "all nations",
+    #                                          "https://en.wiktionary.org/wiki/all_nations")
+    #
+    # # examples exist for both two defs
+    # ala_raw = IdiomRawScraper.scrape("as_long_as",
+    #                                  "as long as",
+    #                                  "https://en.wiktionary.org/wiki/as_long_as")
 
-    # the entry is broken
-    all_nations_raw = IdiomRawScraper.scrape("all_nations",
-                                             "all nations",
-                                             "https://en.wiktionary.org/wiki/all_nations")
+    # go into - definitions have sub defs....
 
-    # examples exist for both two defs
-    ala_raw = IdiomRawScraper.scrape("as_long_as",
-                                     "as long as",
-                                     "https://en.wiktionary.org/wiki/as_long_as")
-
-    def test_parse_when_meaning_1_def_1(self):
+    def test_parse_when_sense_1_def_1(self):
         def_text = "A difficult situation from which there is no escape" \
                    " because it involves mutually conflicting or dependent conditions."
         def_context = "idiomatic"
@@ -59,9 +61,10 @@ class IdiomExtractorTestCase(TestCase):
         catch_22.save()  # have to save this in order to access defs
         # assert equals definition (there is only one for this case)
         self.assertEqual(def_text, catch_22.senses[0]['defs'][0]['text'])
+        # assert equal def
         self.assertEqual(def_context, catch_22.senses[0]['defs'][0]['context'])
 
-    def test_parse_when_meaning_1_def_2(self):
+    def test_parse_when_sense_1_def_2(self):
         def_text_1 = "a street leading off Whitehall in Westminster, London containing the residences of" \
                      " the Prime Minister and the Chancellor of the Exchequer"
         def_text_2 = "the British government"
@@ -71,20 +74,43 @@ class IdiomExtractorTestCase(TestCase):
         downing_street.save()  # have to save this in order to access defs
         # assert equals definition (two definitions for this case)
         self.assertEqual(def_text_1, downing_street.senses[0]['defs'][0]['text'])
-        self.assertEqual(def_context_1, downing_street.senses[0]['defs'][0]['context'])
         self.assertEqual(def_text_2, downing_street.senses[0]['defs'][1]['text'])
+        # assert equal context
+        self.assertEqual(def_context_1, downing_street.senses[0]['defs'][0]['context'])
         self.assertEqual(def_context_2, downing_street.senses[0]['defs'][1]['context'])
 
-    def test_parse_when_meaning_1_def_6(self):
+    def test_parse_when_sense_def_3(self):
+        """
+        what's wrong with this one?
+        :return:
+        """
+        def_text_1 = "Used other than with a figurative or idiomatic meaning: see big,‎ picture."
+        def_text_2 = "The totality of a situation."
+        def_text_3 = "The main film in a double feature."
+        def_context_1 = None
+        def_context_2 = None
+        def_context_3 = "Britain, dated"
+        big_picture = IdiomExtractor.parse(self.big_picture_raw)
+        big_picture.save()
+        # assert definitions
+        self.assertEqual(def_text_1, big_picture.senses[0]['defs'][0]['text'])
+        self.assertEqual(def_text_2, big_picture.senses[0]['defs'][1]['text'])
+        self.assertEqual(def_text_3, big_picture.senses[0]['defs'][2]['text'])
+        # assert contexts
+        self.assertEqual(def_context_1, big_picture.senses[0]['defs'][0]['context'])
+        self.assertEqual(def_context_2, big_picture.senses[0]['defs'][1]['context'])
+        self.assertEqual(def_context_3, big_picture.senses[0]['defs'][2]['context'])
+
+    def test_parse_when_sense_1_def_6(self):
         def_text_1 = "A large metal cooking pot with a tight-fitting lid."
         def_text_2 = "A portable oven consisting of a metal box, with shelves, placed before an open fire."
         def_text_3 = "A protective cover for electrical contacts on a railway coupler, particularly but" \
-                     " not exclusively used on the London Underground.[1]"
+                     " not exclusively used on the London Underground."
         def_text_4 = "The situation where a person breaks wind under the bedcovers, sometimes pulling them" \
                      " over a bedmate's head as a prank."
         def_text_5 = "A room or vehicle full of marijuana smoke."
         def_text_6 = "The very end of a Dutch Masters cigar that has been rerolled" \
-                     " with marijuana. This usage of the term is said to originate in New Brunswick, New Jersey.[2]"
+                     " with marijuana. This usage of the term is said to originate in New Brunswick, New Jersey."
         def_text_7 = "Used other than with a figurative or idiomatic meaning: see Dutch,‎ oven."
         context_1 = None
         context_2 = None
@@ -99,7 +125,7 @@ class IdiomExtractorTestCase(TestCase):
         self.assertEqual(self.dutch_oven_raw.id, dutch_oven.id)
         self.assertEqual(self.dutch_oven_raw.text, dutch_oven.text)
         self.assertEqual(self.dutch_oven_raw.wiktionary_url, dutch_oven.wiktionary_url)
-        # assert equals definitions
+        # assert equal definitions
         self.assertEqual(def_text_1, dutch_oven.senses[0]['defs'][0]['text'])
         self.assertEqual(def_text_2, dutch_oven.senses[0]['defs'][1]['text'])
         self.assertEqual(def_text_3, dutch_oven.senses[0]['defs'][2]['text'])
@@ -107,8 +133,7 @@ class IdiomExtractorTestCase(TestCase):
         self.assertEqual(def_text_5, dutch_oven.senses[0]['defs'][4]['text'])
         self.assertEqual(def_text_6, dutch_oven.senses[0]['defs'][5]['text'])
         self.assertEqual(def_text_7, dutch_oven.senses[0]['defs'][6]['text'])
-
-        # assert equals contexts
+        # assert equal contexts
         self.assertEqual(context_1, dutch_oven.senses[0]['defs'][0]['context'])
         self.assertEqual(context_2, dutch_oven.senses[0]['defs'][1]['context'])
         self.assertEqual(context_3, dutch_oven.senses[0]['defs'][2]['context'])
@@ -116,36 +141,3 @@ class IdiomExtractorTestCase(TestCase):
         self.assertEqual(context_5, dutch_oven.senses[0]['defs'][4]['context'])
         self.assertEqual(context_6, dutch_oven.senses[0]['defs'][5]['context'])
         self.assertEqual(context_7, dutch_oven.senses[0]['defs'][6]['context'])
-
-        # check if filter works properly
-        self.assertEqual(7, len(dutch_oven.senses[0]['defs']))
-
-    def test_parse_when_meaning_2(self):
-        pass
-
-    def test_parse_when_big_picture(self):
-        """
-        what's wrong with this one?
-        :return:
-        """
-        def_text_1 = "The totality of a situation."
-        def_text_2 = "The main film in a double feature."
-        def_context_1 = None
-        def_context_2 = "Britain, dated"
-        big_picture = IdiomExtractor.parse(self.big_picture_raw)
-        big_picture.save()
-
-        self.assertEqual(def_text_1, big_picture.senses[0]['text'])
-        self.assertEqual(def_context_1, big_picture.senses[0]['context'])
-        self.assertEqual(def_text_2, big_picture.senses[1]['text'])
-        self.assertEqual(def_context_2, big_picture.senses[1]['context'])
-
-    def test_ext_ol_def_list(self):
-        ol_def_list = IdiomExtractor._ext_ol_defs(self.chr_pres_raw.main_html)
-        self.assertTrue(len(ol_def_list) == 2)
-
-    def test_ext_pos(self):
-        ol_def_list = IdiomExtractor._ext_ol_defs(self.chr_pres_raw.main_html)
-        pos_list = [IdiomExtractor._ext_pos(ol_def) for ol_def in ol_def_list]
-        self.assertEqual("Noun", pos_list[0])
-        self.assertEqual("Noun", pos_list[1])
