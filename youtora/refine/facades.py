@@ -9,7 +9,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 class ExtractIdioms:
     @classmethod
-    def run(cls):
+    def exec(cls):
         logger = logging.getLogger("run")
         # get all idiom raws
         idiom_raw_gen = IdiomRaw.objects.all()
