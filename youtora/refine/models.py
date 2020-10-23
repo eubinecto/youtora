@@ -38,7 +38,7 @@ class Idiom(models.Model):
     id = models.CharField(primary_key=True, max_length=100)  # same as text raw
     text = models.CharField(max_length=100, blank=False, null=False)  # same as text raw
     wiktionary_url = models.URLField(validators=[URLValidator], blank=False, null=False)  # same as text raw
-    # a list of definition sets.
+    # a list of senses
     senses = ArrayField(base_field=JSONField(blank=True, null=False),
                         blank=True, null=False, default=list)
 
