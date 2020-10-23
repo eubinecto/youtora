@@ -17,3 +17,11 @@ class SearchQuery:
     from_: int = 0
     size: int = 10
     highlight: bool = True
+
+
+@dataclass
+class SearchResult:
+    """
+    represents the search result
+    """
+    pass
