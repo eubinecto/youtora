@@ -1,70 +1,69 @@
-from youtora.index.indices import (
+import logging
+import sys
+
+from youtora.collect.models import (
+    ChannelRaw,
+    VideoRaw,
+    TracksRaw
+)
+from youtora.index.docs import (
     ChannelInnerDoc,
     VideoInnerDoc,
     CaptionInnerDoc,
-    GeneralIndex
+    GeneralDoc
 )
 from youtora.refine.dataclasses import Video, Channel, Caption
-from youtora.scrape.models import (
-    ChannelRaw,
-    VideoRaw
-)
 from youtora.refine.extractors import (
     ChannelExtractor,
-    VideoExtractor
+    VideoExtractor,
+    CaptionExtractor,
+    TrackExtractor
 
 )
-from typing import Generator
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+# https://stackoverflow.com/a/47157553
+es_logger = logging.getLogger("elasticsearch")
+es_logger.setLevel(logging.WARNING)
 
 
-class GeneralIdxBuilder:
+class GeneralDocBuilder:
     @classmethod
     def build(cls):
-        channels = cls._get_all_channels()
-        channels_videos = cls._get_channels_videos(channels)
-        # parallel iteration
-        for channel, channel_videos in zip(channels, channels_videos):
-            channel_doc = cls._build_channel_doc(channel)
-            for video in channel_videos:
-                video_doc = cls._build_video_doc(video, channel_doc)
-                for caption in video.captions:
-                    caption_doc = cls._build_caption_doc(caption, video_doc)
-                    for track in caption.tracks:
-                        general_idx = GeneralIndex(start=track.start, duration=track.duration,
-                                                   content=track.content, prev_id=track.prev_id,
-                                                   next_id=track.next_id, context=track.context,
-                                                   caption=caption_doc)
-                        # save it
-                        general_idx.save()
-
-    @classmethod
-    def _get_all_channels(cls) -> Generator[Channel, None, None]:
-        # get all the channel_raws
+        logger = logging.getLogger("build")
+        # get a generator of all channel raws
         channel_raws = ChannelRaw.objects.all()
-        # get the channels
-        channels = (
-            ChannelExtractor.parse(channel_raw=channel_raw)
-            for channel_raw in channel_raws
-        )
-        return channels
-
-    @classmethod
-    def _get_channels_videos(cls, channels: Generator[Channel, None, None]) \
-            -> Generator[Generator[Video, None, None], None, None]:
-        """
-        returns a generator of generator of video data
-        """
-        # get all video raws for channel_id
-        channels_video_raws = (
-            VideoRaw.objects.all().filter(channel_id=channel.id)
-            for channel in channels
-        )
-        # parse all of them - this shouldn't take too much time.
-        channels_videos = (
-            VideoExtractor.parse_multi(video_raw_coll=channel_video_raws)
-            for channel_video_raws in channels_video_raws
-        )
-        return channels_videos
+        for chan_idx, channel_raw in enumerate(channel_raws):
+            # parse the channel_raw and build the doc
+            channel = ChannelExtractor.parse(channel_raw)
+            channel_doc = cls._build_channel_doc(channel)
+            video_raws = VideoRaw.objects.filter(channel_raw=channel_raw)
+            for vid_idx, video_raw in enumerate(video_raws):
+                # parse the video_raw and build the doc
+                video = VideoExtractor.parse(video_raw)
+                video_doc = cls._build_video_doc(video, channel_doc)
+                # extract captions from this
+                captions = CaptionExtractor.parse(video_raw)
+                for cap_idx, caption in enumerate(captions):
+                    # build caption doc
+                    caption_doc = cls._build_caption_doc(caption, video_doc)
+                    # get the tracks raw for this caption
+                    tracks_raw = TracksRaw.objects.get(caption_id=caption.id)
+                    # parse it to get all tracks
+                    tracks = TrackExtractor.parse(tracks_raw)
+                    for track in tracks:
+                        # for each track, build general doc
+                        general_doc = GeneralDoc(meta={'id': track.id},  # this is how you put the id
+                                                 start=track.start, duration=track.duration,
+                                                 content=track.content, prev_id=track.prev_id,
+                                                 next_id=track.next_id, context=track.context,
+                                                 caption_doc=caption_doc)
+                        # then save it
+                        general_doc.save()
+                    else:
+                        logger.info("saved:channel={}|{}:video={}|{}:caption={}|{}:all tracks"
+                                    .format(chan_idx, str(channel), vid_idx, str(video),
+                                            cap_idx, str(caption)))
 
     @classmethod
     def _build_channel_doc(cls, channel: Channel) -> ChannelInnerDoc:

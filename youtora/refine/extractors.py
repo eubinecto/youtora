@@ -286,7 +286,7 @@ class VideoExtractor:
         channel_id = video_raw.channel_raw.id
         vid_url = video_raw.url
         # better collect these info separately
-        likes, dislikes = cls._ext_likes_dislikes(video_raw.main_html)
+        likes, dislikes = cls._ext_likes_dislikes(video_raw.main_html, video_raw.id)
         # creates a video object
         video = Video(id=vid_id, title=title, url=vid_url,
                       channel_id=channel_id, publish_date=upload_date,
@@ -302,10 +302,11 @@ class VideoExtractor:
         )
 
     @classmethod
-    def _ext_likes_dislikes(cls, main_html) -> Tuple[int, int]:
+    def _ext_likes_dislikes(cls, main_html: str, video_id: str) -> Tuple[int, int]:
         """
         must collect them together because
         """
+        logger = logging.getLogger("_ext_likes_dislikes")
         # the first will be like info, the latter will be dislike info
         results = re.findall(r'"toggleButtonRenderer":{.*?"accessibilityData":{"label":"(.*?)"}}', main_html)
         # search for like counts
@@ -316,24 +317,24 @@ class VideoExtractor:
             # which means their values are zero.
             like_cnt = 0
             dislike_cnt = 0
-            logging.info("no likes & dislikes for video:" + main_html)
+            logger.info("no likes & dislikes for video:" + video_id)
         else:
             like_cnt_info = like_info.split(" ")[0].strip()
             dislike_cnt_info = dislike_info.split(" ")[0].strip()
             # get the like cnt
             if like_cnt_info == "No":
                 like_cnt = 0
-                logging.info("like_cnt:0:video:" + main_html)
+                logger.info("like_cnt:0:video:" + video_id)
             else:
                 like_cnt = int(like_cnt_info.replace(",", ""))
-                logging.info("like_cnt:{}:video:{}".format(like_cnt, main_html))
+                logger.info("like_cnt:{}:video:{}".format(like_cnt, video_id))
             # get the dislike cnt
             if dislike_cnt_info == "No":
                 dislike_cnt = 0
-                logging.info("dislike_cnt:0:video:" + main_html)
+                logger.info("dislike_cnt:0:video:" + video_id)
             else:
                 dislike_cnt = int(dislike_cnt_info.replace(",", ""))
-                logging.info("dislike_cnt:{}:video:{}".format(dislike_cnt, main_html))
+                logger.info("dislike_cnt:{}:video:{}".format(dislike_cnt, video_id))
         return like_cnt, dislike_cnt
 
 

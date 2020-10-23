@@ -130,8 +130,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
-# elastic search dsl setting for django-elastic-dsl
-# https://django-elasticsearch-dsl.readthedocs.io/en/latest/quickstart.html
+# elastic search dsl configuration.
 ELASTICSEARCH_DSL = {
     'default': {
         'hosts': 'localhost:9200'

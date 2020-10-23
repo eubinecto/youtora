@@ -1,28 +1,28 @@
-from elasticsearch_dsl.connections import connections
-from config.settings import ELASTICSEARCH_DSL
 from elasticsearch_dsl import (
-     Document,
-     InnerDoc,
-     Double,
-     Text,
-     Keyword,
-     Boolean,
-     RankFeature,
-     Nested)
+    Document,
+    InnerDoc,
+    Double,
+    Text,
+    Keyword,
+    Boolean,
+    RankFeature,
+    Nested)
+from elasticsearch_dsl.connections import connections
 
+from config.settings import ELASTICSEARCH_DSL
 
 # create a default connection to the host
 connections.create_connection(hosts=ELASTICSEARCH_DSL['default']['hosts'])
 
 
 class ChannelInnerDoc(InnerDoc):
-    id = Keyword()
+    id = Keyword(required=True)
     subs = RankFeature()
     lang_code = Keyword()
 
 
 class VideoInnerDoc(InnerDoc):
-    id = Keyword()
+    id = Keyword(required=True)
     views = RankFeature()
     likes = RankFeature()
     dislikes = RankFeature()
@@ -33,13 +33,13 @@ class VideoInnerDoc(InnerDoc):
 
 
 class CaptionInnerDoc(InnerDoc):
-    id = Keyword()
+    id = Keyword(required=True)
     is_auto = Boolean()
     lang_code = Keyword()
     video = Nested(VideoInnerDoc)
 
 
-class GeneralIndex(Document):
+class GeneralDoc(Document):
     # define the fields here
     start = Double()
     duration = Double()
@@ -50,7 +50,7 @@ class GeneralIndex(Document):
     caption = Nested(CaptionInnerDoc)
 
     class Index:
-        name = "general_idx"
+        name = "general_doc"
         # using the default settings for now.
 
     def save(self, **kwargs):
@@ -59,4 +59,4 @@ class GeneralIndex(Document):
 
 
 # on import, create the mappings in elasticsearch
-GeneralIndex.init()
+GeneralDoc.init()
