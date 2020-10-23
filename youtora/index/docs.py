@@ -28,7 +28,8 @@ class VideoInnerDoc(InnerDoc):
     # dislikes = RankFeature()
     # like_ratio = RankFeature()
     publish_date_int = RankFeature()
-    category = Text()
+    category = Keyword()  # should be a keyword
+    title = Text()  # might come in handy for context2def later
     channel = Nested(ChannelInnerDoc)
 
 

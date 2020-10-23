@@ -1,1 +1,0 @@
-# use django rest API.

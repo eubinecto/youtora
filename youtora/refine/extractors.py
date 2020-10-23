@@ -277,15 +277,15 @@ class VideoExtractor:
     def parse(cls, video_raw: VideoRaw) -> Video:
         info: dict = video_raw.video_info
         # access the results
-        vid_id = info['id']
-        title = info['title']
+        vid_id = info['id'].strip()
+        title = info['title'].strip()
         publish_date = "{year}-{month}-{day}" \
             .format(year=info['upload_date'][:4],
                     month=info['upload_date'][4:6],
                     day=info['upload_date'][6:])  # e.g. 20200610 -> 2020-06-10
         views = info['view_count']
         # the length is always greater than zero;  use the first one as the category of this video
-        category = info['categories'][0]
+        category = info['categories'][0].strip()
         channel_id = video_raw.channel_raw.id
         vid_url = video_raw.url
         # better collect these info separately
