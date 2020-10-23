@@ -2,7 +2,8 @@
 import html
 import logging
 import re
-from typing import List, Tuple, Generator, Collection
+import unicodedata  # for normalising the text output.
+from typing import List, Tuple, Generator, Collection, Optional
 
 import xmltodict
 # for parsing
@@ -18,7 +19,7 @@ from youtora.refine.dataclasses import (
     Channel,
     Video,
     Track,
-    Caption
+    Caption, Sense, Definition
 )
 from youtora.refine.errors import CaptionNotFoundError
 from youtora.refine.models import Idiom
@@ -340,96 +341,72 @@ class IdiomExtractor:
     # e.g. <strong class="Latn headword" lang="en">...</strong>
     STRONG_CLASS = "Latn headword"
     # e.g. (idiomatic)
-    CONTEXT_RE = re.compile(r"^\([\S ]+\)")
-    PURE_TEXT_WITH_CONTEXT_RE = re.compile(CONTEXT_RE.pattern + r"([\S ]+)")
-    PURE_TEXT_NO_CONTEXT_RE = re.compile(r"^([\S ]+)")
+    CONTEXT_RE = re.compile(r"^\([\S\s^\n]+\)")
+    TEXT_WITH_CONTEXT_RE = re.compile(CONTEXT_RE.pattern + r"([\S\s^\n]+)")
+
+    # TEXT_NO_CONTEXT_RE = re.compile(r"^([\S ]+)")
 
     @classmethod
     def parse(cls, idiom_raw: IdiomRaw) -> Idiom:
-        ol_defs = cls._ext_ol_defs(idiom_raw.main_html)  # extract the ordered list of definitions
-        list_texts = cls._ext_list_texts(ol_defs)
-        pure_texts = cls._ext_pure_texts(list_texts)
-        contexts = cls._ext_contexts(list_texts)
-        defs = cls._build_defs(pure_texts, contexts)
-        return Idiom(_id=idiom_raw.id, text=idiom_raw.text,
-                     wiktionary_url=idiom_raw.wiktionary_url, defs=defs)
+        logger = logging.getLogger("parse")
+        logger.info("parsing...:" + idiom_raw.text)
+        senses = cls._ext_senses(idiom_raw.parser_info)
+        return Idiom(id=idiom_raw.id, text=idiom_raw.text,
+                     wiktionary_url=idiom_raw.wiktionary_url,
+                     # insert the dictionary representation
+                     senses=[sense.to_dict() for sense in senses])
 
     @classmethod
-    def _build_defs(cls, pure_texts, contexts) -> List[dict]:
-        """
-        change this if you want to change the format of the definitions
-        :param pure_texts:
-        :param contexts:
-        :return:
-        """
-        assert len(pure_texts) == len(contexts), "length mismatch"
-        # build a list of defs and return
-        return [
-            {"text": pure_text, "context": context}
-            for pure_text, context in zip(pure_texts, contexts)
-        ]
-
-    @classmethod
-    def _ext_ol_defs(cls, main_html: str) -> BeautifulSoup:
-        """
-        from the main html, extract the ordered list tag which contains
-        the list of defs
-        :param main_html:
-        :return:
-        """
-        # build a soup
-        soup = BeautifulSoup(main_html, 'html.parser')
-        # first, find the strong tag
-        strong = soup.find('strong', attrs={'class': cls.STRONG_CLASS})
-        # the next sibling of the parent of strong is ol_defs = /n
-        # the next sibling of /n = ol_defs
-        ol_defs = strong.parent.next_sibling.next_sibling
-        return ol_defs
-
-    @classmethod
-    def _ext_list_texts(cls, ol_defs: BeautifulSoup) -> List[str]:
-        list_tags = ol_defs.find_all('li', recursive=False)
-        list_texts = [
-            list_tag.get_text()
-            for list_tag in list_tags
-            # filtering out: e.g. Used other than with a figurative or idiomatic meaning: see Dutch, oven.
-            if not list_tag.find_all('span', attrs={'class': "use-with-mention"})
-        ]
-        return list_texts
-
-    @classmethod
-    def _ext_pure_texts(cls, list_texts: List[str]) -> List[str]:
-        """
-        given the ordered list tag, extract a list of pure texts
-        :return:
-        """
-        pure_texts = list()
-        # extract only the definitions
-        for list_text in list_texts:
-            if list_text.startswith("("):
-                # it has a context
-                pure_text = cls.PURE_TEXT_WITH_CONTEXT_RE.findall(list_text)[0]
+    def _ext_senses(cls, parser_info: dict) -> List[Sense]:
+        if parser_info:
+            senses = list()
+            for sense_json in parser_info:
+                if sense_json['etymology']:
+                    etymology = sense_json['etymology'].strip()
+                    # normalise
+                    etymology = unicodedata.normalize("NFKD", etymology)
+                else:
+                    etymology = None
+                sense = Sense(etymology=etymology, defs=cls._ext_defs(sense_json['definitions']))
+                senses.append(sense)
             else:
-                # it doesn't has a context
-                pure_text = cls.PURE_TEXT_NO_CONTEXT_RE.findall(list_text)[0]
-            # strip white spaces and append
-            pure_texts.append(pure_text.strip())
-        return pure_texts
+                return senses
+        return list()  # if parser_info does not exist, return an empty list
 
     @classmethod
-    def _ext_contexts(cls, list_texts: List[str]) -> List[str]:
-        """
-        given the ordered list tag, extract a list of contexts
-        :return:
-        """
-        contexts = [
-            # don't get the parenthesis
-            cls.CONTEXT_RE.findall(list_text)[0][1:-1]
-            if cls.CONTEXT_RE.findall(list_text) else None  # if the list is empty, then context should be None
-            for list_text in list_texts
-        ]
-        return contexts
+    def _ext_defs(cls, defs_json: List[dict]) -> List[Definition]:
+        defs = list()
+        for def_json in defs_json:
+            # list concatenation
+            pos = def_json['partOfSpeech'] if def_json['partOfSpeech'] else None
+            # exclude the first entry, normalise it
+            text_jsons = [unicodedata.normalize("NFKD", text_json) for text_json in def_json['text'][1:]]
+            texts = [cls._ext_text(text_json) for text_json in text_jsons]
+            contexts = [cls._ext_context(text_json) for text_json in text_jsons]
+            defs += [
+                # set the examples later
+                Definition(text=text, pos=pos, context=context)
+                for text, context in zip(texts, contexts)
+            ]
+        return defs
 
+    @classmethod
+    def _ext_text(cls, text_json: str) -> str:
+        if text_json.startswith("("):
+            # it has a context, omit the context
+            return cls.TEXT_WITH_CONTEXT_RE.findall(text_json)[0].strip()
+        else:
+            # it doesn't have a context
+            # just return itself.
+            return text_json
+
+    @classmethod
+    def _ext_context(cls, text_json: str) -> Optional[str]:
+        # get the pure texts only from the list tags
+        if text_json.startswith("("):
+            return cls.CONTEXT_RE.findall(text_json)[0][1:-1]
+        else:
+            return None
 
 # don't think about this for now.
 # class MLGlossHTMLParser:

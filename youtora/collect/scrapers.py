@@ -1,7 +1,7 @@
 # for type hinting
 import logging
 from os import path
-from typing import List, Generator
+from typing import List, Generator, Optional
 
 import pandas as pd  # for reading in the list of idioms
 import requests
@@ -12,6 +12,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as e_c
 from selenium.webdriver.support.ui import WebDriverWait
+from wiktionaryparser import WiktionaryParser
 
 from config.settings import DATA_DIR
 from youtora.refine.dataclasses import Caption
@@ -259,22 +260,10 @@ class ChannelRawScraper(Scraper):
 
 
 class IdiomRawScraper(Scraper):
+    # https://www.igrec.ca/projects/wiktionary-text-parser/
+    WIKI_PARSER_ENDPOINT = "http://www.igrec.ca/project-files/wikparser/wikparser.php"
     SLIDE_DIR = path.join(DATA_DIR, "slide")
     SLIDE_TSV_PATH = path.join(SLIDE_DIR, "slide.tsv")
-
-    @classmethod
-    def scrape(cls, idiom_id: str, idiom_text: str, wiktionary_url: str) -> IdiomRaw:
-        """
-        :param idiom_id
-        :param idiom_text: e.g. Catch-22
-        :param wiktionary_url: e.g. https://en.wiktionary.org/wiki/American_Dream
-        :return: an IdiomRaw object
-        """
-        logger = logging.getLogger("scrape")
-        logger.info("loading main html for:[{}]...".format(idiom_text))
-        main_html = cls._scrape_main_html(wiktionary_url)
-        return IdiomRaw(id=idiom_id, text=idiom_text,
-                        wiktionary_url=wiktionary_url, main_html=main_html)
 
     @classmethod
     def scrape_multi(cls) -> Generator[IdiomRaw, None, None]:
@@ -302,11 +291,46 @@ class IdiomRawScraper(Scraper):
                 yield idiom_raw
 
     @classmethod
-    def _scrape_main_html(cls, wiktionary_url: str) -> str:
-        response = requests.get(url=wiktionary_url)
-        response.raise_for_status()
-        main_html = response.text
-        return main_html
+    def scrape(cls, idiom_id: str, idiom_text: str, wiktionary_url: str) -> IdiomRaw:
+        """
+        :param idiom_id
+        :param idiom_text: e.g. Catch-22
+        :param wiktionary_url: e.g. https://en.wiktionary.org/wiki/American_Dream
+        :return: an IdiomRaw object
+        """
+        logger = logging.getLogger("scrape")
+        logger.info("loading idiom info for:[{}]...".format(idiom_text))
+        parser_info = cls._scrape_parser_info(idiom_id)
+        main_html = cls._scrape_main_html(wiktionary_url)
+        return IdiomRaw(id=idiom_id, text=idiom_text, wiktionary_url=wiktionary_url,
+                        parser_info=parser_info, main_html=main_html)
+
+    @classmethod
+    def _scrape_parser_info(cls, idiom_id: str) -> Optional[dict]:
+        logger = logging.getLogger("_scrape_parser_1_info")
+        # using this wiktionary parser
+        parser = WiktionaryParser()
+        # include alternative forms as well (e.g. beat around the bush = beat about the bush)
+        parser.include_relation('alternative forms')
+        try:
+            idiom_info = parser.fetch(idiom_id)
+        except AttributeError as ae:
+            logger.warning(str(ae))
+            return None
+        else:
+            return idiom_info
+
+    @classmethod
+    def _scrape_main_html(cls, wiktionary_url: str) -> Optional[str]:
+        logger = logging.getLogger("_scrape_main_html")
+        try:
+            main_html_r = requests.get(wiktionary_url)
+            main_html_r.raise_for_status()
+        except requests.exceptions.HTTPError as he:
+            logger.warning(str(he))
+            return None
+        else:
+            return main_html_r.text
 
     @classmethod
     def _load_slide(cls) -> pd.DataFrame:

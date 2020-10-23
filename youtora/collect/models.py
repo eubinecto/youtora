@@ -69,7 +69,10 @@ class IdiomRaw(models.Model):
     id = models.CharField(primary_key=True, max_length=100)
     text = models.CharField(max_length=100, blank=False, null=False)
     wiktionary_url = models.CharField(max_length=100, blank=False, null=False)
-    main_html = models.TextField(blank=False, null=False)
+    # could be null
+    parser_info = JSONField(blank=True, null=True)  # get this from wiktionary parser (python)
+    # could be null (if request was erroneous)
+    main_html = models.TextField(blank=True, null=True)
 
     def __str__(self) -> str:
         return self.text
@@ -78,5 +81,5 @@ class IdiomRaw(models.Model):
         # note: always do model.clean_fields() before model.save()
         # https://stackoverflow.com/questions/17816229/django-model-blank-false-does-not-work
         self.clean_fields()
-        self.validate_unique()  # must do this before saving
+        # self.validate_unique()  # must do this before saving
         super(IdiomRaw, self).save()
