@@ -84,8 +84,8 @@ class Video:
     url: str
     title: str
     publish_date: str
-    likes: int
-    dislikes: int
+    # likes: int
+    # dislikes: int
     views: int
     category: str
 

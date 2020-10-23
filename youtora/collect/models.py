@@ -19,7 +19,7 @@ class ChannelRaw(models.Model):
         # note: always do model.clean_fields() before model.save()
         # https://stackoverflow.com/questions/17816229/django-model-blank-false-does-not-work
         self.clean_fields()
-        self.validate_unique()
+        # self.validate_unique()
         super(ChannelRaw, self).save()
 
 
@@ -41,7 +41,7 @@ class VideoRaw(models.Model):
         # note: always do model.clean_fields() before model.save()
         # https://stackoverflow.com/questions/17816229/django-model-blank-false-does-not-work
         self.clean_fields()
-        self.validate_unique()
+        # self.validate_unique()
         super(VideoRaw, self).save()
 
 
@@ -62,7 +62,7 @@ class TracksRaw(models.Model):
         # note: always do model.clean_fields() before model.save()
         # https://stackoverflow.com/questions/17816229/django-model-blank-false-does-not-work
         self.clean_fields()
-        self.validate_unique()  # must do this before saving
+        # self.validate_unique()  # must do this before saving
         super(TracksRaw, self).save()
 
 

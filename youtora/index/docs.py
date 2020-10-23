@@ -24,9 +24,9 @@ class ChannelInnerDoc(InnerDoc):
 class VideoInnerDoc(InnerDoc):
     id = Keyword(required=True)
     views = RankFeature()
-    likes = RankFeature()
-    dislikes = RankFeature()
-    like_ratio = RankFeature()
+    # likes = RankFeature()
+    # dislikes = RankFeature()
+    # like_ratio = RankFeature()
     publish_date_int = RankFeature()
     category = Text()
     channel = Nested(ChannelInnerDoc)

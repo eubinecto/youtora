@@ -22,7 +22,6 @@ from youtora.refine.extractors import (
     VideoExtractor,
     CaptionExtractor,
     TrackExtractor
-
 )
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -70,11 +69,10 @@ class GeneralDocBuilder:
 
     @classmethod
     def _build_video_doc(cls, video: Video, channel_doc: ChannelInnerDoc) -> VideoInnerDoc:
+        publish_date_int = "".join(video.publish_date.split("-"))
         video_doc = VideoInnerDoc(id=video.id, views=video.views,
-                                  likes=video.likes, dislikes=video.dislikes,
+                                  publish_date_int=publish_date_int,
                                   category=video.category, channel=channel_doc)
-        if video.dislikes > 0:
-            video_doc.like_ratio = video.likes / video.dislikes
         return video_doc
 
     @classmethod

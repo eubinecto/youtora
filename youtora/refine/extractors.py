@@ -3,7 +3,7 @@ import html
 import logging
 import re
 import unicodedata  # for normalising the text output.
-from typing import List, Tuple, Generator, Collection, Optional
+from typing import List, Generator, Collection, Optional
 
 import xmltodict
 # for parsing
@@ -198,6 +198,9 @@ class TrackExtractor:
     @classmethod
     def parse(cls, tracks_raw: TracksRaw) -> List[Track]:
         logger = logging.getLogger("parse")
+        if not tracks_raw.raw_xml:
+            # return an empty list if raw_xml is None
+            return list()
         tracks = list()
         tracks_caption_id = tracks_raw.caption_id
         tracks_xml = html.unescape(tracks_raw.raw_xml)  # get the tracks_html. escape the character reference entities
@@ -276,7 +279,7 @@ class VideoExtractor:
         # access the results
         vid_id = info['id']
         title = info['title']
-        upload_date = "{year}-{month}-{day}" \
+        publish_date = "{year}-{month}-{day}" \
             .format(year=info['upload_date'][:4],
                     month=info['upload_date'][4:6],
                     day=info['upload_date'][6:])  # e.g. 20200610 -> 2020-06-10
@@ -286,12 +289,11 @@ class VideoExtractor:
         channel_id = video_raw.channel_raw.id
         vid_url = video_raw.url
         # better collect these info separately
-        likes, dislikes = cls._ext_likes_dislikes(video_raw.main_html, video_raw.id)
+        # likes, dislikes = cls._ext_likes_dislikes(video_raw.main_html, video_raw.id)
         # creates a video object
         video = Video(id=vid_id, title=title, url=vid_url,
-                      channel_id=channel_id, publish_date=upload_date,
-                      likes=likes, dislikes=dislikes, views=views,
-                      category=category)
+                      channel_id=channel_id, publish_date=publish_date,
+                      views=views, category=category)
         return video
 
     @classmethod
@@ -300,42 +302,42 @@ class VideoExtractor:
             cls.parse(video_raw)
             for video_raw in video_raw_coll
         )
-
-    @classmethod
-    def _ext_likes_dislikes(cls, main_html: str, video_id: str) -> Tuple[int, int]:
-        """
-        must collect them together because
-        """
-        logger = logging.getLogger("_ext_likes_dislikes")
-        # the first will be like info, the latter will be dislike info
-        results = re.findall(r'"toggleButtonRenderer":{.*?"accessibilityData":{"label":"(.*?)"}}', main_html)
-        # search for like counts
-        like_info = results[0].strip()
-        dislike_info = results[1].strip()
-        if like_info == "I like this" and dislike_info == "I dislike this":
-            # like count and dislike count does not exist
-            # which means their values are zero.
-            like_cnt = 0
-            dislike_cnt = 0
-            logger.info("no likes & dislikes for video:" + video_id)
-        else:
-            like_cnt_info = like_info.split(" ")[0].strip()
-            dislike_cnt_info = dislike_info.split(" ")[0].strip()
-            # get the like cnt
-            if like_cnt_info == "No":
-                like_cnt = 0
-                logger.info("like_cnt:0:video:" + video_id)
-            else:
-                like_cnt = int(like_cnt_info.replace(",", ""))
-                logger.info("like_cnt:{}:video:{}".format(like_cnt, video_id))
-            # get the dislike cnt
-            if dislike_cnt_info == "No":
-                dislike_cnt = 0
-                logger.info("dislike_cnt:0:video:" + video_id)
-            else:
-                dislike_cnt = int(dislike_cnt_info.replace(",", ""))
-                logger.info("dislike_cnt:{}:video:{}".format(dislike_cnt, video_id))
-        return like_cnt, dislike_cnt
+    # don't really need to collect likes & dislikes for now. It is holding my back.
+    # @classmethod
+    # def _ext_likes_dislikes(cls, main_html: str, video_id: str) -> Tuple[int, int]:
+    #     """
+    #     must collect them together because
+    #     """
+    #     logger = logging.getLogger("_ext_likes_dislikes")
+    #     # the first will be like info, the latter will be dislike info
+    #     results = re.findall(r'"toggleButtonRenderer":{.*?"accessibilityData":{"label":"(.*?)"}}', main_html)
+    #     # search for like counts
+    #     like_info = results[0].strip()
+    #     dislike_info = results[1].strip()
+    #     if like_info == "I like this" and dislike_info == "I dislike this":
+    #         # like count and dislike count does not exist
+    #         # which means their values are zero.
+    #         like_cnt = 0
+    #         dislike_cnt = 0
+    #         logger.info("no likes & dislikes for video:" + video_id)
+    #     else:
+    #         like_cnt_info = like_info.split(" ")[0].strip()
+    #         dislike_cnt_info = dislike_info.split(" ")[0].strip()
+    #         # get the like cnt
+    #         if like_cnt_info == "No":
+    #             like_cnt = 0
+    #             logger.info("like_cnt:0:video:" + video_id)
+    #         else:
+    #             like_cnt = int(like_cnt_info.replace(",", ""))
+    #             logger.info("like_cnt:{}:video:{}".format(like_cnt, video_id))
+    #         # get the dislike cnt
+    #         if dislike_cnt_info == "No":
+    #             dislike_cnt = 0
+    #             logger.info("dislike_cnt:0:video:" + video_id)
+    #         else:
+    #             dislike_cnt = int(dislike_cnt_info.replace(",", ""))
+    #             logger.info("dislike_cnt:{}:video:{}".format(dislike_cnt, video_id))
+    #     return like_cnt, dislike_cnt
 
 
 class IdiomExtractor:
