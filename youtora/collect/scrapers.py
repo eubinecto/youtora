@@ -90,13 +90,10 @@ class TracksRawScraper(Scraper):
         :param caption: parsed caption object.
         :return:
         """
-        logger = logging.getLogger("scrape")
-        logger.info("loading tracks...:" + caption.url)
-        response = requests.get(caption.url)  # first, get the response (download)
-        response.raise_for_status()  # check if the response was erroneous
+        raw_xml = cls._scrape_raw_xml(caption.url)
         tracks_raw = TracksRaw(id="|".join([caption.id, "tracks"]),
                                caption_id=caption.id,
-                               raw_xml=response.text)
+                               raw_xml=raw_xml)
         # should be saved later. scrape does scraping only.
         return tracks_raw
 
@@ -107,6 +104,19 @@ class TracksRawScraper(Scraper):
             cls.scrape(caption)
             for caption in caption_list
         )
+
+    @classmethod
+    def _scrape_raw_xml(cls, caption_url: str) -> Optional[str]:
+        logger = logging.getLogger("_scrape_raw_xml")
+        logger.info("loading raw xml...:" + caption_url)
+        response = requests.get(caption_url)  # first, get the response (download)
+        try:
+            response.raise_for_status()  # check if the response was erroneous
+        except requests.exceptions.HTTPError as he:
+            logger.warning(str(he))
+            return None
+        else:
+            return response.text
 
 
 class VideoRawScraper:

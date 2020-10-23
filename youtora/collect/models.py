@@ -50,7 +50,8 @@ class TracksRaw(models.Model):
     id = models.CharField(primary_key=True, max_length=100, verbose_name="caption_id|tracks_raw")
     # caption id must be unique
     caption_id = models.CharField(max_length=100, blank=False, null=False, unique=True)
-    raw_xml = models.TextField(blank=False, null=False)
+    # can be null
+    raw_xml = models.TextField(blank=True, null=True, default=None)
 
     # don't need a relation to video, as we'll look this up by caption id.
 

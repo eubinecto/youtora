@@ -26,6 +26,7 @@ from youtora.refine.extractors import (
 )
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+# es logger is too verbose. set the logging level to warning.
 # https://stackoverflow.com/a/47157553
 es_logger = logging.getLogger("elasticsearch")
 es_logger.setLevel(logging.WARNING)
