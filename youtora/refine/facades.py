@@ -7,7 +7,7 @@ from youtora.refine.extractors import IdiomExtractor
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
-class ExtractIdiomsRunner:
+class ExtractIdioms:
     @classmethod
     def run(cls):
         logger = logging.getLogger("run")

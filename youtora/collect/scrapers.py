@@ -1,5 +1,6 @@
 # for type hinting
 import logging
+from abc import ABC
 from os import path
 from typing import List, Generator, Optional
 
@@ -19,7 +20,7 @@ from youtora.refine.dataclasses import Caption
 from .models import TracksRaw, ChannelRaw, VideoRaw, IdiomRaw
 
 
-class Scraper:
+class Scraper(ABC):
     # chrome drivers are stored in bin
     CHROME_DRIVER_PATH: dict = {
         "mac": "./bin/chromedriver_mac_64",

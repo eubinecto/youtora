@@ -14,13 +14,7 @@ from youtora.refine.extractors import CaptionExtractor, ChannelExtractor
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
-class Runner:
-    @classmethod
-    def run(cls, **kwargs):
-        raise NotImplementedError
-
-
-class ScrapeYouTubeRawsRunner(Runner):
+class ScrapeYouTubeRaws:
     # just take out the lang codes
     LANG_CODES = [
         lang_code for lang_code, desc
@@ -57,7 +51,7 @@ class ScrapeYouTubeRawsRunner(Runner):
                 logger.info("tracks_raw saved #{}".format(track_idx + 1))
 
 
-class ScrapeIdiomRawsRunner(Runner):
+class ScrapeIdiomRaws:
     @classmethod
     def run(cls):
         logger = logging.getLogger("run")

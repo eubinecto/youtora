@@ -31,9 +31,9 @@ es_logger = logging.getLogger("elasticsearch")
 es_logger.setLevel(logging.WARNING)
 
 
-class GeneralDocBuilder:
+class BuildGeneralDoc:
     @classmethod
-    def build(cls):
+    def run(cls):
         logger = logging.getLogger("build")
         # get a generator of all channel raws
         channel_raws = ChannelRaw.objects.all()
