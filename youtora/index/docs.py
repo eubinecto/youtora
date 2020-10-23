@@ -12,7 +12,7 @@ from elasticsearch_dsl.connections import connections
 from config.settings import ELASTICSEARCH_DSL
 
 # create a default connection to the host
-connections.create_connection(hosts=ELASTICSEARCH_DSL['default']['hosts'])
+es_connection = connections.create_connection(hosts=ELASTICSEARCH_DSL['default']['hosts'])
 
 
 class ChannelInnerDoc(InnerDoc):

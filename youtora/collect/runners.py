@@ -2,13 +2,13 @@
 import logging
 import sys
 
-from youtora.refine.extractors import CaptionExtractor, ChannelExtractor
-from .scrapers import (
+from youtora.collect.scrapers import (
     ChannelRawScraper,
     VideoRawScraper,
     TracksRawScraper,
     IdiomRawScraper
 )
+from youtora.refine.extractors import CaptionExtractor, ChannelExtractor
 
 # logs to standard out, logging level is at info
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
