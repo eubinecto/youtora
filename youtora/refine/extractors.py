@@ -2,6 +2,7 @@
 import html
 import logging
 import re
+import unicodedata  # for normalising the text output.
 from typing import List, Tuple, Generator, Collection, Optional
 
 import xmltodict
@@ -340,8 +341,9 @@ class IdiomExtractor:
     # e.g. <strong class="Latn headword" lang="en">...</strong>
     STRONG_CLASS = "Latn headword"
     # e.g. (idiomatic)
-    CONTEXT_RE = re.compile(r"^\([\S ]+\)")
-    TEXT_WITH_CONTEXT_RE = re.compile(CONTEXT_RE.pattern + r"([\S ]+)")
+    CONTEXT_RE = re.compile(r"^\([\S\s^\n]+\)")
+    TEXT_WITH_CONTEXT_RE = re.compile(CONTEXT_RE.pattern + r"([\S\s^\n]+)")
+
     # TEXT_NO_CONTEXT_RE = re.compile(r"^([\S ]+)")
 
     @classmethod
@@ -356,12 +358,14 @@ class IdiomExtractor:
 
     @classmethod
     def _ext_senses(cls, parser_info: dict) -> List[Sense]:
-        meanings = [
-            Sense(etymology=sense_json['etymology'] if sense_json['etymology'] else None,
-                  defs=cls._ext_defs(sense_json['definitions']))
-            for sense_json in parser_info
-        ]
-        return meanings
+        if parser_info:
+            meanings = [
+                Sense(etymology=sense_json['etymology'] if sense_json['etymology'] else None,
+                      defs=cls._ext_defs(sense_json['definitions']))
+                for sense_json in parser_info
+            ]
+            return meanings
+        return list()
 
     @classmethod
     def _ext_defs(cls, defs_json: List[dict]) -> List[Definition]:
@@ -369,7 +373,8 @@ class IdiomExtractor:
         for def_json in defs_json:
             # list concatenation
             pos = def_json['partOfSpeech'] if def_json['partOfSpeech'] else None
-            text_jsons = def_json['text'][1:]  # exclude the first entry
+            # exclude the first entry, normalise it
+            text_jsons = [unicodedata.normalize("NFKD", text_json) for text_json in def_json['text'][1:]]
             texts = [cls._ext_text(text_json) for text_json in text_jsons]
             contexts = [cls._ext_context(text_json) for text_json in text_jsons]
             defs += [

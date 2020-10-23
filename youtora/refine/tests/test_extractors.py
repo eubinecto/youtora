@@ -34,6 +34,10 @@ class IdiomExtractorTestCase(TestCase):
     big_picture_raw = IdiomRawScraper.scrape("big_picture",
                                              "big picture",
                                              "https://en.wiktionary.org/wiki/big_picture")
+    # this won't work?
+    say_no_more_raw = IdiomRawScraper.scrape("say_no_more",
+                                             "say no more",
+                                             "https://en.wiktionary.org/wiki/say_no_more")
 
     # # with two different pos.
     # promised_land_raw = IdiomRawScraper.scrape("Promised_Land",
@@ -141,3 +145,22 @@ class IdiomExtractorTestCase(TestCase):
         self.assertEqual(context_5, dutch_oven.senses[0]['defs'][4]['context'])
         self.assertEqual(context_6, dutch_oven.senses[0]['defs'][5]['context'])
         self.assertEqual(context_7, dutch_oven.senses[0]['defs'][6]['context'])
+
+    def test_parse_when_text_include_non_breaking_space(self):
+        """
+        had this problem: https://stackoverflow.com/questions/10993612/how-to-remove-xa0-from-string-in-python
+        :return:
+        """
+        def_text_1 = "What has already been said conveys all the meaning and information needed to draw a conclusion" \
+                     " concerning a matter which it would be imprudent to discuss further."
+        def_text_2 = "A standard formula to end a conversation, i.e. bye, see you soon."
+        context_1 = "idiomatic, often humorous"
+        context_2 = "MLE"
+        say_no_more = IdiomExtractor.parse(self.say_no_more_raw)
+        say_no_more.save()
+        # assert equal definitions
+        self.assertEqual(def_text_1, say_no_more.senses[0]['defs'][0]['text'])
+        self.assertEqual(def_text_2, say_no_more.senses[0]['defs'][1]['text'])
+        # assert equal contexts
+        self.assertEqual(context_1, say_no_more.senses[0]['defs'][0]['context'])
+        self.assertEqual(context_2, say_no_more.senses[0]['defs'][1]['context'])
