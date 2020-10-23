@@ -41,15 +41,6 @@ class Track:
         """
         return "|".join([self.caption_id, str(self.__hash__())])
 
-    def set_prev_id(self, prev_id: str):
-        self.prev_id = prev_id
-
-    def set_next_id(self, next_id: str):
-        self.next_id = next_id
-
-    def set_context(self, context: str):
-        self.context: str = context
-
     def __hash__(self) -> int:
         return hash((self.caption_id, self.start, self.content))
 
