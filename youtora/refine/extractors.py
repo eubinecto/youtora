@@ -359,13 +359,19 @@ class IdiomExtractor:
     @classmethod
     def _ext_senses(cls, parser_info: dict) -> List[Sense]:
         if parser_info:
-            meanings = [
-                Sense(etymology=sense_json['etymology'] if sense_json['etymology'] else None,
-                      defs=cls._ext_defs(sense_json['definitions']))
-                for sense_json in parser_info
-            ]
-            return meanings
-        return list()
+            senses = list()
+            for sense_json in parser_info:
+                if sense_json['etymology']:
+                    etymology = sense_json['etymology'].strip()
+                    # normalise
+                    etymology = unicodedata.normalize("NFKD", etymology)
+                else:
+                    etymology = None
+                sense = Sense(etymology=etymology, defs=cls._ext_defs(sense_json['definitions']))
+                senses.append(sense)
+            else:
+                return senses
+        return list()  # if parser_info does not exist, return an empty list
 
     @classmethod
     def _ext_defs(cls, defs_json: List[dict]) -> List[Definition]:
