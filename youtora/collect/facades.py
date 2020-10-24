@@ -38,7 +38,7 @@ class ScrapeYouTubeRaws:
         logger.info("channel_raw saved:{}".format(str(channel_raw)))
         # scrape and store video raws (which will save caption raws)
         vid_id_list = ChannelExtractor.parse(channel_raw).vid_id_list
-        vid_raw_gen = VideoRawScraper.scrape_multi(vid_id_list, channel_raw)
+        vid_raw_gen = VideoRawScraper.scrape_multi(vid_id_list, channel_raw.id)
         for vid_idx, vid_raw in enumerate(vid_raw_gen):
             # save video_raw
             vid_raw.save()

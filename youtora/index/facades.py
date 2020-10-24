@@ -41,7 +41,7 @@ class BuildGeneralDoc:
             # parse the channel_raw and build the doc
             channel = ChannelExtractor.parse(channel_raw)
             channel_doc = cls._build_channel_doc(channel)
-            video_raws = VideoRaw.objects.filter(channel_raw=channel_raw)
+            video_raws = VideoRaw.objects.filter(channel_id=channel_raw.id)
             for vid_idx, video_raw in enumerate(video_raws):
                 # parse the video_raw and build the doc
                 video = VideoExtractor.parse(video_raw)

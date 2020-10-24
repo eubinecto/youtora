@@ -30,9 +30,7 @@ class VideoRaw(models.Model):
     url = models.URLField(validators=[URLValidator], blank=False, null=False)
     video_info = JSONField(blank=False, null=False)  # should be serialised with json.dumps
     main_html = models.TextField(blank=False, null=False)
-    channel_raw = models.ForeignKey(to=ChannelRaw, blank=False, null=False, on_delete=models.CASCADE)
-
-    # channel_id = models.CharField(max_length=100, blank=False, null=False)
+    channel_id = models.CharField(max_length=100, blank=False, null=False)
 
     def __str__(self) -> str:
         return str(self.id)
@@ -41,7 +39,7 @@ class VideoRaw(models.Model):
         # note: always do model.clean_fields() before model.save()
         # https://stackoverflow.com/questions/17816229/django-model-blank-false-does-not-work
         self.clean_fields()
-        # self.validate_unique()
+        self.validate_unique()
         super(VideoRaw, self).save()
 
 
@@ -62,7 +60,7 @@ class TracksRaw(models.Model):
         # note: always do model.clean_fields() before model.save()
         # https://stackoverflow.com/questions/17816229/django-model-blank-false-does-not-work
         self.clean_fields()
-        # self.validate_unique()  # must do this before saving
+        self.validate_unique()  # must do this before saving
         super(TracksRaw, self).save()
 
 
@@ -83,5 +81,5 @@ class IdiomRaw(models.Model):
         # note: always do model.clean_fields() before model.save()
         # https://stackoverflow.com/questions/17816229/django-model-blank-false-does-not-work
         self.clean_fields()
-        # self.validate_unique()  # must do this before saving
+        self.validate_unique()  # must do this before saving
         super(IdiomRaw, self).save()
