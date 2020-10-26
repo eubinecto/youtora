@@ -15,7 +15,7 @@ from youtora.index.docs import (
     CaptionInnerDoc,
     GeneralDoc
 )
-from youtora.index.docs import es_connection
+from youtora.index.docs import es_client
 from youtora.refine.dataclasses import Video, Channel, Caption, Track
 from youtora.refine.extractors import (
     ChannelExtractor,
@@ -31,9 +31,9 @@ es_logger = logging.getLogger("elasticsearch")
 es_logger.setLevel(logging.WARNING)
 
 
-class GeneralDocBuilder:
+class BuildGeneralDoc:
     @classmethod
-    def build(cls):
+    def exec(cls):
         logger = logging.getLogger("build")
         # get a generator of all channel raws
         channel_raws = ChannelRaw.objects.all()
@@ -41,7 +41,7 @@ class GeneralDocBuilder:
             # parse the channel_raw and build the doc
             channel = ChannelExtractor.parse(channel_raw)
             channel_doc = cls._build_channel_doc(channel)
-            video_raws = VideoRaw.objects.filter(channel_raw=channel_raw)
+            video_raws = VideoRaw.objects.filter(channel_id=channel_raw.id)
             for vid_idx, video_raw in enumerate(video_raws):
                 # parse the video_raw and build the doc
                 video = VideoExtractor.parse(video_raw)
@@ -56,7 +56,7 @@ class GeneralDocBuilder:
                     # parse it to get all tracks
                     tracks = TrackExtractor.parse(tracks_raw)
                     general_doc_dicts = cls._build_general_doc_dicts(tracks, caption_doc)
-                    bulk(client=es_connection, actions=general_doc_dicts)
+                    bulk(client=es_client, actions=general_doc_dicts)
                     logger.info("saved:channel={}|{}:video={}|{}:caption={}|{}:all tracks"
                                 .format(chan_idx, str(channel), vid_idx, str(video),
                                         cap_idx, str(caption)))
@@ -70,7 +70,7 @@ class GeneralDocBuilder:
     @classmethod
     def _build_video_doc(cls, video: Video, channel_doc: ChannelInnerDoc) -> VideoInnerDoc:
         publish_date_int = "".join(video.publish_date.split("-"))
-        video_doc = VideoInnerDoc(id=video.id, views=video.views,
+        video_doc = VideoInnerDoc(id=video.id, views=video.views, title=video.title,
                                   publish_date_int=publish_date_int,
                                   category=video.category, channel=channel_doc)
         return video_doc
@@ -97,7 +97,7 @@ class GeneralDocBuilder:
                        start=track.start, duration=track.duration,
                        content=track.content, prev_id=track.prev_id,
                        next_id=track.next_id, context=track.context,
-                       caption_doc=caption_doc)
+                       caption=caption_doc)
             for track in tracks
         )
         dicts = (

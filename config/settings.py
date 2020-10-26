@@ -81,7 +81,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # djongo connector setup tutorial: https://www.youtube.com/watch?v=iKB_4HWKMCc
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'djongo',
         'NAME': 'youtora_db',
         'HOST': "localhost",  # experiment with the local one
         # you may or may need username or password

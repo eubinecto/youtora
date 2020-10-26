@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 
 
 # --- YouTube --- #
@@ -40,15 +40,6 @@ class Track:
         :return: the id of this track.
         """
         return "|".join([self.caption_id, str(self.__hash__())])
-
-    def set_prev_id(self, prev_id: str):
-        self.prev_id = prev_id
-
-    def set_next_id(self, next_id: str):
-        self.next_id = next_id
-
-    def set_context(self, context: str):
-        self.context: str = context
 
     def __hash__(self) -> int:
         return hash((self.caption_id, self.start, self.content))
@@ -95,32 +86,3 @@ class Video:
     # overrides the dunder string method
     def __str__(self) -> str:
         return self.title
-
-
-# -- to be used for extracting Idiom
-@dataclass
-class Definition:
-    text: str
-    pos: str
-    context: str
-    examples: Optional[List[str]] = None  # could be empty. example sentences.
-
-    def to_dict(self) -> dict:
-        return {
-            'text': self.text,
-            'pos': self.pos,
-            'examples': self.examples,
-            'context': self.context
-        }
-
-
-@dataclass
-class Sense:
-    etymology: Optional[str]  # could be null
-    defs: List[Definition]
-
-    def to_dict(self) -> dict:
-        return {
-            'etymology': self.etymology,
-            'defs': [definition.to_dict() for definition in self.defs]
-        }

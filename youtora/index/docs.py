@@ -12,7 +12,7 @@ from elasticsearch_dsl.connections import connections
 from config.settings import ELASTICSEARCH_DSL
 
 # create a default connection to the host
-es_connection = connections.create_connection(hosts=ELASTICSEARCH_DSL['default']['hosts'])
+es_client = connections.create_connection(hosts=ELASTICSEARCH_DSL['default']['hosts'])
 
 
 class ChannelInnerDoc(InnerDoc):
@@ -28,7 +28,8 @@ class VideoInnerDoc(InnerDoc):
     # dislikes = RankFeature()
     # like_ratio = RankFeature()
     publish_date_int = RankFeature()
-    category = Text()
+    category = Keyword()  # should be a keyword
+    title = Text()  # might come in handy for context2def later
     channel = Nested(ChannelInnerDoc)
 
 
