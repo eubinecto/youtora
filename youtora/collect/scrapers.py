@@ -92,7 +92,7 @@ class TracksRawScraper(Scraper):
         :return:
         """
         raw_xml = cls._scrape_raw_xml(caption.url)
-        tracks_raw = TracksRaw(id="|".join([caption.id, "tracks"]),
+        tracks_raw = TracksRaw(_id="|".join([caption.id, "tracks"]),
                                caption_id=caption.id,
                                raw_xml=raw_xml)
         # should be saved later. scrape does scraping only.
@@ -146,7 +146,7 @@ class VideoRawScraper:
         video_info = cls._scrape_video_info(vid_url)
         main_html = cls._scrape_main_html(vid_url)
         # assign and return. make sure to save them later.
-        video_raw = VideoRaw(id=vid_id, url=vid_url, channel_id=channel_id,
+        video_raw = VideoRaw(_id=vid_id, url=vid_url, channel_id=channel_id,
                              main_html=main_html, video_info=video_info)
         return video_raw
 
@@ -225,7 +225,7 @@ class ChannelRawScraper(Scraper):
             raise e
         else:
             # assign and return
-            channel_raw = ChannelRaw(id=channel_id, url=chan_url,
+            channel_raw = ChannelRaw(_id=channel_id, url=chan_url,
                                      lang_code=lang_code, main_html=main_html,
                                      uploads_html=uploads_html)
             return channel_raw
@@ -313,7 +313,7 @@ class IdiomRawScraper(Scraper):
         logger.info("loading idiom info for:[{}]...".format(idiom_text))
         parser_info = cls._scrape_parser_info(idiom_id)
         main_html = cls._scrape_main_html(wiktionary_url)
-        return IdiomRaw(id=idiom_id, text=idiom_text, wiktionary_url=wiktionary_url,
+        return IdiomRaw(_id=idiom_id, text=idiom_text, wiktionary_url=wiktionary_url,
                         parser_info=parser_info, main_html=main_html)
 
     @classmethod

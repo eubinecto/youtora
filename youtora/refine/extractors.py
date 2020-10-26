@@ -19,10 +19,10 @@ from youtora.refine.dataclasses import (
     Channel,
     Video,
     Track,
-    Caption, Sense, Definition
+    Caption
 )
 from youtora.refine.errors import CaptionNotFoundError
-from youtora.refine.models import Idiom
+from youtora.refine.models import Idiom, Definition, Sense
 
 
 class ChannelExtractor:
@@ -286,7 +286,7 @@ class VideoExtractor:
         views = info['view_count']
         # the length is always greater than zero;  use the first one as the category of this video
         category = info['categories'][0].strip()
-        channel_id = video_raw.channel_raw.id
+        channel_id = video_raw.channel_id
         vid_url = video_raw.url
         # better collect these info separately
         # likes, dislikes = cls._ext_likes_dislikes(video_raw.main_html, video_raw.id)
@@ -354,7 +354,7 @@ class IdiomExtractor:
         logger = logging.getLogger("parse")
         logger.info("parsing...:" + idiom_raw.text)
         senses = cls._ext_senses(idiom_raw.parser_info)
-        return Idiom(id=idiom_raw.id, text=idiom_raw.text,
+        return Idiom(_id=idiom_raw.id, text=idiom_raw.text,
                      wiktionary_url=idiom_raw.wiktionary_url,
                      # insert the dictionary representation
                      senses=[sense.to_dict() for sense in senses])
@@ -370,7 +370,10 @@ class IdiomExtractor:
                     etymology = unicodedata.normalize("NFKD", etymology)
                 else:
                     etymology = None
-                sense = Sense(etymology=etymology, defs=cls._ext_defs(sense_json['definitions']))
+                defs = cls._ext_defs(sense_json['definitions'])
+                sense = Sense(etymology=etymology,
+                              # insert the dictionary representation
+                              defs=[defin.to_dict() for defin in defs])
                 senses.append(sense)
             else:
                 return senses
@@ -383,12 +386,15 @@ class IdiomExtractor:
             # list concatenation
             pos = def_json['partOfSpeech'] if def_json['partOfSpeech'] else None
             # exclude the first entry, normalise it
-            text_jsons = [unicodedata.normalize("NFKD", text_json) for text_json in def_json['text'][1:]]
+            text_jsons = [
+                unicodedata.normalize("NFKD", text_json)
+                for text_json in def_json['text'][1:] if text_json
+            ]
             texts = [cls._ext_text(text_json) for text_json in text_jsons]
             contexts = [cls._ext_context(text_json) for text_json in text_jsons]
             defs += [
                 # set the examples later
-                Definition(text=text, pos=pos, context=context)
+                Definition(text=text, pos=pos, context=context, examples=list())
                 for text, context in zip(texts, contexts)
             ]
         return defs

@@ -1,12 +1,11 @@
-from django.contrib.postgres.fields import JSONField  # postgres - specific field
 from django.core.validators import URLValidator
-from django.db import models
+from djongo import models
 
 
 # ---  Raw models (YouTube) --- #
 class ChannelRaw(models.Model):
     objects = models.Manager()
-    id = models.CharField(primary_key=True, max_length=100, verbose_name="channel_id")
+    _id = models.CharField(primary_key=True, max_length=100)
     url = models.URLField(validators=[URLValidator], blank=False, null=False)
     lang_code = models.CharField(max_length=10, blank=False, null=False)
     main_html = models.TextField(blank=False, null=False)
@@ -19,16 +18,20 @@ class ChannelRaw(models.Model):
         # note: always do model.clean_fields() before model.save()
         # https://stackoverflow.com/questions/17816229/django-model-blank-false-does-not-work
         self.clean_fields()
-        # self.validate_unique()
+        self.validate_unique()
         super(ChannelRaw, self).save()
+
+    @property
+    def id(self) -> str:
+        return self._id
 
 
 class VideoRaw(models.Model):
     objects = models.Manager()
-    id = models.CharField(primary_key=True, max_length=100, verbose_name="video_id")
+    _id = models.CharField(primary_key=True, max_length=100)
     # on looking up channel_id, djongo will create a pymongo query for that
     url = models.URLField(validators=[URLValidator], blank=False, null=False)
-    video_info = JSONField(blank=False, null=False)  # should be serialised with json.dumps
+    video_info = models.JSONField(blank=False, null=False, default=dict)  # should be serialised with json.dumps
     main_html = models.TextField(blank=False, null=False)
     channel_id = models.CharField(max_length=100, blank=False, null=False)
 
@@ -42,10 +45,14 @@ class VideoRaw(models.Model):
         self.validate_unique()
         super(VideoRaw, self).save()
 
+    @property
+    def id(self) -> str:
+        return self._id
+
 
 class TracksRaw(models.Model):
     objects = models.Manager()
-    id = models.CharField(primary_key=True, max_length=100, verbose_name="caption_id|tracks_raw")
+    _id = models.CharField(primary_key=True, max_length=100)
     # caption id must be unique
     caption_id = models.CharField(max_length=100, blank=False, null=False, unique=True)
     # can be null
@@ -63,16 +70,20 @@ class TracksRaw(models.Model):
         self.validate_unique()  # must do this before saving
         super(TracksRaw, self).save()
 
+    @property
+    def id(self) -> str:
+        return self._id
+
 
 class IdiomRaw(models.Model):
     objects = models.Manager()
-    id = models.CharField(primary_key=True, max_length=100)
+    _id = models.CharField(primary_key=True, max_length=100)
     text = models.CharField(max_length=100, blank=False, null=False)
     wiktionary_url = models.CharField(max_length=100, blank=False, null=False)
     # could be null
-    parser_info = JSONField(blank=True, null=True)  # get this from wiktionary parser (python)
+    parser_info = models.JSONField(blank=True, null=False, default=dict)  # get this from wiktionary parser (python)
     # could be null (if request was erroneous)
-    main_html = models.TextField(blank=True, null=True)
+    main_html = models.TextField(blank=True, null=False, default=None)
 
     def __str__(self) -> str:
         return self.text
@@ -81,5 +92,9 @@ class IdiomRaw(models.Model):
         # note: always do model.clean_fields() before model.save()
         # https://stackoverflow.com/questions/17816229/django-model-blank-false-does-not-work
         self.clean_fields()
-        self.validate_unique()  # must do this before saving
+        # self.validate_unique()  # must do this before saving
         super(IdiomRaw, self).save()
+
+    @property
+    def id(self) -> str:
+        return self._id
