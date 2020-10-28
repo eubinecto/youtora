@@ -59,5 +59,3 @@ class GeneralDoc(Document):
         # do something before save here, if you wish
         return super().save(**kwargs)
 
-
-GeneralDoc.init()

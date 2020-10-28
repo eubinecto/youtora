@@ -35,6 +35,8 @@ class BuildGeneralDoc:
     @classmethod
     def exec(cls):
         logger = logging.getLogger("build")
+        # should populate the mappings before building the idx
+        GeneralDoc.init()
         channel_raws = ChannelRaw.objects.all()
         for chan_idx, channel_raw in enumerate(channel_raws):
             # parse the channel_raw and build the doc
