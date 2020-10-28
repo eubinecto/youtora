@@ -2,7 +2,7 @@
 from unittest import TestCase
 
 from youtora.search.dataclasses import SrchQuery
-from youtora.search.facades import SearchGeneralDoc
+from youtora.search.facades import SrchGeneralDoc
 
 
 class SearchGeneralDocTestCase(TestCase):
@@ -13,16 +13,14 @@ class SearchGeneralDocTestCase(TestCase):
 
     # only the auto captions should be returned
     def test_add_filter_is_auto_true(self):
-        res = SearchGeneralDoc.exec(self.is_auto_true)
-        self.assertTrue(len(res['hits']['hits']) > 0)
-        for hit in res['hits']['hits']:
-            src = hit['_source']
-            self.assertEqual(True, src['caption']['is_auto'])
+        srch_results = SrchGeneralDoc.exec(self.is_auto_true)
+        self.assertTrue(len(srch_results) > 0)
+        for srch_res in srch_results:
+            self.assertEqual(True, srch_res.features['is_auto'])
 
     # only the manual captions should be returned
     def test_add_filter_is_auto_false(self):
-        res = SearchGeneralDoc.exec(self.is_auto_false)
-        self.assertTrue(len(res['hits']['hits']) > 0)
-        for hit in res['hits']['hits']:
-            src = hit['_source']
-            self.assertEqual(False, src['caption']['is_auto'])
+        srch_results = SrchGeneralDoc.exec(self.is_auto_false)
+        self.assertTrue(len(srch_results) > 0)
+        for srch_res in srch_results:
+            self.assertEqual(False, srch_res.features['is_auto'])

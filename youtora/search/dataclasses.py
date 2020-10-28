@@ -29,5 +29,5 @@ class SrchResult:
     """previous, current, next track"""
     highlight: str
     """highlighted result"""
-    features: str
+    features: dict
     """remaining features"""

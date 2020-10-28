@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from youtora.search.dataclasses import SrchQuery
 from youtora.search.extractors import SrchResultsExtractor
-from youtora.search.facades import SearchGeneralDoc
+from youtora.search.facades import SrchGeneralDoc
 
 
 class SrchResultsExtractorTestCase(TestCase):
@@ -10,7 +10,7 @@ class SrchResultsExtractorTestCase(TestCase):
     # build a query to test with
     srch_query = SrchQuery(text)
     # search it on elastic search
-    resp_dict = SearchGeneralDoc.exec(srch_query)
+    resp_dict = SrchGeneralDoc.exec(srch_query)
     # get the hits json
     hits_json = resp_dict['hits']['hits']
 

@@ -3,16 +3,17 @@ from typing import List
 from elasticsearch_dsl import Search, Q
 
 from youtora.index.docs import es_client
-from youtora.search.dataclasses import SrchQuery
+from youtora.search.dataclasses import SrchQuery, SrchResult
+from youtora.search.extractors import SrchResultsExtractor
 
 
-class SearchGeneralDoc:
+class SrchGeneralDoc:
     """
     facade class that houses logic for searching general query.
     """
 
     @classmethod
-    def exec(cls, srch_query: SrchQuery) -> dict:
+    def exec(cls, srch_query: SrchQuery) -> List[SrchResult]:
         """
         :param srch_query: the search query passed from the view
         :return:
@@ -26,8 +27,10 @@ class SearchGeneralDoc:
         # add highlight - https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#highlighting
         srch = cls._add_highlight(srch)
         # to send the request to elasticsearch, call execute
-        response = srch.execute()
-        return response.to_dict()
+        resp_json = srch.execute()
+        # parse the response json to get a list of search results
+        srch_results = SrchResultsExtractor.parse(resp_json=resp_json.to_dict())
+        return srch_results
 
     @classmethod
     def _add_query(cls, srch: Search, srch_query: SrchQuery) -> Search:
