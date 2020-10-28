@@ -17,11 +17,15 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('text', type=str, help='the text to search on general_doc')
+        # optional arguments
+        parser.add_argument('-cl', '--capt_lang_code', type=str,
+                            help="the language of the caption")
 
     def handle(self, *args, **options):
         text = options['text']
+        capt_lang_code = options.get('capt_lang_code', None)
         # build a search query
-        srch_query = SrchQuery(text)
+        srch_query = SrchQuery(text, capt_lang_code=capt_lang_code)
         # do the search
         srch_results = SrchGeneralDoc.exec(srch_query)
         # print out the results
@@ -32,5 +36,10 @@ class Command(BaseCommand):
                 srch_res.highlight = self.BOLD_RE.sub(repl=colored(hl, 'blue'),
                                                       string=srch_res.highlight,
                                                       count=idx + 1)
-            print(textwrap.fill(srch_res.highlight, self.WIDTH))
-            print(srch_res.tracks[0].timed_url)
+
+            print(colored("context:\n", "white")
+                  + textwrap.fill(srch_res.highlight, self.WIDTH))
+            print(colored("timed_url:\n", "white")
+                  + srch_res.tracks[0].timed_url)
+            print(colored("doc_id:\n", "white")
+                  + srch_res.tracks[0].id)

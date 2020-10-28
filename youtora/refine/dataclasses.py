@@ -54,6 +54,7 @@ class Track:
 
     def to_dict(self) -> dict:
         return {
+            'id': self.id,
             'caption_id': self.caption_id,
             'start': self.start,
             'duration': self.duration,

@@ -36,6 +36,7 @@ class SrchResultsExtractor:
                                   highlight=hit_json['highlight']['context'][0],
                                   features=src_json['caption'])
             srch_results.append(srch_res)
+            del tracks
         else:
             return srch_results
 

@@ -3,6 +3,7 @@ import sys
 from typing import Generator, List
 
 from elasticsearch.helpers import bulk
+from elasticsearch_dsl import Index
 
 from youtora.collect.models import (
     ChannelRaw,
@@ -34,9 +35,9 @@ es_logger.setLevel(logging.WARNING)
 class BuildGeneralDoc:
     @classmethod
     def exec(cls):
-        logger = logging.getLogger("build")
-        # should populate the mappings before building the idx
-        GeneralDoc.init()
+        logger = logging.getLogger("exec")
+        Index('general_doc').delete(ignore=404)  # first delete the index
+        GeneralDoc.init()  # should populate the mappings before building the idx
         channel_raws = ChannelRaw.objects.all()
         for chan_idx, channel_raw in enumerate(channel_raws):
             # parse the channel_raw and build the doc
