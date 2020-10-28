@@ -18,6 +18,13 @@ class SrchGeneralDoc:
         :param srch_query: the search query passed from the view
         :return:
         """
+        resp_json = cls.build_and_exec(srch_query)
+        # parse the response json to get a list of search results
+        srch_results = SrchResultsExtractor.parse(resp_json)
+        return srch_results
+
+    @classmethod
+    def build_and_exec(cls, srch_query: SrchQuery) -> dict:
         # build a search instance
         srch = Search(using=es_client)
         # pagination - https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#pagination
@@ -28,9 +35,7 @@ class SrchGeneralDoc:
         srch = cls._add_highlight(srch)
         # to send the request to elasticsearch, call execute
         resp_json = srch.execute()
-        # parse the response json to get a list of search results
-        srch_results = SrchResultsExtractor.parse(resp_json=resp_json.to_dict())
-        return srch_results
+        return resp_json.to_dict()
 
     @classmethod
     def _add_query(cls, srch: Search, srch_query: SrchQuery) -> Search:

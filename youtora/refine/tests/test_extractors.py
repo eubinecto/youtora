@@ -1,4 +1,4 @@
-from django.test import TestCase
+from unittest import TestCase
 
 from youtora.collect.scrapers import IdiomRawScraper
 from youtora.refine.extractors import IdiomExtractor

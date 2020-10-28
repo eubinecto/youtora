@@ -1,5 +1,5 @@
 # we are not accessing django's db, so just use unittest's one
-from unittest import TestCase
+from django.test import TestCase
 
 from youtora.search.dataclasses import SrchQuery
 from youtora.search.facades import SrchGeneralDoc
