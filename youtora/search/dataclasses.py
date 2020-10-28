@@ -31,3 +31,10 @@ class SrchResult:
     """highlighted result"""
     features: dict
     """remaining features"""
+
+    def to_dict(self) -> dict:
+        return {
+            'tracks': [track.to_dict() for track in self.tracks],
+            'highlight': self.highlight,
+            'features': self.features
+        }

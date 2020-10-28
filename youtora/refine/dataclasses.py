@@ -32,6 +32,7 @@ class Track:
     prev_id: str = None
     next_id: str = None
     context: str = None
+    timed_url: str = None
 
     @property
     def id(self) -> str:
@@ -59,7 +60,8 @@ class Track:
             'content': self.content,
             'context': self.context,
             'prev_id': self.prev_id,
-            'next_id': self.next_id
+            'next_id': self.next_id,
+            'timed_url': self.timed_url
         }
 
 

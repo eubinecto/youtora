@@ -1,11 +1,13 @@
 from typing import List
 
+from config.settings import STR_FORMATS
 from youtora.index.docs import GeneralDoc
 from youtora.refine.dataclasses import Track
 from youtora.search.dataclasses import SrchResult
 
 
 class SrchResultsExtractor:
+    VID_TIMED_URL_FORMAT = STR_FORMATS['vid_timed_url']
 
     @classmethod
     def parse(cls, resp_json: dict) -> List[SrchResult]:
@@ -39,10 +41,17 @@ class SrchResultsExtractor:
 
     @classmethod
     def _ext_track(cls, src_json: dict) -> Track:
+        # parse timed_url
+        timed_url = cls.VID_TIMED_URL_FORMAT.format(
+            src_json['caption']['video']['id'],
+            int(src_json['start'])
+        )
+        # construct a track and return
         return Track(caption_id=src_json['caption']['id'],
                      start=src_json['start'],
                      duration=src_json['duration'],
                      content=src_json['content'],
                      context=src_json['context'],
                      prev_id=src_json.get('prev_id', None),
-                     next_id=src_json.get('next_id', None))
+                     next_id=src_json.get('next_id', None),
+                     timed_url=timed_url)
