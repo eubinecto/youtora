@@ -204,7 +204,7 @@ class ChannelRawScraper(Scraper):
     CHAN_URL = STR_FORMATS['chan_url']
     # the show more button changes its position. find it by its class name
     SHOW_MORE_CLASS = "nextcontinuation-button"
-    TIME_OUT = 5
+    TIME_OUT = 10
 
     @classmethod
     def scrape(cls, channel_id: str, lang_code: str, os: str,
