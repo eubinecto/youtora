@@ -1,17 +1,18 @@
 from elasticsearch_dsl import (
     Document,
+    Object,
     InnerDoc,
     Double,
     Text,
     Keyword,
     Boolean,
-    RankFeature,
-    Nested)
+    RankFeature)
 from elasticsearch_dsl.connections import connections
 
 from config.settings import ELASTICSEARCH_DSL
 
 # create a default connection to the host
+
 es_client = connections.create_connection(hosts=ELASTICSEARCH_DSL['default']['hosts'])
 
 
@@ -30,14 +31,14 @@ class VideoInnerDoc(InnerDoc):
     publish_date_int = RankFeature()
     category = Keyword()  # should be a keyword
     title = Text()  # might come in handy for context2def later
-    channel = Nested(ChannelInnerDoc)
+    channel = Object(ChannelInnerDoc)
 
 
 class CaptionInnerDoc(InnerDoc):
     id = Keyword(required=True)
     is_auto = Boolean()
     lang_code = Keyword()
-    video = Nested(VideoInnerDoc)
+    video = Object(VideoInnerDoc)
 
 
 class GeneralDoc(Document):
@@ -48,7 +49,7 @@ class GeneralDoc(Document):
     prev_id = Keyword()
     next_id = Keyword()
     context = Text()
-    caption = Nested(CaptionInnerDoc)
+    caption = Object(CaptionInnerDoc)
 
     class Index:
         name = "general_doc"
@@ -59,5 +60,4 @@ class GeneralDoc(Document):
         return super().save(**kwargs)
 
 
-# on import, create the mappings in elasticsearch
 GeneralDoc.init()

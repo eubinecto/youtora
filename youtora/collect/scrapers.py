@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as e_c
 from selenium.webdriver.support.ui import WebDriverWait
 from wiktionaryparser import WiktionaryParser
 
-from config.settings import DATA_DIR
+from config.settings import DATA_DIR, STR_FORMATS
 from youtora.refine.dataclasses import Caption
 from .models import TracksRaw, ChannelRaw, VideoRaw, IdiomRaw
 
@@ -129,7 +129,7 @@ class VideoRawScraper:
         'quiet': True
     }  # VIDEO_DL_OPTIONS
 
-    VID_URL_FORMAT = "https://www.youtube.com/watch?v={}"
+    VID_URL_FORMAT = STR_FORMATS['vid_url']
 
     HEADERS = {
         # get the english page
@@ -199,9 +199,9 @@ class VideoRawScraper:
 
 class ChannelRawScraper(Scraper):
     # the url to the playlist for getting all uploaded videos
-    CHAN_UPLOADS_URL = "https://m.youtube.com/channel/{}/videos?view=0&flow=list"
+    CHAN_UPLOADS_URL = STR_FORMATS['chan_uploads_url']
     # the main landing page of the channel_id
-    CHAN_URL = "http://www.youtube.com/channel/{}"
+    CHAN_URL = STR_FORMATS['chan_url']
     # the show more button changes its position. find it by its class name
     SHOW_MORE_CLASS = "nextcontinuation-button"
     TIME_OUT = 5

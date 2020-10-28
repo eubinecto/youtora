@@ -22,7 +22,7 @@ class ScrapeYouTubeRaws:
     ]
 
     @classmethod
-    def run(cls, channel_id: str, lang_code: str, os: str = "mac"):
+    def exec(cls, channel_id: str, lang_code: str, os: str = "mac"):
         """
         scrapes and saves raw data in the following order:
         1. TracksRaw
@@ -53,7 +53,7 @@ class ScrapeYouTubeRaws:
 
 class ScrapeIdiomRaws:
     @classmethod
-    def run(cls):
+    def exec(cls):
         logger = logging.getLogger("run")
         for idiom_raw in IdiomRawScraper.scrape_multi():
             idiom_raw.save()

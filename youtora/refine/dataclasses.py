@@ -32,6 +32,7 @@ class Track:
     prev_id: str = None
     next_id: str = None
     context: str = None
+    timed_url: str = None
 
     @property
     def id(self) -> str:
@@ -50,6 +51,18 @@ class Track:
         overrides the dunder string method
         """
         return self.content
+
+    def to_dict(self) -> dict:
+        return {
+            'caption_id': self.caption_id,
+            'start': self.start,
+            'duration': self.duration,
+            'content': self.content,
+            'context': self.context,
+            'prev_id': self.prev_id,
+            'next_id': self.next_id,
+            'timed_url': self.timed_url
+        }
 
 
 @dataclass

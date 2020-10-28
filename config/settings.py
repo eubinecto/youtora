@@ -129,7 +129,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-
 # elastic search dsl configuration.
 ELASTICSEARCH_DSL = {
     'default': {
@@ -137,4 +136,10 @@ ELASTICSEARCH_DSL = {
     },
 }
 
-
+# string formats to be used
+STR_FORMATS = {
+    'vid_url': "https://www.youtube.com/watch?v={}",
+    'chan_url': "https://www.youtube.com/channel/{}",
+    'chan_uploads_url': "https://m.youtube.com/channel/{}/videos?view=0&flow=list",
+    'vid_timed_url': "https://youtu.be/{}?t={}"
+}

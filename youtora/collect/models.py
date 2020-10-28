@@ -6,10 +6,10 @@ from djongo import models
 class ChannelRaw(models.Model):
     objects = models.Manager()
     _id = models.CharField(primary_key=True, max_length=100)
-    url = models.URLField(validators=[URLValidator], blank=False, null=False)
-    lang_code = models.CharField(max_length=10, blank=False, null=False)
-    main_html = models.TextField(blank=False, null=False)
-    uploads_html = models.TextField(blank=False, null=False)
+    url = models.URLField(validators=[URLValidator], blank=False)
+    lang_code = models.CharField(max_length=10, blank=False)
+    main_html = models.TextField(blank=False)
+    uploads_html = models.TextField(blank=False)
 
     def __str__(self) -> str:
         return str(self.id)
@@ -30,10 +30,10 @@ class VideoRaw(models.Model):
     objects = models.Manager()
     _id = models.CharField(primary_key=True, max_length=100)
     # on looking up channel_id, djongo will create a pymongo query for that
-    url = models.URLField(validators=[URLValidator], blank=False, null=False)
-    video_info = models.JSONField(blank=False, null=False, default=dict)  # should be serialised with json.dumps
-    main_html = models.TextField(blank=False, null=False)
-    channel_id = models.CharField(max_length=100, blank=False, null=False)
+    url = models.URLField(validators=[URLValidator], blank=False)
+    video_info = models.JSONField(blank=False, default=None)  # should be serialised with json.dumps
+    main_html = models.TextField(blank=False)
+    channel_id = models.CharField(max_length=100, blank=False)
 
     def __str__(self) -> str:
         return str(self.id)
@@ -54,9 +54,9 @@ class TracksRaw(models.Model):
     objects = models.Manager()
     _id = models.CharField(primary_key=True, max_length=100)
     # caption id must be unique
-    caption_id = models.CharField(max_length=100, blank=False, null=False, unique=True)
+    caption_id = models.CharField(max_length=100, blank=False, unique=True)
     # can be null
-    raw_xml = models.TextField(blank=True, null=True, default=None)
+    raw_xml = models.TextField(blank=True, default=None)
 
     # don't need a relation to video, as we'll look this up by caption id.
 
@@ -78,12 +78,12 @@ class TracksRaw(models.Model):
 class IdiomRaw(models.Model):
     objects = models.Manager()
     _id = models.CharField(primary_key=True, max_length=100)
-    text = models.CharField(max_length=100, blank=False, null=False)
-    wiktionary_url = models.CharField(max_length=100, blank=False, null=False)
+    text = models.CharField(max_length=100, blank=False)
+    wiktionary_url = models.CharField(max_length=100, blank=False)
     # could be null
-    parser_info = models.JSONField(blank=True, null=False, default=dict)  # get this from wiktionary parser (python)
+    parser_info = models.JSONField(blank=True, default=None)  # get this from wiktionary parser (python)
     # could be null (if request was erroneous)
-    main_html = models.TextField(blank=True, null=False, default=None)
+    main_html = models.TextField(blank=True, default=None)
 
     def __str__(self) -> str:
         return self.text
