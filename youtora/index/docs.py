@@ -12,6 +12,7 @@ from elasticsearch_dsl.connections import connections
 from config.settings import ELASTICSEARCH_DSL
 
 # create a default connection to the host
+
 es_client = connections.create_connection(hosts=ELASTICSEARCH_DSL['default']['hosts'])
 
 

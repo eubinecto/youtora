@@ -3,7 +3,7 @@ from typing import List
 from elasticsearch_dsl import Search, Q
 
 from youtora.index.docs import es_client
-from youtora.search.dataclasses import SearchQuery
+from youtora.search.dataclasses import SrchQuery
 
 
 class SearchGeneralDoc:
@@ -12,7 +12,7 @@ class SearchGeneralDoc:
     """
 
     @classmethod
-    def exec(cls, srch_query: SearchQuery) -> dict:
+    def exec(cls, srch_query: SrchQuery) -> dict:
         """
         :param srch_query: the search query passed from the view
         :return:
@@ -30,7 +30,7 @@ class SearchGeneralDoc:
         return response.to_dict()
 
     @classmethod
-    def _add_query(cls, srch: Search, srch_query: SearchQuery) -> Search:
+    def _add_query(cls, srch: Search, srch_query: SrchQuery) -> Search:
         # add must, should, filter and return the search object
         return srch.query('bool',
                           must=cls._build_must(srch_query),
@@ -42,7 +42,7 @@ class SearchGeneralDoc:
                               pre_tags=["<strong>"], post_tags=["</strong>"])
 
     @classmethod
-    def _build_filter(cls, srch_query: SearchQuery) -> List[Q]:
+    def _build_filter(cls, srch_query: SrchQuery) -> List[Q]:
         filters = list()
         if isinstance(srch_query.is_auto, bool):
             filters.append(Q("term", **{'caption.is_auto': srch_query.is_auto}))
@@ -53,7 +53,7 @@ class SearchGeneralDoc:
         return filters
 
     @classmethod
-    def _build_must(cls, srch_query: SearchQuery) -> List[Q]:
+    def _build_must(cls, srch_query: SrchQuery) -> List[Q]:
         """
         must match content and context
         :param srch_query:
@@ -65,7 +65,7 @@ class SearchGeneralDoc:
         return must
 
     @classmethod
-    def _build_should(cls, srch_query: SearchQuery) -> List[Q]:
+    def _build_should(cls, srch_query: SrchQuery) -> List[Q]:
         """
         should boost views & subs (and later, publish_date_int)
         :param srch_query:

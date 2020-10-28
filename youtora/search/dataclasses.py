@@ -1,9 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
+
+from youtora.refine.dataclasses import Track
 
 
 @dataclass
-class SearchQuery:
+class SrchQuery:
     text: str
     """the text to match with"""
     is_auto: Optional[bool] = None
@@ -19,8 +21,13 @@ class SearchQuery:
 
 
 @dataclass
-class SearchResult:
+class SrchResult:
     """
     represents the search result
     """
-    pass
+    tracks: List[Track]
+    """previous, current, next track"""
+    highlight: str
+    """highlighted result"""
+    features: str
+    """remaining features"""

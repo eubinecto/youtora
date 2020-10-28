@@ -1,15 +1,15 @@
 # we are not accessing django's db, so just use unittest's one
 from unittest import TestCase
 
-from youtora.search.dataclasses import SearchQuery
+from youtora.search.dataclasses import SrchQuery
 from youtora.search.facades import SearchGeneralDoc
 
 
 class SearchGeneralDocTestCase(TestCase):
     text = "hello"
     # queries to be used for testing
-    is_auto_true = SearchQuery(text, is_auto=True)
-    is_auto_false = SearchQuery(text, is_auto=False)
+    is_auto_true = SrchQuery(text, is_auto=True)
+    is_auto_false = SrchQuery(text, is_auto=False)
 
     # only the auto captions should be returned
     def test_add_filter_is_auto_true(self):

@@ -51,6 +51,17 @@ class Track:
         """
         return self.content
 
+    def to_dict(self) -> dict:
+        return {
+            'caption_id': self.caption_id,
+            'start': self.start,
+            'duration': self.duration,
+            'content': self.content,
+            'context': self.context,
+            'prev_id': self.prev_id,
+            'next_id': self.next_id
+        }
+
 
 @dataclass
 class Caption:
