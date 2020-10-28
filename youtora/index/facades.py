@@ -35,7 +35,6 @@ class BuildGeneralDoc:
     @classmethod
     def exec(cls):
         logger = logging.getLogger("build")
-        # get a generator of all channel raws
         channel_raws = ChannelRaw.objects.all()
         for chan_idx, channel_raw in enumerate(channel_raws):
             # parse the channel_raw and build the doc
@@ -100,6 +99,7 @@ class BuildGeneralDoc:
                        caption=caption_doc)
             for track in tracks
         )
+        # turn them into dicts to be passed to bulk helper
         dicts = (
             general_doc.to_dict(include_meta=True)
             for general_doc in general_docs

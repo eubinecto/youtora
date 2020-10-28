@@ -16,7 +16,6 @@ class SearchQuery:
     subs_boost: int = 10
     from_: int = 0
     size: int = 10
-    highlight: bool = True
 
 
 @dataclass
