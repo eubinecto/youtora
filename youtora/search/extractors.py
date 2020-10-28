@@ -33,7 +33,7 @@ class SrchResultsExtractor:
                 tracks.append(cls._ext_track(next_track_doc.to_dict()))
             # build a search result
             srch_res = SrchResult(tracks=tracks,
-                                  highlight=hit_json['highlight'],
+                                  highlight=hit_json['highlight']['context'][0],
                                   features=src_json['caption'])
             srch_results.append(srch_res)
         else:
