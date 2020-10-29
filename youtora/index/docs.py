@@ -52,7 +52,7 @@ class GeneralDoc(Document):
     caption = Object(CaptionInnerDoc)
 
     class Index:
-        name = "general_doc"
+        name = "general_idx"
         # using the default settings for now.
 
     def save(self, **kwargs):

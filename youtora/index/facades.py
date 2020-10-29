@@ -2,8 +2,10 @@ import logging
 import sys
 from typing import Generator, List
 
+from django.core.exceptions import ObjectDoesNotExist
 from elasticsearch.helpers import bulk
-from elasticsearch_dsl import Index
+from elasticsearch_dsl import Search
+from termcolor import colored
 
 from youtora.collect.models import (
     ChannelRaw,
@@ -17,7 +19,7 @@ from youtora.index.docs import (
     GeneralDoc
 )
 from youtora.index.docs import es_client
-from youtora.refine.dataclasses import Video, Channel, Caption, Track
+from youtora.refine.dataclasses import Video, Channel, Caption
 from youtora.refine.extractors import (
     ChannelExtractor,
     VideoExtractor,
@@ -32,36 +34,45 @@ es_logger = logging.getLogger("elasticsearch")
 es_logger.setLevel(logging.WARNING)
 
 
-class BuildGeneralDoc:
+class BuildGeneralIdx:
+    BATCH_SIZE = 10
+    IDX_NAME = GeneralDoc.Index.name
+
     @classmethod
-    def exec(cls):
+    def exec(cls, channel_id: str):
         logger = logging.getLogger("exec")
-        Index('general_doc').delete(ignore=404)  # first delete the index
-        GeneralDoc.init()  # should populate the mappings before building the idx
-        channel_raws = ChannelRaw.objects.all()
-        for chan_idx, channel_raw in enumerate(channel_raws):
-            # parse the channel_raw and build the doc
-            channel = ChannelExtractor.parse(channel_raw)
-            channel_doc = cls._build_channel_doc(channel)
-            video_raws = VideoRaw.objects.filter(channel_id=channel_raw.id)
-            for vid_idx, video_raw in enumerate(video_raws):
+        cls._delete_by_channel_id(channel_id)  # delete all tracks that belong to this channel
+        channel_raw = ChannelRaw.objects.get(_id=channel_id)  # get the channel_raw
+        # parse the channel_raw and build the doc
+        channel = ChannelExtractor.parse(channel_raw)
+        channel_doc = cls._build_channel_doc(channel)
+        # filtering
+        vid_qset = VideoRaw.objects.filter(channel_id=channel_raw.id)
+        batches = cls._batched_queryset(vid_qset)
+        vid_cnt = vid_qset.count()  # for progress report
+        for batch_idx, batch_qset in enumerate(batches):
+            for vid_idx, video_raw in enumerate(batch_qset):
                 # parse the video_raw and build the doc
                 video = VideoExtractor.parse(video_raw)
                 video_doc = cls._build_video_doc(video, channel_doc)
                 # extract captions from this
                 captions = CaptionExtractor.parse(video_raw)
-                for cap_idx, caption in enumerate(captions):
-                    # build caption doc
-                    caption_doc = cls._build_caption_doc(caption, video_doc)
-                    # get the tracks raw for this caption
-                    tracks_raw = TracksRaw.objects.get(caption_id=caption.id)
-                    # parse it to get all tracks
-                    tracks = TrackExtractor.parse(tracks_raw)
-                    general_doc_dicts = cls._build_general_doc_dicts(tracks, caption_doc)
-                    bulk(client=es_client, actions=general_doc_dicts)
-                    logger.info("saved:channel={}|{}:video={}|{}:caption={}|{}:all tracks"
-                                .format(chan_idx, str(channel), vid_idx, str(video),
-                                        cap_idx, str(caption)))
+                general_doc_dicts = cls._build_general_doc_dicts(captions, video_doc)
+                bulk(client=es_client, actions=general_doc_dicts)
+                # log statistics
+                vid_saved = batch_idx * cls.BATCH_SIZE + (vid_idx + 1)
+                msg = "saved:all_tracks:video={}/{}:channel={}" \
+                    .format(vid_saved, vid_cnt, str(channel))
+                logger.info(colored(msg, 'blue'))
+
+    @classmethod
+    def exec_multi(cls):
+        """
+        build indices for all channels stored
+        :return:
+        """
+        for chan_raw in ChannelRaw.objects.iterator():
+            cls.exec(chan_raw.id)
 
     @classmethod
     def _build_channel_doc(cls, channel: Channel) -> ChannelInnerDoc:
@@ -84,27 +95,65 @@ class BuildGeneralDoc:
         return caption_doc
 
     @classmethod
-    def _build_general_doc_dicts(cls, tracks: List[Track], caption_doc: CaptionInnerDoc) \
+    def _build_general_doc_dicts(cls, captions: List[Caption], video_doc: VideoInnerDoc) \
             -> Generator[dict, None, None]:
         """
         for passing it to bulk helper
         # reference:
         # https://github.com/elastic/elasticsearch-dsl-py/issues/403#issuecomment-218447768
-        :param tracks:
-        :param caption_doc:
         :return:
         """
-        general_docs = (
-            GeneralDoc(meta={'id': track.id},  # this is how you put the id
-                       start=track.start, duration=track.duration,
-                       content=track.content, prev_id=track.prev_id,
-                       next_id=track.next_id, context=track.context,
-                       caption=caption_doc)
-            for track in tracks
-        )
-        # turn them into dicts to be passed to bulk helper
-        dicts = (
-            general_doc.to_dict(include_meta=True)
-            for general_doc in general_docs
-        )
-        return dicts
+        logger = logging.getLogger("_build_general_doc_dicts")
+        for cap_idx, caption in enumerate(captions):
+            # build caption doc
+            caption_doc = cls._build_caption_doc(caption, video_doc)
+            # get the tracks raw for this caption
+            try:
+                tracks_raw = TracksRaw.objects.get(caption_id=caption.id)
+            except ObjectDoesNotExist as bde:
+                logger.warning(str(bde))
+                logger.warning("SKIP:tracks_raw does not exist for:caption_id=" + caption.id)
+                continue
+            else:
+                # parse it to get all tracks
+                tracks = TrackExtractor.parse(tracks_raw)
+                # send all the tracks in the captions to the generator
+                for track in tracks:
+                    general_doc = GeneralDoc(meta={'id': track.id},  # this is how you put the id
+                                             start=track.start, duration=track.duration,
+                                             content=track.content, prev_id=track.prev_id,
+                                             next_id=track.next_id, context=track.context,
+                                             caption=caption_doc)
+                    # turn them into dicts to be passed to bulk helper
+                    general_doc_dict = general_doc.to_dict(include_meta=True)
+                    # and yield
+                    yield general_doc_dict
+
+    @classmethod
+    def _batched_queryset(cls, queryset):
+        """
+        Slice a queryset into chunks.
+        Code excerpted from: https://djangosnippets.org/snippets/10599/
+        """
+        start_pk = 0
+        queryset = queryset.order_by('pk')
+        while True:
+            # No entry left
+            if not queryset.filter(pk__gt=start_pk).exists():
+                break
+            try:
+                # Fetch chunk_size entries if possible
+                end_pk = queryset.filter(pk__gt=start_pk).values_list(
+                    'pk', flat=True)[cls.BATCH_SIZE - 1]
+                # Fetch rest entries if less than chunk_size left
+            except IndexError:
+                end_pk = queryset.values_list('pk', flat=True).last()
+            yield queryset.filter(pk__gt=start_pk).filter(pk__lte=end_pk)
+            start_pk = end_pk
+
+    @classmethod
+    def _delete_by_channel_id(cls, channel_id: str) -> dict:
+        s: Search = Search(index=cls.IDX_NAME) \
+            .query("match", **{"caption.video.channel.id": channel_id})
+        resp = s.delete()
+        return resp.to_dict()

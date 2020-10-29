@@ -4,7 +4,7 @@ from youtora.collect.facades import ScrapeYouTubeRaws, ScrapeIdiomRaws
 
 
 class Command(BaseCommand):
-    help = 'scrape raw data from the web'
+    HELP = 'scrape raw data from the web'
     RAW_TYPES = ('youtube', 'idiom')
 
     def add_arguments(self, parser):

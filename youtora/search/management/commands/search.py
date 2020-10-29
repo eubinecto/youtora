@@ -18,24 +18,30 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('text', type=str, help='the text to search on general_doc')
         # optional arguments
-        parser.add_argument('-cl', '--capt_lang_code', type=str,
+        parser.add_argument('-captl', '--capt_lang_code', type=str,
                             help="the language of the caption")
+        parser.add_argument('-chanl', '--chan_lang_code', type=str,
+                            help="the language of the channel")
 
     def handle(self, *args, **options):
         text = options['text']
         capt_lang_code = options.get('capt_lang_code', None)
+        chan_lang_code = options.get('chan_lang_code', None)
         # build a search query
-        srch_query = SrchQuery(text, capt_lang_code=capt_lang_code)
+        srch_query = SrchQuery(text,
+                               capt_lang_code=capt_lang_code,
+                               chan_lang_code=chan_lang_code)
         # do the search
         srch_results = SrchGeneralDoc.exec(srch_query)
         # print out the results
         for srch_res in srch_results:
             print("".join(["="] * self.WIDTH))
             hls = self.BOLD_RE.findall(string=srch_res.highlight)
-            for idx, hl in enumerate(hls):
+            for hl in hls:
                 srch_res.highlight = self.BOLD_RE.sub(repl=colored(hl, 'blue'),
                                                       string=srch_res.highlight,
-                                                      count=idx + 1)
+                                                      # sub only the first one\
+                                                      count=1)
 
             print(colored("context:\n", "white")
                   + textwrap.fill(srch_res.highlight, self.WIDTH))

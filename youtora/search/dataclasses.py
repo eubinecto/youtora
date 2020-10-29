@@ -14,10 +14,10 @@ class SrchQuery:
     """lang_code constraint for captions"""
     chan_lang_code: Optional[str] = None
     """lang_code constraint for channel"""
-    views_boost: int = 10
-    subs_boost: int = 10
+    views_boost: int = 0
+    subs_boost: int = 0
     from_: int = 0
-    size: int = 10
+    size: int = 5
 
 
 @dataclass

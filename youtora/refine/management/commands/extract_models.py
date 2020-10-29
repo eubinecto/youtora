@@ -4,7 +4,7 @@ from youtora.refine.facades import ExtractIdioms
 
 
 class Command(BaseCommand):
-    help = 'scrape raw data from the web'
+    HELP = 'scrape raw data from the web'
     MODEL_NAMES = ('idiom',)
 
     def add_arguments(self, parser):
