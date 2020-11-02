@@ -22,15 +22,20 @@ class Command(BaseCommand):
                             help="the language of the caption")
         parser.add_argument('-chanl', '--chan_lang_code', type=str,
                             help="the language of the channel")
+        parser.add_argument('-s', '--size', type=int,
+                            help="the number of search entries to retrieve")
 
     def handle(self, *args, **options):
         text = options['text']
+        # get the optional arguments
         capt_lang_code = options.get('capt_lang_code', None)
         chan_lang_code = options.get('chan_lang_code', None)
+        size = options.get('size', None)
         # build a search query
         srch_query = SrchQuery(text,
                                capt_lang_code=capt_lang_code,
-                               chan_lang_code=chan_lang_code)
+                               chan_lang_code=chan_lang_code,
+                               size=size)
         # do the search
         srch_results = SrchGeneralDoc.exec(srch_query)
         # print out the results
