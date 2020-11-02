@@ -22,7 +22,7 @@ class Command(BaseCommand):
         if idx_name == self.IDX_NAMES[0]:
             # build the general doc
             channel_id = options['channel_id']
-            if channel_id == "all":
+            if not channel_id:
                 BuildGeneralIdx.exec_multi()
             else:
                 BuildGeneralIdx.exec(channel_id)

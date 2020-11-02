@@ -226,9 +226,10 @@ class TrackExtractor:
                                   duration=duration,
                                   content=content)
                     tracks.append(track)
-        # set these and return
-        cls._set_neighbours(tracks)
-        cls._set_contexts(tracks)
+        # if there are more than one tracks, set neighbours and contexts
+        if len(tracks) > 1:
+            cls._set_neighbours(tracks)
+            cls._set_contexts(tracks)
         return tracks
 
     @classmethod
