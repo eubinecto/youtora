@@ -10,7 +10,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('raw_type', type=str,
                             help='the type of raw data to scrape')
-
+        parser.add_argument('os', type=str,
+                            help='either mac or linux')
         # optional arguments
         parser.add_argument('-c', '--channel_id', type=str,
                             help="the channel id of the channel to be scraped")
@@ -19,6 +20,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         raw_type = options['raw_type']
+        os = options['os']
         if raw_type not in self.RAW_TYPES:
             raise CommandError("Not a valid raw type:" + raw_type)
         if raw_type == self.RAW_TYPES[0]:
@@ -28,7 +30,7 @@ class Command(BaseCommand):
             if not channel_id or not lang_code:
                 raise CommandError("for scraping a channel, both"
                                    "channel_id (-c) and lang_code (-l) must be given")
-            ScrapeYouTubeRaws.exec(channel_id, lang_code)
+            ScrapeYouTubeRaws.exec(channel_id, lang_code, os=os)
         elif raw_type == self.RAW_TYPES[1]:
             # scrape idiom raws
             ScrapeIdiomRaws.exec()
