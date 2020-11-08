@@ -41,15 +41,18 @@ class Command(BaseCommand):
         # print out the results
         for srch_res in srch_results:
             print("".join(["="] * self.WIDTH))
-            hls = self.BOLD_RE.findall(string=srch_res.highlight)
+            if not srch_res.highlight:
+                raise ValueError("highlight is empty")
+            highlight_text = srch_res.highlight['context'][0]
+            hls = self.BOLD_RE.findall(string=highlight_text)
             for hl in hls:
-                srch_res.highlight = self.BOLD_RE.sub(repl=colored(hl, 'blue'),
-                                                      string=srch_res.highlight,
-                                                      # sub only the first one\
-                                                      count=1)
+                highlight_text = self.BOLD_RE.sub(repl=colored(hl, 'blue'),
+                                                  string=highlight_text,
+                                                  # sub only the first one\
+                                                  count=1)
 
             print(colored("context:\n", "white")
-                  + textwrap.fill(srch_res.highlight, self.WIDTH))
+                  + textwrap.fill(highlight_text, self.WIDTH))
             print(colored("timed_url:\n", "white")
                   + srch_res.tracks[0].timed_url)
             print(colored("doc_id:\n", "white")

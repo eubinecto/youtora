@@ -1,6 +1,7 @@
 from typing import List
 
 from elasticsearch_dsl import Search, Q
+from nltk.util import ngrams
 
 from youtora.index.docs import es_client
 from youtora.search.dataclasses import SrchQuery, SrchResult
@@ -11,6 +12,12 @@ class SrchGeneralDoc:
     """
     facade class that houses logic for searching general query.
     """
+    # parameters for search.
+    MIN_SHOULD_MATCH = "60%"
+    N_GRAM = 2
+    MAX_GAPS = 3
+    DELIM = " "
+    ORDERED = True
 
     @classmethod
     def exec(cls, srch_query: SrchQuery) -> List[SrchResult]:
@@ -40,9 +47,17 @@ class SrchGeneralDoc:
     @classmethod
     def _add_query(cls, srch: Search, srch_query: SrchQuery) -> Search:
         # add must, should, filter and return the search object
-        return srch.query('bool',
-                          must=cls._build_must(srch_query),
-                          filter=cls._build_filter(srch_query))
+        q = Q(
+            {
+                'bool': {
+                    'should': cls._build_should(srch_query),
+                    'filter': cls._build_filter(srch_query),
+                    'minimum_should_match': cls.MIN_SHOULD_MATCH
+                }
+            }
+        )
+        # attach a query to
+        return srch.query(q)
 
     @classmethod
     def _add_highlight(cls, srch: Search) -> Search:
@@ -50,38 +65,60 @@ class SrchGeneralDoc:
                               pre_tags=["<strong>"], post_tags=["</strong>"])
 
     @classmethod
-    def _build_filter(cls, srch_query: SrchQuery) -> List[Q]:
+    def _build_filter(cls, srch_query: SrchQuery) -> List[dict]:
         filters = list()
         if isinstance(srch_query.is_auto, bool):
-            filters.append(Q("term", **{'caption.is_auto': srch_query.is_auto}))
+            q = {
+                'term': {
+                    'caption.is_auto': srch_query.is_auto
+                }
+            }
+            filters.append(q)
         if isinstance(srch_query.capt_lang_code, str):
-            filters.append(Q("term", **{'caption.lang_code': srch_query.capt_lang_code}))
+            q = {
+                'term': {
+                    'caption.lang_code': srch_query.capt_lang_code
+                }
+            }
+            filters.append(q)
         if isinstance(srch_query.chan_lang_code, str):
-            filters.append(Q("term", **{'caption.video.channel.lang_code': srch_query.chan_lang_code}))
+            q = {
+                'term': {
+                    'caption.video.channel.lang_code': srch_query.chan_lang_code
+                }
+            }
+            filters.append(q)
         return filters
 
     @classmethod
-    def _build_must(cls, srch_query: SrchQuery) -> List[Q]:
-        """
-        must match content and context
-        :param srch_query:
-        :return:
-        """
-        must = list()
-        must.append(Q('match', content=srch_query.text))
-        must.append(Q('match', context=srch_query.text))
-        return must
-
-    @classmethod
-    def _build_should(cls, srch_query: SrchQuery) -> List[Q]:
+    def _build_should(cls, srch_query: SrchQuery) -> List[dict]:
         """
         should boost views & subs (and later, publish_date_int)
         :param srch_query:
         :return:
         """
-        should = list()
-        should.append(Q('rank_feature', field="caption.video.views",
-                        boost=srch_query.views_boost))
-        should.append(Q('rank_feature', field='caption.video.channel.subs',
-                        boost=srch_query.subs_boost))
+        # as of right now, just use white space tokenization
+        text_tokens = srch_query.text.strip().split(cls.DELIM)
+        # build ngrams
+        if len(text_tokens) == 1:
+            # have to do this to match the format with the output of ngrams
+            text_ngrams = [(text_tokens[0],)]
+        else:
+            text_ngrams = ngrams(sequence=text_tokens, n=cls.N_GRAM)
+        # construct the should query
+        should = [
+            {
+                "intervals": {
+                    "context": {
+                        "match": {
+                            "query": " ".join(text_ngram),
+                            "max_gaps": cls.MAX_GAPS,
+                            "ordered": cls.ORDERED
+                        }  # match
+                    }  # context
+                }  # intervals
+            }  # intervals query
+            for text_ngram in text_ngrams
+        ]  # should query
+        # return the list of queries
         return should

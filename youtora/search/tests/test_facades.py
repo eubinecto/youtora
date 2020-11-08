@@ -1,12 +1,12 @@
 # we are not accessing django's db, so just use unittest's one
-from django.test import TestCase
+from unittest import TestCase
 
 from youtora.search.dataclasses import SrchQuery
 from youtora.search.facades import SrchGeneralDoc
 
 
 class SearchGeneralDocTestCase(TestCase):
-    text = "hello"
+    text = "catch-22"
     # queries to be used for testing
     is_auto_true = SrchQuery(text, is_auto=True)
     is_auto_false = SrchQuery(text, is_auto=False)

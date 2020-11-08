@@ -27,7 +27,7 @@ class SrchResult:
     """
     tracks: List[Track]
     """previous, current, next track"""
-    highlight: str
+    highlight: dict
     """highlighted result"""
     features: dict
     """remaining features"""
