@@ -83,7 +83,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'djongo',
         'NAME': 'youtora_db',
-        'HOST': "localhost",  # experiment with the local one
+        'HOST': "mongodb://192.168.219.197:27017",  # experiment with the local one
         # you may or may need username or password
         # experiment with the localhost first
         # MONGO_URI = "mongodb://localhost:27017"
@@ -132,7 +132,7 @@ STATIC_URL = '/static/'
 # elastic search dsl configuration.
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': 'localhost:9200'
+        'hosts': '192.168.219.197:9200'
     },
 }
 
