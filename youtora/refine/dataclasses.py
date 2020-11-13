@@ -100,3 +100,9 @@ class Video:
     # overrides the dunder string method
     def __str__(self) -> str:
         return self.title
+
+
+@dataclass
+class Response:
+    content: str
+    contexts: List[str]
