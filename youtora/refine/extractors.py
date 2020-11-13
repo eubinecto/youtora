@@ -2,8 +2,7 @@
 import html
 import logging
 import re
-import unicodedata  # for normalising the text output.
-from typing import List, Generator, Collection, Optional
+from typing import List, Generator, Collection
 
 import xmltodict
 # for parsing
@@ -12,8 +11,7 @@ from bs4 import BeautifulSoup
 from youtora.collect.models import (
     ChannelRaw,
     TracksRaw,
-    VideoRaw,
-    IdiomRaw
+    VideoRaw
 )
 from youtora.refine.dataclasses import (
     Channel,
@@ -22,7 +20,6 @@ from youtora.refine.dataclasses import (
     Caption
 )
 from youtora.refine.errors import CaptionNotFoundError
-from youtora.refine.models import Idiom, Definition, Sense
 
 
 class ChannelExtractor:
@@ -340,83 +337,83 @@ class VideoExtractor:
     #             logger.info("dislike_cnt:{}:video:{}".format(dislike_cnt, video_id))
     #     return like_cnt, dislike_cnt
 
-
-class IdiomExtractor:
-    # e.g. <strong class="Latn headword" lang="en">...</strong>
-    STRONG_CLASS = "Latn headword"
-    # e.g. (idiomatic)
-    CONTEXT_RE = re.compile(r"^\([\S\s^\n]+\)")
-    TEXT_WITH_CONTEXT_RE = re.compile(CONTEXT_RE.pattern + r"([\S\s^\n]+)")
-
-    # TEXT_NO_CONTEXT_RE = re.compile(r"^([\S ]+)")
-
-    @classmethod
-    def parse(cls, idiom_raw: IdiomRaw) -> Idiom:
-        logger = logging.getLogger("parse")
-        logger.info("parsing...:" + idiom_raw.text)
-        senses = cls._ext_senses(idiom_raw.parser_info)
-        return Idiom(_id=idiom_raw.id, text=idiom_raw.text,
-                     wiktionary_url=idiom_raw.wiktionary_url,
-                     # insert the dictionary representation
-                     senses=[sense.to_dict() for sense in senses])
-
-    @classmethod
-    def _ext_senses(cls, parser_info: dict) -> List[Sense]:
-        if parser_info:
-            senses = list()
-            for sense_json in parser_info:
-                if sense_json['etymology']:
-                    etymology = sense_json['etymology'].strip()
-                    # normalise
-                    etymology = unicodedata.normalize("NFKD", etymology)
-                else:
-                    etymology = None
-                defs = cls._ext_defs(sense_json['definitions'])
-                sense = Sense(etymology=etymology,
-                              # insert the dictionary representation
-                              defs=[defin.to_dict() for defin in defs])
-                senses.append(sense)
-            else:
-                return senses
-        return list()  # if parser_info does not exist, return an empty list
-
-    @classmethod
-    def _ext_defs(cls, defs_json: List[dict]) -> List[Definition]:
-        defs = list()
-        for def_json in defs_json:
-            # list concatenation
-            pos = def_json['partOfSpeech'] if def_json['partOfSpeech'] else None
-            # exclude the first entry, normalise it
-            text_jsons = [
-                unicodedata.normalize("NFKD", text_json)
-                for text_json in def_json['text'][1:] if text_json
-            ]
-            texts = [cls._ext_text(text_json) for text_json in text_jsons]
-            contexts = [cls._ext_context(text_json) for text_json in text_jsons]
-            defs += [
-                # set the examples later
-                Definition(text=text, pos=pos, context=context, examples=list())
-                for text, context in zip(texts, contexts)
-            ]
-        return defs
-
-    @classmethod
-    def _ext_text(cls, text_json: str) -> str:
-        if text_json.startswith("("):
-            # it has a context, omit the context
-            return cls.TEXT_WITH_CONTEXT_RE.findall(text_json)[0].strip()
-        else:
-            # it doesn't have a context
-            # just return itself.
-            return text_json
-
-    @classmethod
-    def _ext_context(cls, text_json: str) -> Optional[str]:
-        # get the pure texts only from the list tags
-        if text_json.startswith("("):
-            return cls.CONTEXT_RE.findall(text_json)[0][1:-1]
-        else:
-            return None
+# - don't really need idiom extractors any more. I'll be just using SLIDE dataset.
+# class IdiomExtractor:
+#     # e.g. <strong class="Latn headword" lang="en">...</strong>
+#     STRONG_CLASS = "Latn headword"
+#     # e.g. (idiomatic)
+#     CONTEXT_RE = re.compile(r"^\([\S\s^\n]+\)")
+#     TEXT_WITH_CONTEXT_RE = re.compile(CONTEXT_RE.pattern + r"([\S\s^\n]+)")
+#
+#     # TEXT_NO_CONTEXT_RE = re.compile(r"^([\S ]+)")
+#
+#     @classmethod
+#     def parse(cls, idiom_raw: IdiomRaw) -> Idiom:
+#         logger = logging.getLogger("parse")
+#         logger.info("parsing...:" + idiom_raw.text)
+#         senses = cls._ext_senses(idiom_raw.parser_info)
+#         return Idiom(_id=idiom_raw.id, text=idiom_raw.text,
+#                      wiktionary_url=idiom_raw.wiktionary_url,
+#                      # insert the dictionary representation
+#                      senses=[sense.to_dict() for sense in senses])
+#
+#     @classmethod
+#     def _ext_senses(cls, parser_info: dict) -> List[Sense]:
+#         if parser_info:
+#             senses = list()
+#             for sense_json in parser_info:
+#                 if sense_json['etymology']:
+#                     etymology = sense_json['etymology'].strip()
+#                     # normalise
+#                     etymology = unicodedata.normalize("NFKD", etymology)
+#                 else:
+#                     etymology = None
+#                 defs = cls._ext_defs(sense_json['definitions'])
+#                 sense = Sense(etymology=etymology,
+#                               # insert the dictionary representation
+#                               defs=[defin.to_dict() for defin in defs])
+#                 senses.append(sense)
+#             else:
+#                 return senses
+#         return list()  # if parser_info does not exist, return an empty list
+#
+#     @classmethod
+#     def _ext_defs(cls, defs_json: List[dict]) -> List[Definition]:
+#         defs = list()
+#         for def_json in defs_json:
+#             # list concatenation
+#             pos = def_json['partOfSpeech'] if def_json['partOfSpeech'] else None
+#             # exclude the first entry, normalise it
+#             text_jsons = [
+#                 unicodedata.normalize("NFKD", text_json)
+#                 for text_json in def_json['text'][1:] if text_json
+#             ]
+#             texts = [cls._ext_text(text_json) for text_json in text_jsons]
+#             contexts = [cls._ext_context(text_json) for text_json in text_jsons]
+#             defs += [
+#                 # set the examples later
+#                 Definition(text=text, pos=pos, context=context, examples=list())
+#                 for text, context in zip(texts, contexts)
+#             ]
+#         return defs
+#
+#     @classmethod
+#     def _ext_text(cls, text_json: str) -> str:
+#         if text_json.startswith("("):
+#             # it has a context, omit the context
+#             return cls.TEXT_WITH_CONTEXT_RE.findall(text_json)[0].strip()
+#         else:
+#             # it doesn't have a context
+#             # just return itself.
+#             return text_json
+#
+#     @classmethod
+#     def _ext_context(cls, text_json: str) -> Optional[str]:
+#         # get the pure texts only from the list tags
+#         if text_json.startswith("("):
+#             return cls.CONTEXT_RE.findall(text_json)[0][1:-1]
+#         else:
+#             return None
 
 # don't think about this for now.
 # class MLGlossHTMLParser:
