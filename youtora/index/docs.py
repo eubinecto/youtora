@@ -6,7 +6,8 @@ from elasticsearch_dsl import (
     Text,
     Keyword,
     Boolean,
-    RankFeature)
+    RankFeature
+)  # the data types needed
 from elasticsearch_dsl.connections import connections
 
 from config.settings import ELASTICSEARCH_DSL
@@ -59,3 +60,19 @@ class GeneralDoc(Document):
         # do something before save here, if you wish
         return super().save(**kwargs)
 
+
+class OpenSubDoc(Document):
+    # define the fields here
+    response = Text()
+    # contexts. array of strings. might want to make it searchable..?
+    # in elastic search, there is no dedicated "array" data type.
+    # every datatype can have one or more values.
+    # https://www.elastic.co/guide/en/elasticsearch/reference/current/array.html
+    contexts = Text()
+
+    class Index:
+        name = "opensub_idx"
+
+    def save(self, **kwargs):
+        # do something before saving here, if you wish.
+        return super().save(**kwargs)
