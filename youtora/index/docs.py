@@ -19,7 +19,7 @@ es_client = connections.create_connection(hosts=ELASTICSEARCH_DSL['default']['ho
 
 class ChannelInnerDoc(InnerDoc):
     id = Keyword(required=True)
-    subs = RankFeature()
+    subs = RankFeature()  # you won't really need this.
     lang_code = Keyword()
 
 
