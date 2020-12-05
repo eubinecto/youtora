@@ -4,31 +4,28 @@ from typing import Optional, List
 from youtora.refine.dataclasses import Track
 
 
+# this is the object that we want to build
 @dataclass
 class SrchQuery:
-    text: str
-    """the text to match with"""
-    is_auto: Optional[bool] = None
-    """auto / manual constraint for captions"""
-    capt_lang_code: Optional[str] = None
-    """lang_code constraint for captions"""
-    chan_lang_code: Optional[str] = None
-    """lang_code constraint for channel"""
-    views_boost: int = 0
-    subs_boost: int = 0
-    from_: int = 0
-    size: int = 5
+    # get the value of this later
+    idx_name: Optional[str] = None
+    body: Optional[dict] = None  # the complete body to be used for..
 
 
 @dataclass
-class SrchResult:
+class SrchRes:
+    highlight: dict
+    """highlighted result"""
+
+
+@dataclass
+class GeneralSrchRes(SrchRes):
     """
     represents the search result
     """
     tracks: List[Track]
     """previous, current, next track"""
-    highlight: dict
-    """highlighted result"""
+
     features: dict
     """remaining features"""
 
@@ -37,4 +34,17 @@ class SrchResult:
             'tracks': [track.to_dict() for track in self.tracks],
             'highlight': self.highlight,
             'features': self.features
+        }
+
+
+@dataclass
+class OpensubSrchRes(SrchRes):
+    response: str
+    contexts: List[str]
+
+    def to_dict(self) -> dict:
+        return {
+            'response': self.response,
+            'highlight': self.highlight,
+            'contexts': self.contexts
         }

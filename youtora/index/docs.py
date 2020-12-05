@@ -61,7 +61,7 @@ class GeneralDoc(Document):
         return super().save(**kwargs)
 
 
-class OpenSubDoc(Document):
+class OpensubDoc(Document):
     # define the fields here
     response = Text()
     # contexts. array of strings. might want to make it searchable..?

@@ -3,7 +3,7 @@ from sys import stdout
 
 from django.core.management import BaseCommand
 
-from youtora.index.docs import GeneralDoc, OpenSubDoc
+from youtora.index.docs import GeneralDoc, OpensubDoc
 
 logging.basicConfig(stream=stdout, level=logging.INFO)
 
@@ -14,5 +14,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger = logging.getLogger("handle")
         GeneralDoc.init()
-        OpenSubDoc.init()
+        OpensubDoc.init()
         logger.info("migration successful")

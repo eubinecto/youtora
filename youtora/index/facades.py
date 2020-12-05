@@ -20,7 +20,7 @@ from youtora.index.docs import (
     VideoInnerDoc,
     CaptionInnerDoc,
     GeneralDoc,
-    OpenSubDoc,  # for searching opensub data.
+    OpensubDoc,  # for searching opensub data.
 )
 from youtora.refine.dataclasses import Video, Channel, Caption
 from youtora.refine.extractors import (
@@ -51,7 +51,7 @@ class BuildGeneralIdx:
         channel = ChannelExtractor.parse(channel_raw)
         channel_doc = cls._build_channel_doc(channel)
         # filtering
-        vid_qset = VideoRaw.objects.filter(channel_id=channel_raw.id)
+        vid_qset = VideoRaw.objects.filters(channel_id=channel_raw.id)
         batches = cls._batched_queryset(vid_qset)  # to use elasticsearch-dsl's  bulk API.
         vid_cnt = vid_qset.count()  # for progress report
         for batch_idx, batch_qset in enumerate(batches):
@@ -143,16 +143,16 @@ class BuildGeneralIdx:
         queryset = queryset.order_by('pk')
         while True:
             # No entry left
-            if not queryset.filter(pk__gt=start_pk).exists():
+            if not queryset.filters(pk__gt=start_pk).exists():
                 break
             try:
                 # Fetch chunk_size entries if possible
-                end_pk = queryset.filter(pk__gt=start_pk).values_list(
+                end_pk = queryset.filters(pk__gt=start_pk).values_list(
                     'pk', flat=True)[cls.VIDEO_BATCH_SIZE - 1]
                 # Fetch rest entries if less than chunk_size left
             except IndexError:
                 end_pk = queryset.values_list('pk', flat=True).last()
-            yield queryset.filter(pk__gt=start_pk).filter(pk__lte=end_pk)
+            yield queryset.filters(pk__gt=start_pk).filters(pk__lte=end_pk)
             start_pk = end_pk
 
     @classmethod
@@ -166,7 +166,7 @@ class BuildGeneralIdx:
 # for opensub
 class BuildOpenSubIdx:
     # to be used for es_client.
-    IDX_NAME = OpenSubDoc.Index.name
+    IDX_NAME = OpensubDoc.Index.name
     NUM_PROC = 5
     NDJSON_BATCH_SIZE = 30  # the size of each batch to be sent with a bulk call
 
@@ -206,7 +206,7 @@ class BuildOpenSubIdx:
                 response: str = example['response']
                 contexts: List[str] = example['contexts']
                 example_id = file_path.split("/")[-1].replace(".ndjson", "")
-                opensub_doc = OpenSubDoc(meta={'id': example_id},  # use the path as the id.
+                opensub_doc = OpensubDoc(meta={'id': example_id},  # use the path as the id.
                                          response=response, contexts=contexts)
                 yield opensub_doc.to_dict(include_meta=True)
 

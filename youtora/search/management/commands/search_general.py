@@ -6,8 +6,8 @@ import textwrap
 from django.core.management.base import BaseCommand
 from termcolor import colored
 
-from youtora.search.dataclasses import SrchQuery
-from youtora.search.facades import SrchGeneralDoc
+from youtora.search.dataclasses import GeneralSrchQuery
+from youtora.search.facades import SrchGeneralIdx
 
 
 class Command(BaseCommand):
@@ -32,12 +32,10 @@ class Command(BaseCommand):
         chan_lang_code = options.get('chan_lang_code', None)
         size = options.get('size', None)
         # build a search query
-        srch_query = SrchQuery(text,
-                               capt_lang_code=capt_lang_code,
-                               chan_lang_code=chan_lang_code,
-                               size=size)
+        srch_query = GeneralSrchQuery(text, capt_lang_code=capt_lang_code,
+                                      chan_lang_code=chan_lang_code, size=size)
         # do the search
-        srch_results = SrchGeneralDoc.exec(srch_query)
+        srch_results = SrchGeneralIdx.exec(srch_query)
         # print out the results
         for srch_res in srch_results:
             print("".join(["="] * self.WIDTH))

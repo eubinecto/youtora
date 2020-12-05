@@ -3,14 +3,17 @@ from typing import List
 from config.settings import STR_FORMATS
 from youtora.index.docs import GeneralDoc
 from youtora.refine.dataclasses import Track
-from youtora.search.dataclasses import SrchResult
+from youtora.search.dataclasses import GeneralSrchRes, OpensubSrchRes
 
 
-class SrchResultsExtractor:
+#  TODO: build this into.. another builder? or a factory?
+# well, builder pattern won't fit in that well. it won't really
+# or should it be implemented with different design pattern?
+class GenSrchResExtractor:
     VID_TIMED_URL_FORMAT = STR_FORMATS['vid_timed_url']
 
     @classmethod
-    def parse(cls, resp_json: dict) -> List[SrchResult]:
+    def parse(cls, resp_json: dict) -> List[GeneralSrchRes]:
         """
         :param resp_json: the source dictionary returned from SearchGeneralDoc.exec()
         :return:
@@ -32,9 +35,9 @@ class SrchResultsExtractor:
                 next_track_doc = GeneralDoc.get(id=curr_track.next_id)
                 tracks.append(cls._ext_track(next_track_doc.to_dict()))
             # build a search result
-            srch_res = SrchResult(tracks=tracks,
-                                  highlight=hit_json.get('highlight', None),
-                                  features=src_json.get('caption', None))
+            srch_res = GeneralSrchRes(tracks=tracks,
+                                      highlight=hit_json.get('highlight', None),
+                                      features=src_json.get('caption', None))
             srch_results.append(srch_res)
             del tracks
         else:
@@ -56,3 +59,10 @@ class SrchResultsExtractor:
                      prev_id=src_json.get('prev_id', None),
                      next_id=src_json.get('next_id', None),
                      timed_url=timed_url)
+
+
+class OpenSrchResExtractor:
+
+    @classmethod
+    def parse(cls, resp_json: dict) -> List[OpensubSrchRes]:
+        pass
