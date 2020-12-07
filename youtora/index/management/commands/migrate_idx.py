@@ -5,6 +5,7 @@ from django.core.management import BaseCommand
 
 from youtora.index.docs import GeneralDoc, OpensubDoc
 
+# make sure you run this command, before you build any indices.
 logging.basicConfig(stream=stdout, level=logging.INFO)
 
 

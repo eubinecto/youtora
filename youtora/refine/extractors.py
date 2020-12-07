@@ -17,7 +17,7 @@ from youtora.refine.dataclasses import (
     Channel,
     Video,
     Track,
-    Caption, Response
+    Caption
 )
 from youtora.refine.errors import CaptionNotFoundError
 
@@ -53,6 +53,7 @@ class ChannelExtractor:
         title_elem = soup.find('title')
         return title_elem.text.split("-")[0].strip()
 
+    # you don't need this, really.
     @classmethod
     def _ext_subs(cls, main_html: str) -> int:
         """
@@ -337,50 +338,49 @@ class VideoExtractor:
     #             logger.info("dislike_cnt:{}:video:{}".format(dislike_cnt, video_id))
     #     return like_cnt, dislike_cnt
 
-
-class ResponseExtractor:
-    NUM_CONTEXTS = 10
-    MIN_LENGTH = 9
-
-    @classmethod
-    def parse(cls, subs_txt_path: str) -> Generator[Response, None, None]:
-        logger = logging.getLogger("parse")
-        """
-        modified the code from:
-        https://github.com/PolyAI-LDN/conversational-datasets/blob/50f626ad0d0e825835bd054f6a58006afa95a8e5/opensubtitles/create_data.py#L136-L158
-        to fit my needs
-        :param subs_txt_path:
-        :return:
-        """
-        # init a bucket for previous lines
-        prev_lines = list()
-        with open(subs_txt_path, 'r') as fh:
-            for idx, line in enumerate(fh):
-                if cls._should_skip(line):
-                    logger.info("SKIP:{}|{}".format(idx + 1, line))
-                    continue
-                # yield the response for this line
-                yield Response(content=cls._ext_content(line),
-                               contexts=prev_lines)
-                # prepare prev lines, for the next response
-                prev_lines.append(cls._ext_content(line))
-                if len(prev_lines) > cls.NUM_CONTEXTS + 1:
-                    # pop the first prev line
-                    prev_lines.pop(0)
-
-    @classmethod
-    def _should_skip(cls, line) -> bool:
-        if not line:
-            return True
-        if len(line) < 9:
-            return True
-        # else, return false
-        return False
-
-    @classmethod
-    def _ext_content(cls, line) -> str:
-        # simple preprocessing.
-        return line.strip()
+# class ResponseExtractor:
+#     NUM_CONTEXTS = 10
+#     MIN_LENGTH = 9
+#
+#     @classmethod
+#     def parse(cls, subs_txt_path: str) -> Generator[Response, None, None]:
+#         logger = logging.getLogger("parse")
+#         """
+#         modified the code from:
+#         https://github.com/PolyAI-LDN/conversational-datasets/blob/50f626ad0d0e825835bd054f6a58006afa95a8e5/opensubtitles/create_data.py#L136-L158
+#         to fit my needs
+#         :param subs_txt_path:
+#         :return:
+#         """
+#         # init a bucket for previous lines
+#         prev_lines = list()
+#         with open(subs_txt_path, 'r') as fh:
+#             for idx, line in enumerate(fh):
+#                 if cls._should_skip(line):
+#                     logger.info("SKIP:{}|{}".format(idx + 1, line))
+#                     continue
+#                 # yield the response for this line
+#                 yield Response(content=cls._ext_content(line),
+#                                contexts=prev_lines)
+#                 # prepare prev lines, for the next response
+#                 prev_lines.append(cls._ext_content(line))
+#                 if len(prev_lines) > cls.NUM_CONTEXTS + 1:
+#                     # pop the first prev line
+#                     prev_lines.pop(0)
+#
+#     @classmethod
+#     def _should_skip(cls, line) -> bool:
+#         if not line:
+#             return True
+#         if len(line) < 9:
+#             return True
+#         # else, return false
+#         return False
+#
+#     @classmethod
+#     def _ext_content(cls, line) -> str:
+#         # simple preprocessing.
+#         return line.strip()
 
 # - don't really need idiom extractors any more. I'll be just using SLIDE dataset.
 # class IdiomExtractor:

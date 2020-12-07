@@ -1,38 +1,45 @@
-# and the director. director is given a
-from typing import Optional
-
-from youtora.search.builders import SrchQueryBuilder, SrchResBuilder
-from youtora.search.dataclasses import SrchQuery
+from youtora.search.builders import SrchQueryBuilder, Builder, SrchResBuilder, ResEntryBuilder
+from youtora.search.dataclasses import SrchQuery, SrchRes, ResEntry
 
 
-class SrchQueryDirector:
-    def __init__(self):
-        # a director maintains a builder
-        self.srch_query_builder: Optional[SrchQueryBuilder] = None
+class Director:
+    def __init__(self, builder: Builder):
+        self.builder: Builder = builder
 
-    def construct_srch_query(self, srch_query_builder: SrchQueryBuilder):
-        """
-        given a builder, constructs a srch query.
-        :param srch_query_builder:
-        :return:
-        """
-        # set the builder
-        self.srch_query_builder = srch_query_builder
-        # step-by-step construction.
-        for step in self.srch_query_builder.build_steps():
-            step()  # step is a callable.
+    def construct(self):
+        for step in self.builder.steps:
+            # execute build steps, step-by-step.
+            step()
 
-    # alias to the srch_query.
+
+class SrchQueryDirector(Director):
+
+    def __init__(self, builder: SrchQueryBuilder):
+        super().__init__(builder)
+
     @property
     def srch_query(self) -> SrchQuery:
-        return self.srch_query_builder.srch_query
+        self.builder: SrchQueryBuilder  # type cast hinting
+        return self.builder.srch_query
 
 
-class SrchResDirector:
-    def __init__(self):
-        self.srch_res_builder: Optional[SrchResDirector] = None
+class ResEntryDirector(Director):
 
-    def construct_srch_res(self, srch_res_builder: SrchResBuilder):
-        self.srch_res_builder = srch_res_builder
-        for step in self.srch_res_builder.build_steps():
-            step()
+    def __init__(self, builder: ResEntryBuilder):
+        super().__init__(builder)
+
+    @property
+    def res_entry(self) -> ResEntry:
+        self.builder: ResEntryBuilder  # type cast hinting
+        return self.builder.res_entry
+
+
+class SrchResDirector(Director):
+
+    def __init__(self, builder: SrchResBuilder):
+        super().__init__(builder)
+
+    @property
+    def srch_res(self) -> SrchRes:  # this is just a getter.
+        self.builder: SrchResBuilder  # type cast hinting
+        return self.builder.srch_res

@@ -9,13 +9,13 @@ from elasticsearch.helpers import bulk
 from elasticsearch_dsl import Search
 from termcolor import colored
 
+from config.settings import ES_CLIENT
 from youtora.collect.models import (
     ChannelRaw,
     VideoRaw,
     TracksRaw
 )
 from youtora.index.docs import (
-    es_client,
     ChannelInnerDoc,
     VideoInnerDoc,
     CaptionInnerDoc,
@@ -38,6 +38,7 @@ es_logger = logging.getLogger("elasticsearch")
 es_logger.setLevel(logging.WARNING)  # suppress the logs from es_client.
 
 
+# TODO: you can use builder pattern for this as well!
 class BuildGeneralIdx:
     VIDEO_BATCH_SIZE = 10
     IDX_NAME = GeneralDoc.Index.name
@@ -62,7 +63,7 @@ class BuildGeneralIdx:
                 # extract captions from this
                 captions = CaptionExtractor.parse(video_raw)
                 general_doc_dicts = cls._build_general_doc_dicts(captions, video_doc)
-                bulk(client=es_client, actions=general_doc_dicts)
+                bulk(client=ES_CLIENT, actions=general_doc_dicts)
                 # log progress.
                 vid_saved = batch_idx * cls.VIDEO_BATCH_SIZE + (vid_idx + 1)
                 msg = "saved:all_tracks:video={}/{}:channel={}" \
@@ -196,7 +197,7 @@ class BuildOpenSubIdx:
             for opensub_dict in cls.build_opensub_doc_dicts(file_path)
         )
         # build index by bulk call
-        bulk(client=es_client, actions=opensub_doc_dicts)
+        bulk(client=ES_CLIENT, actions=opensub_doc_dicts)
 
     @classmethod
     def build_opensub_doc_dicts(cls, file_path: str) -> Generator[dict, None, None]:

@@ -1,12 +1,10 @@
 import re
+import textwrap
 
 from django.core.management.base import BaseCommand
 
-from youtora.search.dataclasses import OpensubSrchQuery
-
-
-# for breaking up long lines of text into lines of fixed width
-# reference: https://stackoverflow.com/a/16320713
+from youtora.search.builders import OpensubSrchQueryBuilder, OpensubSrchResBuilder
+from youtora.search.facades import SrchFacade
 
 
 class Command(BaseCommand):
@@ -16,14 +14,26 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('text', type=str, help='the text to search on opensub_idx')
-        # optional arguments
+        # optional
+        parser.add_argument('-f', '--from', type=int, default=0,
+                            help="from which entry?")
         parser.add_argument('-s', '--size', type=int,
                             help="the number of search entries to retrieve")
 
     def handle(self, *args, **options):
-        text = options['text']
-        # get the optional arguments
-        size = options.get('size', None)
-        # build a search query
-        srch_query = OpensubSrchQuery(text=text,
-                                      size=size)
+        params = {
+            'text': options['text'],
+            'from_': options['from'],
+            'size': options['size']
+        }
+        # build a search query with the given params.
+        srch_q_builder = OpensubSrchQueryBuilder(**params)
+        srch_facade = SrchFacade(srch_q_builder,
+                                 srch_r_builder_type=OpensubSrchResBuilder)
+        srch_res = srch_facade.exec()
+        for entry in srch_res.entries:
+            # we know that we have three tracks... and highlight.
+            highlight_text = entry['highlight']['text']
+            wrapped_text = textwrap.fill(highlight_text, width=self.WIDTH)
+            print(wrapped_text)
+            print("##############")

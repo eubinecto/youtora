@@ -8,13 +8,8 @@ from elasticsearch_dsl import (
     Boolean,
     RankFeature
 )  # the data types needed
-from elasticsearch_dsl.connections import connections
 
-from config.settings import ELASTICSEARCH_DSL
-
-# create a default connection to the host
-
-es_client = connections.create_connection(hosts=ELASTICSEARCH_DSL['default']['hosts'])
+from config.settings import IndexName
 
 
 class ChannelInnerDoc(InnerDoc):
@@ -53,7 +48,7 @@ class GeneralDoc(Document):
     caption = Object(CaptionInnerDoc)
 
     class Index:
-        name = "general_idx"
+        name = IndexName.GENERAL.value
         # using the default settings for now.
 
     def save(self, **kwargs):
@@ -71,7 +66,7 @@ class OpensubDoc(Document):
     contexts = Text()
 
     class Index:
-        name = "opensub_idx"
+        name = IndexName.OPENSUB.value
 
     def save(self, **kwargs):
         # do something before saving here, if you wish.

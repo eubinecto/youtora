@@ -1,50 +1,31 @@
-from dataclasses import dataclass
+# each dataclasses has dedicated builders in builders.py
+from dataclasses import dataclass, field
 from typing import Optional, List
 
-from youtora.refine.dataclasses import Track
-
-
 # this is the object that we want to build
+from config.settings import IndexName
+
+
 @dataclass
 class SrchQuery:
-    # get the value of this later
-    idx_name: Optional[str] = None
-    body: Optional[dict] = None  # the complete body to be used for..
+    body: dict = field(default_factory=dict)  # json representation of SrchQuery.
+    index_name: Optional[IndexName] = None  # what index this query is for.
+    # https://stackoverflow.com/q/53632152 : mutable default is not allowed for dataclasses.
+
+
+@dataclass
+class ResEntry:
+    """
+    each entry of the result.
+    """
+    body: dict = field(default_factory=dict)  # main data
+    meta: dict = field(default_factory=dict)  # meta data
 
 
 @dataclass
 class SrchRes:
-    highlight: dict
-    """highlighted result"""
-
-
-@dataclass
-class GeneralSrchRes(SrchRes):
     """
-    represents the search result
+    search result of a index.
     """
-    tracks: List[Track]
-    """previous, current, next track"""
-
-    features: dict
-    """remaining features"""
-
-    def to_dict(self) -> dict:
-        return {
-            'tracks': [track.to_dict() for track in self.tracks],
-            'highlight': self.highlight,
-            'features': self.features
-        }
-
-
-@dataclass
-class OpensubSrchRes(SrchRes):
-    response: str
-    contexts: List[str]
-
-    def to_dict(self) -> dict:
-        return {
-            'response': self.response,
-            'highlight': self.highlight,
-            'contexts': self.contexts
-        }
+    entries: Optional[List[ResEntry]] = None  # main srch result.
+    meta: dict = field(default_factory=dict)  # meta data (e.g. total hits, etc).

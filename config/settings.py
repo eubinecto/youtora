@@ -9,11 +9,14 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
+from enum import Enum
 from os import path
 from pathlib import Path
 
 # start building the index
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+from elasticsearch_dsl.connections import connections
+
 BASE_DIR = Path(__file__).resolve().parent.parent  # the base directory of this project
 DATA_DIR = path.join(BASE_DIR, "data")  # the directory to put all the data
 
@@ -38,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'youtora.home',
+    'youtora.home',  # just for.. hmm...
     'youtora.index',  # for indexing data to elasticsearch index.
     'youtora.collect',  # for scraping data from youtube
     'youtora.search',  # app for general search
@@ -137,6 +140,16 @@ ELASTICSEARCH_DSL = {
         'hosts': '192.168.219.197:9200'
     },
 }
+
+# TODO better have all the es-related stuff to be defined here. (central access points).
+ES_CLIENT = connections.create_connection(hosts=ELASTICSEARCH_DSL['default']['hosts'])
+
+
+# index names are stored here.
+class IndexName(Enum):
+    GENERAL = "general_idx"
+    OPENSUB = "opensub_idx"
+
 
 # string formats to be used
 STR_FORMATS = {
