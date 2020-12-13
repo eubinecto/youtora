@@ -8,10 +8,9 @@ from typing import Optional, List, Callable
 from nltk import ngrams
 from termcolor import colored
 
-from config.settings import STR_FORMATS, IndexName
+from config.settings import STR_FORMATS, IndexName  # global variables to use.
 from youtora.index.docs import GeneralDoc  # for getting prev & next track.
-from youtora.search.dataclasses import SrchQuery, SrchRes, ResEntry
-from youtora.search.directors import ResEntryDirector
+from youtora.search.dataclasses import SrchQuery, ResEntry
 
 logging.basicConfig(stream=stdout, level=logging.INFO)
 
@@ -34,17 +33,23 @@ class Builder:
 class SrchQueryBuilder(Builder, ABC):
     # common attribute
     MIN_SHOULD_MATCH: str = "60%"
-    NUM_FRAGMENTS: int = 0
+    NUM_FRAGMENTS: int = 2
     # parameters for n-gram search.
     DELIM: str = " "
     N_GRAM: int = 2
     MAX_GAPS: int = 3
     ORDERED = True
 
-    def __init__(self, text: str, from_: int, size: int):
+    def __init__(self):
         # a builder maintains the final product
         self.srch_query: SrchQuery = SrchQuery()
         # must-include parameters.
+        self.text: Optional[str] = None
+        self.from_: Optional[int] = None
+        self.size: Optional[int] = None
+        self.srch_field: Optional[str] = None
+
+    def prep(self, text: str, from_: int, size: int):
         self.text: str = text  # the text to search on the index.
         self.from_: int = from_
         self.size: int = size
@@ -53,14 +58,28 @@ class SrchQueryBuilder(Builder, ABC):
     def setup_body(self):
         self.srch_query.body.update(
             {
-                "query": {
-                    "bool": dict()  # bool to be filled.
-                },
+                "query": dict(),
                 # for pagination, we need these two properties.
                 "from": self.from_,
                 "size": self.size
             }
         )  # update body.
+
+    def build_bool(self):
+        self.srch_query.body['query'].update(
+            {
+                "bool": dict()
+            }
+        )
+
+    def build_match(self):
+        self.srch_query.body['query'].update(
+            {
+                "match": {
+                    self.srch_field: self.text
+                }
+            }
+        )
 
     def build_shoulds(self):
         # as of right now, just use white space tokenization
@@ -76,7 +95,7 @@ class SrchQueryBuilder(Builder, ABC):
         shoulds = [
             {
                 "intervals": {
-                    "context": {
+                    self.srch_field: {
                         "match": {
                             "query": " ".join(text_ngram),
                             "max_gaps": self.MAX_GAPS,
@@ -107,10 +126,12 @@ class SrchQueryBuilder(Builder, ABC):
         self.srch_query.body.update(
             {
                 "highlight": {
-                    "context": {
-                        "number_of_fragments": self.NUM_FRAGMENTS,
-                        "pre_tags": [PRE_TAG],
-                        "post_tags": [POST_TAG]
+                    "pre_tags": [PRE_TAG],
+                    "post_tags": [POST_TAG],
+                    "fields": {
+                        self.srch_field: {
+                            "number_of_fragments": self.NUM_FRAGMENTS,
+                        }
                     }
                 }
             }
@@ -118,18 +139,23 @@ class SrchQueryBuilder(Builder, ABC):
 
 
 class GeneralSrchQueryBuilder(SrchQueryBuilder):
-    # keep the name of the index here.
-    IDX_NAME: str = IndexName.GENERAL
 
-    def __init__(self, text: str, from_: int, size: int, is_auto: bool = None,
-                 capt_lang_code: str = None, chan_lang_code: str = None):
-        super(GeneralSrchQueryBuilder, self).__init__(text, from_, size)
+    def __init__(self):
+        super(GeneralSrchQueryBuilder, self).__init__()
         # set the index name
-        self.srch_query.index_name = self.IDX_NAME
+        self.srch_query.index_name = IndexName.GENERAL
+        self.srch_field = "context"
         # additional params for general_idx.
-        self.is_auto: Optional[bool] = is_auto  # auto / manual constraint
-        self.capt_lang_code: Optional[str] = capt_lang_code  # lang constraint for captions
-        self.chan_lang_code: Optional[str] = chan_lang_code  # lang constraint for the channel
+        self.is_auto: Optional[bool] = None  # auto / manual constraint
+        self.capt_lang_code: Optional[str] = None  # lang constraint for captions
+        self.chan_lang_code: Optional[str] = None  # lang constraint for the channel
+
+    def prep(self, text: str, from_: int, size: int, is_auto: bool = None,
+             capt_lang_code: str = None, chan_lang_code: str = None):
+        super().prep(text, from_, size)
+        self.is_auto = is_auto
+        self.capt_lang_code = capt_lang_code
+        self.chan_lang_code = chan_lang_code
 
     def build_filters(self):
         """
@@ -188,12 +214,12 @@ class GeneralSrchQueryBuilder(SrchQueryBuilder):
 
 class OpensubSrchQueryBuilder(SrchQueryBuilder):
     # keep the name of the index.
-    IDX_NAME: str = IndexName.OPENSUB
 
-    def __init__(self, text: str, from_: int, size: int):
-        super().__init__(text, from_, size)
+    def __init__(self):
+        super(OpensubSrchQueryBuilder, self).__init__()
         # make sure you pass in the index name.
-        self.srch_query.index_name = self.IDX_NAME
+        self.srch_query.index_name = IndexName.OPENSUB
+        self.srch_field = "response"
 
     @property
     def steps(self) -> List[Callable]:
@@ -203,8 +229,8 @@ class OpensubSrchQueryBuilder(SrchQueryBuilder):
         """
         steps = [
             self.setup_body,  # setup_body must come first.
+            self.build_bool,
             self.build_shoulds,
-            self.build_minimum_should_match,
             self.build_highlight
         ]
         return steps
@@ -215,20 +241,30 @@ class OpensubSrchQueryBuilder(SrchQueryBuilder):
 # wouldn't factory be better? because.. it has..
 class ResEntryBuilder(Builder, ABC):
 
-    def __init__(self, hit_json: dict):
+    def __init__(self):
         """
-        :param hit_json: e.g. resp_json['hits'][['hits'][0]
         """
         self.res_entry: ResEntry = ResEntry()
-        self.hit_json: dict = hit_json
-        self.src_json: dict = hit_json['_source']
+        self.hit_json: Optional[dict] = None
+        self.src_json: Optional[dict] = None
+        self.srch_field: Optional[str] = None
+
+    def prep(self, hit_json: dict, srch_field: str):
+        """
+        :param hit_json: e.g. resp_json['hits'][['hits'][0]
+        :param srch_field
+        :return:
+        """
+        self.hit_json = hit_json
+        self.src_json = hit_json['_source']
+        self.srch_field = srch_field
 
     def build_highlight(self):
         global BOLD_RE
         # get the highlights from resp_json, and build it into body
         highlight: Optional[dict] = self.hit_json.get('highlight', None)
         if highlight:
-            highlight_text = highlight['context'][0]
+            highlight_text = highlight[self.srch_field][0]
             hls = BOLD_RE.findall(string=highlight_text)
             for hl in hls:  # highlight the strong-tagged parts
                 highlight_text = BOLD_RE.sub(repl=colored(hl, 'blue'),
@@ -237,6 +273,7 @@ class ResEntryBuilder(Builder, ABC):
                                              count=1)
         else:
             highlight_text = None
+
         self.res_entry.body.update(
             {
                 "highlight": {
@@ -298,7 +335,7 @@ class GeneralResEntryBuilder(ResEntryBuilder):
         return [
             self.build_highlight,  # build highlight first.
             self.build_tracks,
-            self.build_meta,
+            self.build_meta
         ]
 
 
@@ -327,67 +364,3 @@ class OpensubResEntryBuilder(ResEntryBuilder):
             self.build_response,
             self.build_contexts
         ]
-
-
-# builders for search result.
-class SrchResBuilder(Builder):
-    def __init__(self, resp_json: dict):
-        self.srch_res: SrchRes = SrchRes()
-        self.resp_json: dict = resp_json
-
-    def build_entries(self):
-        """
-        to be implemented by subclasses.
-        :return:
-        """
-        raise NotImplementedError
-
-    def build_meta(self):
-        # TODO: Dou you have any metadata to include?
-        # not sure what kinds of metadata I might need.
-        meta: dict = dict()  # just a placeholder, for now
-        self.srch_res.meta.update(**meta)
-
-    @property
-    def steps(self) -> List[Callable]:
-        """
-        this is to be shared with both builders.
-        :return:
-        """
-        return [
-            self.build_entries,
-            self.build_meta
-        ]
-
-
-class GeneralSrchResBuilder(SrchResBuilder):
-
-    def build_entries(self):
-        # to be filled.
-        entries: List[ResEntry] = list()
-        for hit_json in self.resp_json['hits']['hits']:
-            gen_res_entry_builder = GeneralResEntryBuilder(hit_json)
-            # use the director for building General Srch Entries.
-            res_entry_director = ResEntryDirector(gen_res_entry_builder)
-            res_entry_director.construct()
-            res_entry = res_entry_director.res_entry
-            entries.append(res_entry)
-        else:
-            # update entries
-            self.srch_res.entries = entries
-
-
-class OpensubSrchResBuilder(SrchResBuilder):
-    def build_entries(self):
-        # to be filled.
-        entries: List[ResEntry] = list()
-        for hit_json in self.resp_json['hits']['hits']:
-            opensub_res_entry_builder = OpensubResEntryBuilder(hit_json)
-            # use the director for building Opensub Srch Entries.
-            res_entry_director = ResEntryDirector(opensub_res_entry_builder)
-            res_entry_director.construct()
-            res_entry = res_entry_director.res_entry
-            entries.append(res_entry)
-        else:
-            # update entries
-            self.srch_res.entries = entries

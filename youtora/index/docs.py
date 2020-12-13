@@ -48,7 +48,7 @@ class GeneralDoc(Document):
     caption = Object(CaptionInnerDoc)
 
     class Index:
-        name = IndexName.GENERAL.value
+        name: str = IndexName.GENERAL.value
         # using the default settings for now.
 
     def save(self, **kwargs):
@@ -66,7 +66,7 @@ class OpensubDoc(Document):
     contexts = Text()
 
     class Index:
-        name = IndexName.OPENSUB.value
+        name: str = IndexName.OPENSUB.value
 
     def save(self, **kwargs):
         # do something before saving here, if you wish.

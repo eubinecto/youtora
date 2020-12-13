@@ -21,6 +21,12 @@ class ResEntry:
     body: dict = field(default_factory=dict)  # main data
     meta: dict = field(default_factory=dict)  # meta data
 
+    def to_dict(self) -> dict:
+        return {
+            'body': self.body,
+            'meta': self.meta
+        }
+
 
 @dataclass
 class SrchRes:
@@ -29,3 +35,9 @@ class SrchRes:
     """
     entries: Optional[List[ResEntry]] = None  # main srch result.
     meta: dict = field(default_factory=dict)  # meta data (e.g. total hits, etc).
+
+    def to_dict(self) -> dict:
+        return {
+            'entries': [entry.to_dict() for entry in self.entries],
+            'meta': self.meta
+        }

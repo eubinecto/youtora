@@ -4,7 +4,7 @@ import textwrap
 
 from django.core.management.base import BaseCommand
 
-from youtora.search.builders import GeneralSrchQueryBuilder, GeneralSrchResBuilder
+from youtora.search.builders import GeneralSrchQueryBuilder, GeneralResEntryBuilder
 from youtora.search.facades import SrchFacade
 
 
@@ -34,9 +34,10 @@ class Command(BaseCommand):
             'size': options['size']
         }
         # build a search query with the given params
-        srch_q_builder = GeneralSrchQueryBuilder(**params)
-        srch_facade = SrchFacade(srch_q_builder,
-                                 srch_r_builder_type=GeneralSrchResBuilder)
+        srch_q_builder = GeneralSrchQueryBuilder()
+        srch_q_builder.prep(**params)
+        res_e_builder = GeneralResEntryBuilder()
+        srch_facade = SrchFacade(srch_q_builder, res_e_builder)
         srch_res = srch_facade.exec()
         for entry in srch_res.entries:
             # we know that we have three tracks... and highlight.

@@ -3,7 +3,7 @@ import textwrap
 
 from django.core.management.base import BaseCommand
 
-from youtora.search.builders import OpensubSrchQueryBuilder, OpensubSrchResBuilder
+from youtora.search.builders import OpensubSrchQueryBuilder, OpensubResEntryBuilder
 from youtora.search.facades import SrchFacade
 
 
@@ -17,7 +17,7 @@ class Command(BaseCommand):
         # optional
         parser.add_argument('-f', '--from', type=int, default=0,
                             help="from which entry?")
-        parser.add_argument('-s', '--size', type=int,
+        parser.add_argument('-s', '--size', type=int, default=10,
                             help="the number of search entries to retrieve")
 
     def handle(self, *args, **options):
@@ -27,13 +27,14 @@ class Command(BaseCommand):
             'size': options['size']
         }
         # build a search query with the given params.
-        srch_q_builder = OpensubSrchQueryBuilder(**params)
-        srch_facade = SrchFacade(srch_q_builder,
-                                 srch_r_builder_type=OpensubSrchResBuilder)
+        srch_q_builder = OpensubSrchQueryBuilder()
+        srch_q_builder.prep(**params)
+        res_e_builder = OpensubResEntryBuilder()
+        srch_facade = SrchFacade(srch_q_builder, res_e_builder)
         srch_res = srch_facade.exec()
         for entry in srch_res.entries:
             # we know that we have three tracks... and highlight.
-            highlight_text = entry['highlight']['text']
+            highlight_text = entry.body['highlight']['text']
             wrapped_text = textwrap.fill(highlight_text, width=self.WIDTH)
             print(wrapped_text)
-            print("##############")
+            print("#############")

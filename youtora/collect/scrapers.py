@@ -269,7 +269,7 @@ class ChannelRawScraper(Scraper):
         uploads_html = driver.page_source
         return uploads_html
 
-
+# you don't really need this.. do you..
 class IdiomRawScraper(Scraper):
     # https://www.igrec.ca/projects/wiktionary-text-parser/
     WIKI_PARSER_ENDPOINT = "http://www.igrec.ca/project-files/wikparser/wikparser.php"
